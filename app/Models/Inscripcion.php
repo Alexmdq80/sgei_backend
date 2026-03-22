@@ -4,60 +4,132 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Inscripcion extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids, SoftDeletes, AuditableTrait;
 
-    protected $table = "inscripcion";
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        "persona_id",
+        "persona_firma_id",
+        "espacio_id",
+        "escuela_id",
+        "nivel_id",
+        "modalidad_id",
+        "condicion_id",
+        "persona_vinculo_persona_1_id",
+        "persona_vinculo_persona_2_id",
+        "persona_vinculo_persona_3_id",
+        "codigo_abc",
+        "proyecto_inclusion_si",
+        "concurre_especial_si",
+        "asistente_externo_si",
+        "fecha"
+    ];
 
-    protected $fillable = ["id_persona","id_firma","id_espacio_academico",
-        "id_escuela_procedencia","id_escuela_destino","id_nivel_procedencia",
-        "id_modalidad_procedencia","id_condicion","codigo_abc","id_usuario",
-        "responsable_1","responsable_2","restringida","id_ciclo_lectivo",
-        "proyecto_inclusion_si","concurre_especial_si","asistente_externo_si","fecha"];
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'fecha' => 'datetime'
+    ];
 
-    public function persona() {
-        return $this->belongsTo(Persona::class, "id_persona", "id");
-    }
-    // Persona que firma la inscripción
-    public function persona_firma() {
-        return $this->belongsTo(Estudiante_Adulto_Vinculo::class, "id_persona_firma", "id");
-    }
-    public function persona_responsable_1() {
-        return $this->belongsTo(Estudiante_Adulto_Vinculo::class, "responsable_1", "id");
-    }
-    public function persona_responsable_2() {
-        return $this->belongsTo(Estudiante_Adulto_Vinculo::class, "responsable_2", "id");
-    }
-    public function persona_restringida() {
-        return $this->belongsTo(Estudiante_Adulto_Vinculo::class, "restringida", "id");
-    }
-    public function usuario() {
-        return $this->belongsTo(User::class, "id_usuario", "id");
-    }
-    public function ciclo_lectivo() {
-        return $this->belongsTo(Ciclo_Lectivo::class, "id_ciclo_lectivo", "id");
-    }
-    public function espacio_academico() {
-        return $this->belongsTo(Espacio_Academico::class, "id_espacio_academico", "id");
-    }
-    public function escuela_procedencia() {
-        return $this->belongsTo(Escuela::class, "id_escuela_procedencia", "id");
-    }
-    public function escuela_destino() {
-        return $this->belongsTo(Escuela::class, "id_escuela_destino", "id");
-    }
-    public function nivel_procedencia() {
-        return $this->belongsTo(Escuela::class, "id_nivel_procedencia", "id");
-    }
-    public function modalidad_procedencia() {
-        return $this->belongsTo(Modalidad::class, "id_modalidad_procedencia", "id");
-    }
-    public function condicion() {
-        return $this->belongsTo(Condicion::class, "id_condicion", "id");
+    /**
+     * Relationship to the student (Persona).
+     */
+    public function persona(): BelongsTo
+    {
+        return $this->belongsTo(Persona::class, "persona_id", "id");
     }
 
+    /**
+     * Relationship to the person who signed the registration (Persona).
+     */
+    public function personaFirma(): BelongsTo
+    {
+        return $this->belongsTo(Persona::class, "persona_firma_id", "id");
+    }
 
+    /**
+     * Relationship to the academic space.
+     */
+    public function espacio(): BelongsTo
+    {
+        return $this->belongsTo(Espacio::class);
+    }
 
+    /**
+     * Relationship to the school of origin.
+     */
+    public function escuelaProcedencia(): BelongsTo
+    {
+        return $this->belongsTo(Escuela::class, "escuela_id");
+    }
+
+    /**
+     * Relationship to the level of origin.
+     */
+    public function nivelProcedencia(): BelongsTo
+    {
+        return $this->belongsTo(Nivel::class, "nivel_id");
+    }
+
+    /**
+     * Relationship to the modality of origin.
+     */
+    public function modalidadProcedencia(): BelongsTo
+    {
+        return $this->belongsTo(Modalidad::class, "modalidad_id");
+    }
+
+    /**
+     * Relationship to the registration condition.
+     */
+    public function condicion(): BelongsTo
+    {
+        return $this->belongsTo(Condicion::class);
+    }
+
+    /**
+     * Relationship to the first vinculated person.
+     */
+    public function vinculoPersona_1(): BelongsTo
+    {
+        return $this->belongsTo(PersonaVinculoPersona::class, "persona_vinculo_persona_1_id", "id");
+    }
+
+    /**
+     * Relationship to the second vinculated person.
+     */
+    public function vinculoPersona_2(): BelongsTo
+    {
+        return $this->belongsTo(PersonaVinculoPersona::class, "persona_vinculo_persona_2_id", "id");
+    }
+
+    /**
+     * Relationship to the third vinculated person.
+     */
+    public function vinculoPersona_3(): BelongsTo
+    {
+        return $this->belongsTo(PersonaVinculoPersona::class, "persona_vinculo_persona_3_id", "id");
+    }
+
+    /**
+     * Relationship to the registration history records.
+     */
+    public function historial(): HasMany
+    {
+        return $this->hasMany(HistorialInscripcion::class);
+    }
 }

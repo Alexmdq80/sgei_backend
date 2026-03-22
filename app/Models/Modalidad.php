@@ -4,23 +4,47 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Modalidad extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, AuditableTrait;
 
-    protected $table = 'modalidad';
-    protected $fillable = ["nombre","orden","vigente"];
-    // public function escuela_nivel_modalidad() {
-    //     return $this->hasMany(Escuela_Nivel_Modalidad::class, "id_modalidad", "id" );
-    // }
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        "nombre",
+        "orden",
+        "vigente"
+    ];
 
-    public function escuelas() {
-        return $this->belongsToMany(Escuela::class, "escuela_nivel_modalidad","id_modalidad", "id_escuela");
+    /**
+     * Relationship to the levels associated with this modality.
+     */
+    public function niveles(): BelongsToMany
+    {
+        return $this->belongsToMany(Nivel::class)
+                    ->using(ModalidadNivel::class);
     }
 
-    public function inscripciones() {
-        return $this->hasMany(inscripcion::class, "id_modalidad_procedencia", "id" );
+    /**
+     * Relationship to the registrations as school of origin modality.
+     */
+    public function inscripciones(): HasMany
+    {
+        return $this->hasMany(Inscripcion::class);
     }
-    
+
+    /**
+     * Relationship to the registration history as school of origin modality.
+     */
+    public function historialInscripciones(): HasMany
+    {
+        return $this->hasMany(HistorialInscripcion::class);
+    }
 }

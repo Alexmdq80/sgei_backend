@@ -4,60 +4,77 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Provincia extends Model
 {
+    use HasFactory, SoftDeletes, AuditableTrait;
 
-    use HasFactory;
-
-    protected $table = "provincia";
-
-    protected $fillable = ["nombre","nombre_completo","iso_nombre","iso_id",
-                           "centroide_lat","centroide_lon"    
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        "id_georef",
+        "nacion_id",
+        "georef_fuente_id",
+        "georef_categoria_id",
+        "nombre",
+        "nombre_completo",
+        "iso_nombre",
+        "iso_id",
+        "centroide_lat",
+        "centroide_lon"
     ];
 
-    public function calles() {
-        return $this->hasMany(Calle::class, "id_provincia", "id" );
-    }
-    public function asentamientos() {
-        return $this->hasMany(Asentamiento::class, "id_provincia", "id" );
-    }
-    public function localidades() {
-        return $this->hasMany(Localidad::class, "id_provincia", "id" );
-    }
-    public function localidades_asentamientos() {
-        return $this->hasMany(Localidad_Asentamiento::class, "id_provincia", "id" );
-    }
-    public function localidades_censales() {
-        return $this->hasMany(Localidad_Censal::class, "id_provincia", "id" );
-    }
-    public function departamentos() {
-        return $this->hasMany(Departamento::class, "id_provincia", "id" );
-    }
-    public function municipios() {
-        return $this->hasMany(Municipio::class, "id_provincia", "id" );
+    /**
+     * Relationship to the nation.
+     */
+    public function nacion(): BelongsTo
+    {
+        return $this->belongsTo(Nacion::class);
     }
 
-    public function pais(){
-        return $this->belongsTo(Pais::class, "id_pais");
-    }
-    public function continente(){
-        return $this->belongsTo(Continente::class, "id_continente");
-    }
-
-    public function categoria_georef() {
-        return $this->belongsTo(Categoria_Georef::class, "id_categoria_georef");
-    }
-    public function fuente() {
-        return $this->belongsTo(Fuente::class, "id_fuente_georef");
+    /**
+     * Relationship to the georef category.
+     */
+    public function georefCategoria(): BelongsTo
+    {
+        return $this->belongsTo(GeorefCategoria::class);
     }
 
-    public function personas() {
-        return $this->hasMany(Persona::class, "nacimiento_lugar_id_provincia", "id" );
-    } 
-    public function domicilios() {
-        return $this->hasMany(Domicilio::class, "id_provincia", "id" );
+    /**
+     * Relationship to the georef source.
+     */
+    public function georefFuente(): BelongsTo
+    {
+        return $this->belongsTo(GeorefFuente::class);
     }
 
-    public $timestamps = false;
+    /**
+     * Relationship to the departments in this province.
+     */
+    public function departamentos(): HasMany
+    {
+        return $this->hasMany(Departamento::class);
+    }
+
+    /**
+     * Relationship to the municipalities in this province.
+     */
+    public function municipios(): HasMany
+    {
+        return $this->hasMany(Municipio::class);
+    }
+
+    /**
+     * Relationship to the people associated with this province.
+     */
+    public function personas(): HasMany
+    {
+        return $this->hasMany(Persona::class);
+    }
 }

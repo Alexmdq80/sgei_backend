@@ -15,7 +15,7 @@
 - **Autenticación:** middleware('auth:sanctum')
 - **Persistencia de Memoria:** Engram (usar herramientas `mem_*`).
 - **Timestamps:** todos los modelos deben usarlo.
-- **SoftDeletes:** todos las modelos deben emplearo.
+- **SoftDeletes:** algunos las modelos deben emplearo.
 
 ## Estructura del Proyecto
 

@@ -4,16 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sector extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, AuditableTrait;
 
-    protected $table = 'sector';
-    protected $fillable = ["nombre","orden","vigente"];   
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        "nombre",
+        "orden",
+        "vigente"
+    ];
 
-    public function escuelas() {
-        return $this->hasMany(Escuela::class, "id_sector", "id" );
+    /**
+     * Relationship to the schools in this sector.
+     */
+    public function escuelas(): HasMany
+    {
+        return $this->hasMany(Escuela::class);
     }
-
 }

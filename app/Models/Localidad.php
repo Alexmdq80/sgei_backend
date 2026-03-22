@@ -4,42 +4,84 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Localidad extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, AuditableTrait;
 
-    protected $table = "localidad";
-
-    protected $fillable = ["nombre",
-                           "centroide_lat","centroide_lon",
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        "id_georef",
+        "departamento_id",
+        "municipio_id",
+        "localidad_censal_id",
+        "georef_fuente_id",
+        "georef_categoria_id",
+        "nombre",
+        "centroide_lat",
+        "centroide_lon"
     ];
 
-    public function departamento(){
-        return $this->belongsTo(Departamento::class, "id_departamento");
-    }
-    public function municipio(){
-        return $this->belongsTo(Municipio::class, "id_municipio");
-    }
-    public function provincia(){
-        return $this->belongsTo(Provincia::class, "id_provincia");
-    }
-    public function pais(){
-        return $this->belongsTo(Pais::class, "id_pais");
-    }
-    public function continente(){
-        return $this->belongsTo(Continente::class, "id_continente");
-    }
-    public function localidad_censal(){
-        return $this->belongsTo(Localidad_Censal::class, "id_localidad_censal");
+    /**
+     * Relationship to the department.
+     */
+    public function departamento(): BelongsTo
+    {
+        return $this->belongsTo(Departamento::class);
     }
 
-    public function categoria_georef() {
-        return $this->belongsTo(Categoria_Georef::class, "id_categoria_georef");
-    }
-    public function fuente() {
-        return $this->belongsTo(Fuente::class, "id_fuente_georef");
+    /**
+     * Relationship to the municipality.
+     */
+    public function municipio(): BelongsTo
+    {
+        return $this->belongsTo(Municipio::class);
     }
 
-    public $timestamps = false;
+    /**
+     * Relationship to the census locality.
+     */
+    public function localidadCensal(): BelongsTo
+    {
+        return $this->belongsTo(LocalidadCensal::class);
+    }
+
+    /**
+     * Relationship to the georef source.
+     */
+    public function georefFuente(): BelongsTo
+    {
+        return $this->belongsTo(GeorefFuente::class);
+    }
+
+    /**
+     * Relationship to the georef category.
+     */
+    public function georefCategoria(): BelongsTo
+    {
+        return $this->belongsTo(GeorefCategoria::class);
+    }
+
+    /**
+     * Relationship to the people born in this locality.
+     */
+    public function personasNacidas(): HasMany
+    {
+        return $this->hasMany(Persona::class);
+    }
+
+    /**
+     * Relationship to the addresses in this locality.
+     */
+    public function domicilios(): HasMany
+    {
+        return $this->hasMany(Domicilio::class);
+    }
 }
