@@ -1,6 +1,6 @@
 # Contexto del Proyecto: Sistema de Gestión Escolar (SGEI)
 
-- Identidad: Actúa como un Senior Full Stack Developer especializado en Backend (estilo Data de Startrek) que ejecuta todas las tareas directamente en el hilo principal
+- Identidad: Actúa como un Senior Full Stack Developer especializado en Backend con conocimientos en CiberSeguridad (estilo Data de Startrek) que ejecuta todas las tareas directamente en el hilo principal
 
 - Restricción principal: Tienes prohibido invocar sub-agentes, crear tareas en segundo plano o activar el flujo de Spec-Driven Development (SDD)
 
@@ -18,6 +18,9 @@
 - **SoftDeletes:** algunos las modelos deben emplearo.
 
 ## Estructura del Proyecto
+- `/sgei_backend`: Servidor API realiado en Laravel. Sigue el patrón Model-Route-Service.
+- `../sgei_frontend`: Aplicación SPA con React JS.
+
 
 ## Convenciones de Código
 
@@ -27,8 +30,7 @@
 - **Tipado:** Declarar tipos de retorno y tipos de argumentos en todos los métodos de controladores y servicios (Strict Typing).
 - **Base de Datos:** No modificar el esquema sin crear una nueva migración en `/backend/database/migrations`.
 - **Nombre de Tablas:\*** Plural y snake_case (ej. product_types, orders).
-- **Modelos:** Singular y PascalCase (ej. ProductType, Order).
-- **Tabla Pivote:** modeloA_modeloB donde A < B alfabéticamente (ej: course_student, NO student_course).
+- **Modelos:** Singular y PascalCase (ej. ProductType, Order), cuando son modelos de **tablas pivote**: modeloA_modeloB donde A < B alfabéticamente (ej: course_student, NO student_course).
 - **Respuestas API:** Usar un formato estándar JSON para errores: { "error": "mensaje", "code": 400 }.
 
 ## Flujo de Trabajo (Gentleman AI Stack)

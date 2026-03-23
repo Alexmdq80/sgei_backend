@@ -7,14 +7,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use OwenIt\Auditing\Auditable;
-use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Usuario extends Authenticatable implements AuditableContract
+class Usuario extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, Auditable, HasUuids, AuditableTrait;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids, AuditableTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -47,17 +45,6 @@ class Usuario extends Authenticatable implements AuditableContract
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-    ];
-
-    /**
-     * Attributes to exclude from the audit.
-     *
-     * @var array<int, string>
-     */
-    protected $auditExclude = [
-        'password',
-        'remember_token',
-        'verification_token',
     ];
 
     /**

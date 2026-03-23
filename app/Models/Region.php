@@ -22,10 +22,10 @@ class Region extends Model
     ];
 
     /**
-     * Relationship to the department.
+     * Relationship to the departments in this region.
      */
-    public function departamento(): BelongsTo
+    public function departamentos(): HasMany
     {
-        return $this->belongsTo(Departamento::class);
+        return $this->hasMany(Departamento::class);
     }
 }

@@ -18,6 +18,7 @@ class Calle extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        "id_georef",
         "nombre",
         "altura_fin_derecha",
         "altura_fin_izquierda",
@@ -25,7 +26,9 @@ class Calle extends Model
         "altura_inicio_izquierda",
         "localidad_censal_id",
         "georef_fuente_id",
-        "georef_categoria_id"
+        "georef_categoria_id",
+        "created_by",
+        "updated_by"
     ];
 
     /**

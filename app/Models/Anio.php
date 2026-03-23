@@ -21,7 +21,10 @@ class Anio extends Model
         "nombre_completo",
         "anio_absoluto",
         "anio_relativo",
-        "orden"
+        "orden",
+        "vigente",
+        "created_by",
+        "updated_by"
     ];
 
     /**

@@ -18,9 +18,12 @@ class Lectivo extends Model
      */
     protected $fillable = [
         "nombre",
+        "anio",
         "orden",
         "vigente",
-        "cerrado"
+        "cerrado",
+        "created_by",
+        "updated_by"
     ];
 
     /**
