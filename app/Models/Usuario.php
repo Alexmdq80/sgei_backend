@@ -9,10 +9,11 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Permission\Traits\HasRoles;
 
 class Usuario extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids, AuditableTrait;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids, AuditableTrait, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -24,8 +25,24 @@ class Usuario extends Authenticatable
         'apellido',
         'email',
         'password',
-        'verification_token'
+        'verification_token',
+        'avatar_path'
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = ['avatar_url'];
+
+    /**
+     * Get the full URL for the user's avatar.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar_path ? asset('storage/' . $this->avatar_path) : null;
+    }
 
     /**
      * The attributes that should be hidden for serialization.
