@@ -19,19 +19,13 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost',
-        'http://127.0.0.1',
-        'http://www.sgei.test',
-    ],
+    'allowed_origins' => ['http://sgei.local'],
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
-
-    'exposed_headers' => [],
+    'allowed_headers' => ['Content-Type', 'X-Requested-With', 'Authorization', 'X-XSRF-TOKEN', 'Accept', 'Origin'],
+    
+    'exposed_headers' => ['X-XSRF-TOKEN'],
 
     'max_age' => 0,
 

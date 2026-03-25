@@ -22,9 +22,7 @@ class AuthService
      */
     public function login(string $email, string $password, Request $request): array
     {
-        $usuario = Usuario::where('email', $email)->first();
-
-        if (!$usuario || !Hash::check($password, $usuario->password)) {
+        if (!Auth::guard('web')->attempt(['email' => $email, 'password' => $password])) {
             $this->auditLogin($email, 'login_failed', $request);
             
             throw ValidationException::withMessages([
@@ -32,24 +30,24 @@ class AuthService
             ]);
         }
 
-        $token = $usuario->createToken('api-token')->plainTextToken;
+        $usuario = Auth::user();
+        $request->session()->regenerate(); // Regenerar sesión para prevenir ataques
+
         $this->auditLogin($email, 'login_success', $request, $usuario);
 
         return [
-            'user' => $usuario,
-            'token' => $token
+            'user' => $usuario
         ];
     }
 
     /**
-     * Revoke the user's current token.
-     *
-     * @param Usuario $usuario
-     * @return void
+     * Log out and invalidate the session.
      */
-    public function logout(Usuario $usuario): void
+    public function logout(Usuario $usuario, Request $request): void
     {
-        $usuario->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
     }
 
     /**

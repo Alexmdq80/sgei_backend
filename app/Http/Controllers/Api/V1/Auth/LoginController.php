@@ -40,8 +40,7 @@ class LoginController extends Controller
             );
 
             return response()->json([
-                'user' => $data['user'],
-                'token' => $data['token']
+                'user' => $data['user']
             ], 200);
 
         } catch (ValidationException $e) {
@@ -65,7 +64,7 @@ class LoginController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $this->authService->logout($request->user());
+        $this->authService->logout($request->user(), $request);
 
         return response()->json([
             'message' => 'Sesión cerrada correctamente.',
