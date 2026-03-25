@@ -45,7 +45,7 @@ class LoginTest extends TestCase
             ->getJson('/api/v1/auth/me');
 
         $meResponse->assertStatus(200)
-            ->assertJsonPath('email', 'user@example.com');
+            ->assertJsonPath('user.email', 'user@example.com');
     }
 
     /**

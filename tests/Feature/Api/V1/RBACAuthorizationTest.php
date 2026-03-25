@@ -39,7 +39,7 @@ class RBACAuthorizationTest extends TestCase
         $this->actingAs($this->regularUser, 'sanctum');
         $response = $this->getJson('/api/v1/auth/me');
         $response->assertOk()
-                 ->assertJson(['id' => $this->regularUser->id]);
+                 ->assertJson(['user' => ['id' => $this->regularUser->id]]);
     }
 
     public function testUnauthenticatedUserCannotAccessProfileRoutes(): void

@@ -16,7 +16,13 @@ use App\Http\Controllers\Api\V1\Auth\ProfileController;
 |
 */
 
+
 Route::prefix('v1')->group(function () {
+    // RUTA DE PRUEBA
+    Route::get('/check-id', function (Request $request) {
+        return $request->session()->getId();
+    });
+
     // Rutas de Autenticación
     Route::prefix('auth')->group(function () {
         Route::post('/login', [LoginController::class, 'login']);

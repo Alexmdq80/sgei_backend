@@ -27,9 +27,11 @@ class ProfileTest extends TestCase
 
         $response->assertOk()
                  ->assertJson([
-                     'id' => $this->user->id,
-                     'nombre' => $this->user->nombre,
-                     'email' => $this->user->email,
+                     'user' => [
+                         'id' => $this->user->id,
+                         'nombre' => $this->user->nombre,
+                         'email' => $this->user->email,
+                     ]
                  ]);
     }
 

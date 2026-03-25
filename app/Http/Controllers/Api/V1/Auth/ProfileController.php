@@ -22,7 +22,9 @@ class ProfileController extends Controller
      */
     public function me(): JsonResponse
     {
-        return response()->json(Auth::user());
+        return response()->json([
+            'user' => Auth::user()
+        ]);
     }
 
     /**
@@ -49,16 +51,31 @@ class ProfileController extends Controller
      */
     public function updateAvatar(Request $request): JsonResponse
     {
-        $request->validate([
-            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        try {
+            $request->validate([
+                'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
 
-        $avatarUrl = $this->userService->updateAvatar(Auth::user(), $request->file('avatar'));
+            $avatarUrl = $this->userService->updateAvatar(Auth::user(), $request->file('avatar'));
 
-        return response()->json([
-            'message' => 'Avatar actualizado con éxito.',
-            'avatar_url' => $avatarUrl
-        ]);
+            return response()->json([
+                'message' => 'Avatar actualizado con éxito.',
+                'avatar_url' => $avatarUrl
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Illuminate\Support\Facades\Log::error('Error de validación en avatar: ' . json_encode($e->errors()));
+            return response()->json([
+                'error' => 'Los datos proporcionados no son válidos.',
+                'errors' => $e->errors(),
+                'code' => 422
+            ], 422);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error al subir avatar: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error al subir el avatar.',
+                'code' => 500
+            ], 500);
+        }
     }
 
     /**

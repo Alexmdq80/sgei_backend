@@ -18,9 +18,9 @@
 - **SoftDeletes:** algunos las modelos deben emplearo.
 
 ## Estructura del Proyecto
+
 - `/sgei_backend`: Servidor API realiado en Laravel. Sigue el patrón Model-Route-Service.
 - `../sgei_frontend`: Aplicación SPA con React JS.
-
 
 ## Convenciones de Código
 
@@ -32,6 +32,8 @@
 - **Nombre de Tablas:\*** Plural y snake_case (ej. product_types, orders).
 - **Modelos:** Singular y PascalCase (ej. ProductType, Order), cuando son modelos de **tablas pivote**: modeloA_modeloB donde A < B alfabéticamente (ej: course_student, NO student_course).
 - **Respuestas API:** Usar un formato estándar JSON para errores: { "error": "mensaje", "code": 400 }.
+- **XSS Prevention:** No usar nunca `dangerouslySetInnerHTML` a menos que sea estrictamente necesario y el contenido esté sanitizado.
+- **Storage:** No guardar tokens JWT o información sensible en `localStorage`. Priorizar el uso de Cookies con flag `HttpOnly` (gestionado por Sanctum) o estado en memoria.
 
 ## Flujo de Trabajo (Gentleman AI Stack)
 

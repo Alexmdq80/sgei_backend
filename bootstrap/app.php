@@ -12,11 +12,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // 1. Esto es lo ÚNICO que necesitas para que Sanctum funcione con React.
+        // Internamente ya añade StartSession, VerifyCsrfToken, etc., a las rutas de la API.
+        $middleware->statefulApi();
+
+        // 2. NO hagas prepend manual de StartSession o VerifyCsrfToken aquí, 
+        // ya que statefulApi() se encarga de inyectarlos en el orden correcto.
+
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
+
+        // 3. TrustProxies es correcto si usas Apache como Proxy.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
