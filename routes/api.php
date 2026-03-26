@@ -35,6 +35,7 @@ Route::prefix('v1')->group(function () {
             // Perfil de Usuario
             Route::put('/profile', [ProfileController::class, 'update']);
             Route::post('/avatar', [ProfileController::class, 'updateAvatar']);
+            Route::delete('/avatar', [ProfileController::class, 'deleteAvatar']);
             Route::put('/password', [ProfileController::class, 'updatePassword']);
         });
     });

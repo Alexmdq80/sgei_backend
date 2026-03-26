@@ -75,6 +75,18 @@ class UserService
     }
 
     /**
+     * Delete the user's avatar.
+     */
+    public function deleteAvatar(Usuario $user): void
+    {
+        if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+            Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $user->update(['avatar_path' => null]);
+    }
+
+    /**
      * Update the user's password.
      */
     public function updatePassword(Usuario $user, string $currentPassword, string $newPassword): void

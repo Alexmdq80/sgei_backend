@@ -7,6 +7,7 @@ use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
@@ -79,16 +80,52 @@ class ProfileController extends Controller
     }
 
     /**
+     * Delete the user's avatar.
+     */
+    public function deleteAvatar(): JsonResponse
+    {
+        try {
+            $this->userService->deleteAvatar(Auth::user());
+            return response()->json([
+                'message' => 'Avatar eliminado con éxito.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al eliminar el avatar.',
+                'code' => 500
+            ], 500);
+        }
+    }
+
+    /**
      * Update the user's password.
      */
     public function updatePassword(Request $request): JsonResponse
     {
-        $request->validate([
-            'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
         try {
+            $request->validate([
+                'current_password' => 'required|string',
+                'password' => [
+                    'required',
+                    'string',
+                    'confirmed',
+                    Password::min(10)
+                        ->letters()
+                        ->mixedCase()
+                        ->numbers()
+                        ->symbols()
+                ],
+            ], [
+                'current_password.required' => 'La contraseña actual es obligatoria.',
+                'password.required' => 'La nueva contraseña es obligatoria.',
+                'password.min' => 'La nueva contraseña debe tener al menos 10 caracteres.',
+                'password.confirmed' => 'La confirmación de la nueva contraseña no coincide.',
+                'password.letters' => 'La contraseña debe contener al menos una letra.',
+                'password.mixed_case' => 'La contraseña debe contener mayúsculas y minúsculas.',
+                'password.numbers' => 'La contraseña debe contener al menos un número.',
+                'password.symbols' => 'La contraseña debe contener al menos un símbolo.',
+            ]);
+
             $this->userService->updatePassword(Auth::user(), $request->current_password, $request->password);
 
             return response()->json([
@@ -96,9 +133,15 @@ class ProfileController extends Controller
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'error' => 'La contraseña actual es incorrecta.',
+                'error' => 'Error de validación.',
+                'errors' => $e->errors(),
                 'code' => 422
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'code' => 400
+            ], 400);
         }
     }
 }
