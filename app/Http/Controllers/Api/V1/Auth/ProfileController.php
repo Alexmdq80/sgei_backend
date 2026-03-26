@@ -24,7 +24,7 @@ class ProfileController extends Controller
     public function me(): JsonResponse
     {
         return response()->json([
-            'user' => Auth::user()
+            'user' => Auth::user()->load(['persona', 'documentoTipo'])
         ]);
     }
 
@@ -35,7 +35,8 @@ class ProfileController extends Controller
     {
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:255',
-            'apellido' => 'required|string|max:255',
+            'documento_tipo_id' => 'nullable|integer|exists:documento_tipos,id',
+            'documento_numero' => 'nullable|string|max:20',
             'email' => 'required|email|max:255|unique:usuarios,email,' . Auth::id(),
         ]);
 
@@ -43,7 +44,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Perfil actualizado con éxito.',
-            'user' => $user
+            'user' => $user->load(['persona', 'documentoTipo'])
         ]);
     }
 

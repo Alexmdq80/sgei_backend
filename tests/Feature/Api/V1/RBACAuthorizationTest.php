@@ -23,6 +23,7 @@ class RBACAuthorizationTest extends TestCase
         parent::setUp();
 
         // Ensure roles and permissions are seeded
+        $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 
         // Fetch users created by the seeder or create if not present
@@ -83,7 +84,8 @@ class RBACAuthorizationTest extends TestCase
         $this->actingAs($this->adminFullUser, 'sanctum');
         $userData = [
             'nombre' => 'Creator',
-            'apellido' => 'User',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '10101010',
             'email' => 'creator@example.com',
             'password' => 'password123',
         ];
@@ -97,7 +99,8 @@ class RBACAuthorizationTest extends TestCase
         $this->actingAs($this->adminFullUser, 'sanctum');
         $updatedData = [
             'nombre' => 'Updated Admin',
-            'apellido' => 'Full User',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '20202020',
             'email' => 'updated.admin@example.com',
         ];
         $response = $this->putJson('/api/v1/usuarios/' . $userToUpdate->id, $updatedData);

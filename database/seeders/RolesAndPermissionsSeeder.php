@@ -44,7 +44,9 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'superuser@example.com'],
             [
                 'nombre' => 'Super',
-                'apellido' => 'User',
+                'documento_tipo_id' => 1,
+                'documento_numero' => '99999999',
+                'es_administrador' => true,
                 'password' => Hash::make('password'), // Set a default password
                 'email_verified_at' => now(),
             ]
@@ -56,7 +58,9 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'adminfull@example.com'],
             [
                 'nombre' => 'Admin',
-                'apellido' => 'Full',
+                'documento_tipo_id' => 1,
+                'documento_numero' => '88888888',
+                'es_administrador' => true,
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
@@ -68,7 +72,9 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'adminstandard@example.com'],
             [
                 'nombre' => 'Admin',
-                'apellido' => 'Standard',
+                'documento_tipo_id' => 1,
+                'documento_numero' => '77777777',
+                'es_administrador' => true,
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]

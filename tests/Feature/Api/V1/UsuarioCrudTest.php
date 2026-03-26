@@ -16,6 +16,7 @@ class UsuarioCrudTest extends TestCase
     {
         parent::setUp();
         // Ensure roles and permissions are seeded
+        $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 
         // Pick an admin user from the seeder
@@ -33,7 +34,7 @@ class UsuarioCrudTest extends TestCase
         $response->assertOk()
                  ->assertJsonStructure([
                      'data' => [
-                         '*' => ['id', 'nombre', 'apellido', 'email']
+                         '*' => ['id', 'nombre', 'documento_tipo_id', 'documento_numero', 'email']
                      ],
                      'meta' => [
                          'current_page', 'from', 'last_page', 'per_page', 'to', 'total'
@@ -49,7 +50,8 @@ class UsuarioCrudTest extends TestCase
     {
         $userData = [
             'nombre' => 'New',
-            'apellido' => 'User',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
             'email' => 'newuser@example.com',
             'password' => 'password123',
         ];
@@ -62,13 +64,15 @@ class UsuarioCrudTest extends TestCase
                      'user' => [
                          'id' => $response->json('user.id'), // Get the generated ID
                          'nombre' => 'New',
-                         'apellido' => 'User',
+                         'documento_tipo_id' => 1,
+                         'documento_numero' => '12345678',
                          'email' => 'newuser@example.com',
                      ],
                  ]);
 
         $this->assertDatabaseHas('usuarios', [
             'email' => 'newuser@example.com',
+            'documento_numero' => '12345678',
         ]);
     }
 
@@ -96,7 +100,7 @@ class UsuarioCrudTest extends TestCase
                      'data' => [
                          'id' => $user->id,
                          'nombre' => $user->nombre,
-                         'apellido' => $user->apellido,
+                         'documento_numero' => $user->documento_numero,
                          'email' => $user->email,
                      ]
                  ]);
@@ -107,7 +111,8 @@ class UsuarioCrudTest extends TestCase
         $user = Usuario::factory()->create();
         $updatedData = [
             'nombre' => 'Updated Name',
-            'apellido' => 'Updated Lastname',
+            'documento_tipo_id' => 2,
+            'documento_numero' => '87654321',
             'email' => 'updated.user@example.com',
         ];
 
@@ -119,7 +124,8 @@ class UsuarioCrudTest extends TestCase
                      'user' => [
                          'id' => $user->id,
                          'nombre' => 'Updated Name',
-                         'apellido' => 'Updated Lastname',
+                         'documento_tipo_id' => 2,
+                         'documento_numero' => '87654321',
                          'email' => 'updated.user@example.com',
                      ],
                  ]);
@@ -127,7 +133,7 @@ class UsuarioCrudTest extends TestCase
         $this->assertDatabaseHas('usuarios', [
             'id' => $user->id,
             'nombre' => 'Updated Name',
-            'apellido' => 'Updated Lastname',
+            'documento_numero' => '87654321',
             'email' => 'updated.user@example.com',
         ]);
     }

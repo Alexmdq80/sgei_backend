@@ -36,7 +36,9 @@ class UsuarioController extends Controller
     {
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:255',
-            'apellido' => 'required|string|max:255',
+            'documento_tipo_id' => 'nullable|integer|exists:documento_tipos,id',
+            'documento_numero' => 'nullable|string|max:20',
+            'es_administrador' => 'nullable|boolean',
             'email' => 'required|email|max:255|unique:usuarios,email',
             'password' => 'nullable|string|min:8',
         ]);
@@ -54,7 +56,7 @@ class UsuarioController extends Controller
      */
     public function show(Usuario $usuario)
     {
-        return new UsuarioResource($usuario);
+        return new UsuarioResource($usuario->load(['persona', 'documentoTipo']));
     }
 
     /**
@@ -64,7 +66,9 @@ class UsuarioController extends Controller
     {
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:255',
-            'apellido' => 'required|string|max:255',
+            'documento_tipo_id' => 'nullable|integer|exists:documento_tipos,id',
+            'documento_numero' => 'nullable|string|max:20',
+            'es_administrador' => 'nullable|boolean',
             'email' => 'required|email|max:255|unique:usuarios,email,' . $usuario->id,
         ]);
 

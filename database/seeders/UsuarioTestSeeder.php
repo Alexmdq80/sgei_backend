@@ -18,7 +18,8 @@ class UsuarioTestSeeder extends Seeder
             ['email' => 'admin@sgei.com'],
             [
                 'nombre' => 'Admin',
-                'apellido' => 'SGEI',
+                'documento_tipo_id' => 1,
+                'documento_numero' => '11111111',
                 'password' => Hash::make('admin1234'),
                 'email_verified_at' => now(),
             ]

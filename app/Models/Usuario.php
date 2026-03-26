@@ -11,7 +11,10 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Permission\Traits\HasRoles;
 
-class Usuario extends Authenticatable
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\UserService;
+
+class Usuario extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids, AuditableTrait, HasRoles;
 
@@ -22,12 +25,31 @@ class Usuario extends Authenticatable
      */
     protected $fillable = [
         'nombre',
-        'apellido',
+        'documento_tipo_id',
+        'documento_numero',
+        'es_administrador',
         'email',
+        'email_verified_at',
         'password',
         'verification_token',
         'avatar_path'
     ];
+
+    /**
+     * Relationship to the document type.
+     */
+    public function documentoTipo(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DocumentoTipo::class);
+    }
+
+    /**
+     * Relationship to the persona based on the explicit usuario_id in personas table.
+     */
+    public function persona(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Persona::class, 'usuario_id');
+    }
 
     /**
      * The accessors to append to the model's array form.
@@ -62,6 +84,7 @@ class Usuario extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'es_administrador' => 'boolean',
     ];
 
     /**
@@ -73,6 +96,9 @@ class Usuario extends Authenticatable
             'email_verified_at' => now(),
             'verification_token' => null,
         ])->save();
+
+        // Intentar vincular con Persona automáticamente al verificar email
+        app(UserService::class)->linkToPersona($this);
     }
 
     /**

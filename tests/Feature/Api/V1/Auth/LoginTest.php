@@ -11,6 +11,12 @@ class LoginTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
+    }
+
     /**
      * Test successful login.
      */
@@ -32,7 +38,6 @@ class LoginTest extends TestCase
                 'user' => [
                     'id',
                     'nombre',
-                    'apellido',
                     'email',
                 ],
                 'token',

@@ -17,12 +17,16 @@ class UsuarioResource extends JsonResource
         return [
             'id' => $this->id,
             'nombre' => $this->nombre,
-            'apellido' => $this->apellido,
+            'documento_tipo_id' => $this->documento_tipo_id,
+            'documento_numero' => $this->documento_numero,
+            'es_administrador' => $this->es_administrador,
             'email' => $this->email,
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'avatar_url' => $this->avatar_url, // Accessor from Usuario model
+            'avatar_url' => $this->avatar_url,
+            'documento_tipo' => $this->whenLoaded('documentoTipo'),
+            'persona' => $this->whenLoaded('persona'),
         ];
     }
 }

@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\ProfileController;
+use App\Http\Controllers\Api\V1\Auth\VerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,10 +28,16 @@ Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/login', [LoginController::class, 'login']);
         
+        // Verificación de Email (Pública)
+        Route::get('/verify', [VerificationController::class, 'verify']);
+
         // Rutas protegidas por Sanctum
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [LoginController::class, 'logout']);
             Route::get('/me', [ProfileController::class, 'me']);
+            
+            // Reenvío de Verificación
+            Route::post('/verify/resend', [VerificationController::class, 'resend']);
             
             // Perfil de Usuario
             Route::put('/profile', [ProfileController::class, 'update']);

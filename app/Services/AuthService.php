@@ -31,12 +31,33 @@ class AuthService
         }
 
         $usuario = Auth::user();
-        $request->session()->regenerate(); // Regenerar sesión para prevenir ataques
+
+        if (!$usuario->hasVerifiedEmail()) {
+            Auth::guard('web')->logout();
+            
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            $this->auditLogin($email, 'login_unverified', $request, $usuario);
+
+            throw ValidationException::withMessages([
+                'email' => ['Debes verificar tu correo electrónico antes de iniciar sesión.'],
+            ]);
+        }
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate(); // Regenerar sesión para prevenir ataques
+        }
 
         $this->auditLogin($email, 'login_success', $request, $usuario);
 
+        $token = $usuario->createToken('auth_token')->plainTextToken;
+
         return [
-            'user' => $usuario
+            'user' => $usuario,
+            'token' => $token
         ];
     }
 
@@ -45,9 +66,15 @@ class AuthService
      */
     public function logout(Usuario $usuario, Request $request): void
     {
+        // Revocar el token actual de Sanctum si existe
+        $usuario->currentAccessToken()?->delete();
+
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
     }
 
     /**

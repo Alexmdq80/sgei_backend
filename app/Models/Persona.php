@@ -20,6 +20,7 @@ class Persona extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        "usuario_id",
         "documento_tipo_id",
         "documento_situacion_id",
         "sexo_id",
@@ -50,6 +51,14 @@ class Persona extends Model
     protected $casts = [
         'nacimiento_fecha' => 'datetime'
     ];
+
+    /**
+     * Relationship to the user.
+     */
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(Usuario::class);
+    }
 
     /**
      * Relationship to the document type.

@@ -40,7 +40,8 @@ class LoginController extends Controller
             );
 
             return response()->json([
-                'user' => $data['user']
+                'user' => $data['user'],
+                'token' => $data['token']
             ], 200);
 
         } catch (ValidationException $e) {

@@ -33,7 +33,9 @@ class UsuarioFactory extends Factory
     {
         return [
             'nombre' => fake()->firstName(),
-            'apellido' => fake()->lastName(),
+            'documento_tipo_id' => 1, // Defaulting to 1, should be seeded
+            'documento_numero' => fake()->unique()->numerify('########'),
+            'es_administrador' => false,
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

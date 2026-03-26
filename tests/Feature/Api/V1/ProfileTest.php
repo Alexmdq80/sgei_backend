@@ -17,6 +17,7 @@ class ProfileTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
         $this->user = Usuario::factory()->create();
         $this->actingAs($this->user, 'sanctum');
     }
@@ -30,6 +31,7 @@ class ProfileTest extends TestCase
                      'user' => [
                          'id' => $this->user->id,
                          'nombre' => $this->user->nombre,
+                         'documento_numero' => $this->user->documento_numero,
                          'email' => $this->user->email,
                      ]
                  ]);
@@ -39,7 +41,8 @@ class ProfileTest extends TestCase
     {
         $newData = [
             'nombre' => 'Jane',
-            'apellido' => 'Doe Updated',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '98765432',
             'email' => 'jane.doe.updated@example.com',
         ];
 
@@ -50,7 +53,8 @@ class ProfileTest extends TestCase
                      'message' => 'Perfil actualizado con éxito.',
                      'user' => [
                          'nombre' => 'Jane',
-                         'apellido' => 'Doe Updated',
+                         'documento_tipo_id' => 1,
+                         'documento_numero' => '98765432',
                          'email' => 'jane.doe.updated@example.com',
                      ],
                  ]);
@@ -58,7 +62,7 @@ class ProfileTest extends TestCase
         $this->assertDatabaseHas('usuarios', [
             'id' => $this->user->id,
             'nombre' => 'Jane',
-            'apellido' => 'Doe Updated',
+            'documento_numero' => '98765432',
             'email' => 'jane.doe.updated@example.com',
         ]);
     }
@@ -82,7 +86,8 @@ class ProfileTest extends TestCase
 
         $newData = [
             'nombre' => 'Jane',
-            'apellido' => 'Doe Updated',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '98765432',
             'email' => 'other@example.com',
         ];
 
@@ -146,8 +151,8 @@ class ProfileTest extends TestCase
 
     public function testCanUpdateAuthenticatedUserPassword(): void
     {
-        $oldPassword = 'password';
-        $newPassword = 'new-secure-password';
+        $oldPassword = 'Password123!';
+        $newPassword = 'NewSecurePassword1!';
 
         $this->user->password = bcrypt($oldPassword);
         $this->user->save();
@@ -166,9 +171,9 @@ class ProfileTest extends TestCase
 
     public function testCannotUpdatePasswordWithIncorrectCurrentPassword(): void
     {
-        $oldPassword = 'password';
-        $wrongPassword = 'wrong-password';
-        $newPassword = 'new-secure-password';
+        $oldPassword = 'Password123!';
+        $wrongPassword = 'WrongPassword123!';
+        $newPassword = 'NewSecurePassword1!';
 
         $this->user->password = bcrypt($oldPassword);
         $this->user->save();
@@ -181,7 +186,10 @@ class ProfileTest extends TestCase
 
         $response->assertStatus(422)
                  ->assertJson([
-                     'error' => 'La contraseña actual es incorrecta.',
+                     'error' => 'Error de validación.',
+                     'errors' => [
+                         'current_password' => ['La contraseña actual es incorrecta.']
+                     ],
                      'code' => 422
                  ]);
     }
