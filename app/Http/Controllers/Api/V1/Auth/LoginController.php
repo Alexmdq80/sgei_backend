@@ -28,16 +28,23 @@ class LoginController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required_without_all:documento_tipo_id,documento_numero|email',
+            'documento_tipo_id' => 'required_without:email|integer|exists:documento_tipos,id',
+            'documento_numero' => 'required_without:email|string',
             'password' => 'required|string',
         ]);
 
+        $credentials = $request->only(['password']);
+
+        if ($request->has('email')) {
+            $credentials['email'] = $request->string('email');
+        } else {
+            $credentials['documento_tipo_id'] = $request->integer('documento_tipo_id');
+            $credentials['documento_numero'] = $request->string('documento_numero');
+        }
+
         try {
-            $data = $this->authService->login(
-                $request->string('email'),
-                $request->string('password'),
-                $request
-            );
+            $data = $this->authService->login($credentials, $request);
 
             return response()->json([
                 'user' => $data['user'],

@@ -14,25 +14,28 @@ class AuthService
     /**
      * Authenticate a user and create a token.
      *
-     * @param string $email
-     * @param string $password
+     * @param array<string, mixed> $credentials
      * @param Request $request
      * @return array<string, mixed>
      * @throws ValidationException
      */
-    public function login(string $email, string $password, Request $request): array
+    public function login(array $credentials, Request $request): array
     {
-        if (!Auth::guard('web')->attempt(['email' => $email, 'password' => $password])) {
-            $this->auditLogin($email, 'login_failed', $request);
+        $identifier = $credentials['email'] ?? "Doc: {$credentials['documento_tipo_id']}-{$credentials['documento_numero']}";
+
+        if (!Auth::guard('web')->attempt($credentials)) {
+            $this->auditLogin($identifier, 'login_failed', $request);
             
             throw ValidationException::withMessages([
-                'email' => ['Credenciales inválidas.'],
+                'login' => ['Las credenciales proporcionadas son incorrectas.'],
             ]);
         }
 
+        /** @var Usuario $usuario */
         $usuario = Auth::user();
 
         if (!$usuario->hasVerifiedEmail()) {
+            $usuario->tokens()->delete(); // Revoke all tokens
             Auth::guard('web')->logout();
             
             if ($request->hasSession()) {
@@ -40,7 +43,7 @@ class AuthService
                 $request->session()->regenerateToken();
             }
 
-            $this->auditLogin($email, 'login_unverified', $request, $usuario);
+            $this->auditLogin($identifier, 'login_unverified', $request, $usuario);
 
             throw ValidationException::withMessages([
                 'email' => ['Debes verificar tu correo electrónico antes de iniciar sesión.'],
@@ -48,10 +51,10 @@ class AuthService
         }
 
         if ($request->hasSession()) {
-            $request->session()->regenerate(); // Regenerar sesión para prevenir ataques
+            $request->session()->regenerate();
         }
 
-        $this->auditLogin($email, 'login_success', $request, $usuario);
+        $this->auditLogin($identifier, 'login_success', $request, $usuario);
 
         $token = $usuario->createToken('auth_token')->plainTextToken;
 
@@ -80,22 +83,23 @@ class AuthService
     /**
      * Record an authentication attempt in the audit table.
      *
-     * @param string $email
+     * @param string $identifier
      * @param string $event
      * @param Request $request
      * @param Usuario|null $usuario
      * @return void
      */
-    protected function auditLogin(string $email, string $event, Request $request, ?Usuario $usuario = null): void
+    protected function auditLogin(string $identifier, string $event, Request $request, ?Usuario $usuario = null): void
     {
         AuthenticationAudit::create([
             'auditable_type' => $usuario ? get_class($usuario) : null,
             'auditable_id' => $usuario ? $usuario->id : null,
             'event' => $event,
-            'attempted_email' => $email,
+            'attempted_email' => str_contains($identifier, '@') ? $identifier : null,
             'url' => $request->fullUrl(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
+            'details' => !str_contains($identifier, '@') ? ['identifier' => $identifier] : null,
             'audit_driver' => 'authentication'
         ]);
     }

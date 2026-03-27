@@ -18,7 +18,7 @@ class LoginTest extends TestCase
     }
 
     /**
-     * Test successful login.
+     * Test successful login with email.
      */
     public function test_user_can_login_with_correct_credentials(): void
     {
@@ -26,6 +26,7 @@ class LoginTest extends TestCase
         $usuario = Usuario::factory()->create([
             'email' => 'user@example.com',
             'password' => Hash::make($password),
+            'email_verified_at' => now(),
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
@@ -43,14 +44,91 @@ class LoginTest extends TestCase
                 'token',
             ])
             ->assertJsonPath('user.email', 'user@example.com');
+    }
 
-        $token = $response->json('token');
+    /**
+     * Test successful login with document.
+     */
+    public function test_user_can_login_with_document_credentials(): void
+    {
+        $password = 'secret-password';
+        $usuario = Usuario::factory()->create([
+            'documento_tipo_id' => 1, // DNI
+            'documento_numero' => '12345678',
+            'password' => Hash::make($password),
+            'email_verified_at' => now(),
+        ]);
 
-        $meResponse = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->getJson('/api/v1/auth/me');
+        $response = $this->postJson('/api/v1/auth/login', [
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+            'password' => $password,
+        ]);
 
-        $meResponse->assertStatus(200)
-            ->assertJsonPath('user.email', 'user@example.com');
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'user' => [
+                    'id',
+                    'nombre',
+                    'documento_numero',
+                ],
+                'token',
+            ])
+            ->assertJsonPath('user.documento_numero', '12345678');
+    }
+
+    /**
+     * Test login fails with incorrect document.
+     */
+    public function test_user_cannot_login_with_incorrect_document_number(): void
+    {
+        $password = 'secret-password';
+        $usuario = Usuario::factory()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+            'password' => Hash::make($password),
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'documento_tipo_id' => 1,
+            'documento_numero' => '87654321', // Wrong number
+            'password' => $password,
+        ]);
+
+        $response->assertStatus(401)
+            ->assertJson([
+                'error' => 'Las credenciales proporcionadas son incorrectas.',
+                'code' => 401
+            ]);
+
+        $this->assertGuest();
+    }
+
+    /**
+     * Test login fails with unverified email using document.
+     */
+    public function test_user_cannot_login_with_document_if_email_is_unverified(): void
+    {
+        $password = 'secret-password';
+        $usuario = Usuario::factory()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+            'password' => Hash::make($password),
+            'email_verified_at' => null, // Not verified
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+            'password' => $password,
+        ]);
+
+        $response->assertStatus(401)
+            ->assertJson([
+                'error' => 'Debes verificar tu correo electrónico antes de iniciar sesión.',
+                'code' => 401
+            ]);
     }
 
     /**
@@ -61,6 +139,7 @@ class LoginTest extends TestCase
         $usuario = Usuario::factory()->create([
             'email' => 'user@example.com',
             'password' => Hash::make('correct-password'),
+            'email_verified_at' => now(),
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
@@ -70,7 +149,7 @@ class LoginTest extends TestCase
 
         $response->assertStatus(401)
             ->assertJson([
-                'error' => 'Credenciales inválidas.',
+                'error' => 'Las credenciales proporcionadas son incorrectas.',
                 'code' => 401
             ]);
 
@@ -89,7 +168,7 @@ class LoginTest extends TestCase
 
         $response->assertStatus(401)
             ->assertJson([
-                'error' => 'Credenciales inválidas.',
+                'error' => 'Las credenciales proporcionadas son incorrectas.',
                 'code' => 401
             ]);
 
@@ -99,12 +178,12 @@ class LoginTest extends TestCase
     /**
      * Test login validation errors.
      */
-    public function test_login_requires_email_and_password(): void
+    public function test_login_requires_email_or_document_and_password(): void
     {
         $response = $this->postJson('/api/v1/auth/login', []);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email', 'password']);
+            ->assertJsonValidationErrors(['email', 'documento_tipo_id', 'documento_numero', 'password']);
     }
 
     /**
