@@ -108,13 +108,15 @@ class ProfileTest extends TestCase
         $response->assertOk()
                  ->assertJsonStructure(['message', 'avatar_url']);
 
-        // Check if the file was stored
-        Storage::disk('public')->assertExists('avatars/' . $file->hashName());
-
-        // Check if user's avatar_path was updated in the database
+        // Check if user's avatar_path was updated in the database and file exists
         $this->user->refresh();
         $this->assertNotNull($this->user->avatar_path);
-        $this->assertStringContainsString('avatars/' . $file->hashName(), $this->user->avatar_path);
+        
+        // The filename should start with user_id_ and end with .jpg
+        $this->assertStringStartsWith('avatars/' . $this->user->id . '_', $this->user->avatar_path);
+        $this->assertStringEndsWith('.jpg', $this->user->avatar_path);
+        
+        Storage::disk('public')->assertExists($this->user->avatar_path);
     }
 
     public function testOldAvatarIsDeletedWhenUpdatingANewOne(): void
@@ -128,13 +130,21 @@ class ProfileTest extends TestCase
         $oldAvatarPath = $this->user->avatar_path;
         Storage::disk('public')->assertExists($oldAvatarPath);
 
+        // Wait a second to ensure a different timestamp if needed (though user_id is enough to distinguish from other users, same user needs timestamp)
+        // Actually time() changes every second.
+        sleep(1);
+
         // Second avatar
         $secondFile = UploadedFile::fake()->image('second.png');
         $this->postJson('/api/v1/auth/avatar', ['avatar' => $secondFile]);
 
         // Old avatar should be deleted
         Storage::disk('public')->assertMissing($oldAvatarPath);
-        Storage::disk('public')->assertExists('avatars/' . $secondFile->hashName());
+        
+        $this->user->refresh();
+        Storage::disk('public')->assertExists($this->user->avatar_path);
+        $this->assertStringStartsWith('avatars/' . $this->user->id . '_', $this->user->avatar_path);
+        $this->assertStringEndsWith('.png', $this->user->avatar_path);
     }
 
     public function testCannotUploadInvalidAvatarFile(): void

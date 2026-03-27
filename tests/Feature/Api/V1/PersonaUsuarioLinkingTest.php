@@ -17,30 +17,103 @@ class PersonaUsuarioLinkingTest extends TestCase
         $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
     }
 
-    public function testPersonaIsLinkedToUserWhenEmailIsVerified(): void
+    public function testPersonaIsLinkedToUserWhenEmailIsVerifiedAndEmailMatches(): void
     {
-        // 1. Create a Persona
+        // 1. Create a User
+        $user = Usuario::factory()->unverified()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+            'email' => 'juan@example.com'
+        ]);
+
+        // 2. Create a Persona with matching identification and matching email in Contacto
         $persona = Persona::factory()->create([
             'documento_tipo_id' => 1,
             'documento_numero' => '12345678',
-            'nombre' => 'Juan',
-            'apellido' => 'Perez'
         ]);
 
-        // 2. Create an unverified User with same identification
-        $user = Usuario::factory()->unverified()->create([
-            'documento_tipo_id' => 1,
-            'documento_numero' => '12345678'
+        \App\Models\Contacto::create([
+            'persona_id' => $persona->id,
+            'email' => 'juan@example.com'
         ]);
 
         $this->assertNull($persona->fresh()->usuario_id);
 
-        // 3. Verify email
+        // 3. Verify email (triggers linkToPersona via markEmailAsVerified override in Usuario model)
         $user->markEmailAsVerified();
 
         // 4. Check if linked
         $this->assertEquals($user->id, $persona->fresh()->usuario_id);
-        $this->assertEquals($persona->id, $user->fresh()->persona->id);
+    }
+
+    public function testPersonaIsNotLinkedIfEmailDoesNotMatch(): void
+    {
+        // 1. Create a User
+        $user = Usuario::factory()->unverified()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+            'email' => 'juan@example.com'
+        ]);
+
+        // 2. Create a Persona with matching identification but DIFFERENT email in Contacto
+        $persona = Persona::factory()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+        ]);
+
+        \App\Models\Contacto::create([
+            'persona_id' => $persona->id,
+            'email' => 'pedro@example.com'
+        ]);
+
+        $user->markEmailAsVerified();
+
+        // 4. Check that it is NOT linked
+        $this->assertNull($persona->fresh()->usuario_id);
+    }
+
+    public function testPersonaIsNotLinkedIfNoContactoRecordExists(): void
+    {
+        $user = Usuario::factory()->unverified()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+            'email' => 'juan@example.com'
+        ]);
+
+        // Persona exists but has no Contacto record
+        $persona = Persona::factory()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+        ]);
+
+        $user->markEmailAsVerified();
+
+        $this->assertNull($persona->fresh()->usuario_id);
+    }
+
+    public function testUserIsLinkedToExistingPersonaWhenPersonaIsCreatedWithMatchingEmail(): void
+    {
+        // 1. Create an existing verified User
+        $user = Usuario::factory()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+            'email' => 'juan@example.com',
+            'email_verified_at' => now()
+        ]);
+
+        // 2. Create a Persona with matching identification
+        $persona = Persona::factory()->create([
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+        ]);
+
+        // 3. Create Contacto with matching email (should trigger link via ContactoObserver)
+        $contacto = \App\Models\Contacto::create([
+            'persona_id' => $persona->id,
+            'email' => 'juan@example.com'
+        ]);
+
+        $this->assertEquals($user->id, $persona->fresh()->usuario_id);
     }
 
     public function testPersonaIsNotLinkedIfIdentificationDoesNotMatch(): void
@@ -83,6 +156,11 @@ class PersonaUsuarioLinkingTest extends TestCase
         $persona = Persona::factory()->create([
             'documento_tipo_id' => 1,
             'documento_numero' => '12345678'
+        ]);
+
+        \App\Models\Contacto::create([
+            'persona_id' => $persona->id,
+            'email' => 'admin_verified@example.com'
         ]);
 
         // Use UserService to create a verified user

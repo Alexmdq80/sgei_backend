@@ -55,6 +55,7 @@ class UserService
 
     /**
      * Link the user to a persona if identification matches and email is verified.
+     * Requires triple match: documento_tipo_id, documento_numero, and email in Contacto.
      */
     public function linkToPersona(Usuario $user): void
     {
@@ -66,13 +67,54 @@ class UserService
             return;
         }
 
+        // Search for a persona with matching documents and email in their Contacto record
         $persona = Persona::where('documento_tipo_id', $user->documento_tipo_id)
                           ->where('documento_numero', $user->documento_numero)
-                          ->whereNull('usuario_id') // Solo vincular si no tiene usuario
+                          ->whereHas('contacto', function ($query) use ($user) {
+                              $query->where('email', strtolower(trim($user->email)));
+                          })
+                          ->whereNull('usuario_id') // Only link if not already linked
                           ->first();
 
         if ($persona) {
             $persona->update(['usuario_id' => $user->id]);
+        }
+    }
+
+    /**
+     * Link a persona to an existing user if a triple match is found.
+     * Useful when creating or updating a persona's contact information.
+     */
+    public function linkPersonaToUser(Persona $persona): void
+    {
+        if ($persona->usuario_id) {
+            return;
+        }
+
+        if (!$persona->documento_tipo_id || !$persona->documento_numero) {
+            return;
+        }
+
+        // Get the email from the persona's contact record
+        $email = $persona->contacto?->email;
+
+        if (!$email) {
+            return;
+        }
+
+        // Search for a user with matching documents and email
+        $user = Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
+                       ->where('documento_numero', $persona->documento_numero)
+                       ->where('email', strtolower(trim($email)))
+                       ->whereNotNull('email_verified_at') // Only link to verified users
+                       ->first();
+
+        if ($user) {
+            // Check if this user is already linked to another persona (unlikely but possible)
+            $existingLink = Persona::where('usuario_id', $user->id)->exists();
+            if (!$existingLink) {
+                $persona->update(['usuario_id' => $user->id]);
+            }
         }
     }
 
@@ -120,8 +162,13 @@ class UserService
             Storage::disk('public')->delete($user->avatar_path);
         }
 
-        // Store new avatar in 'public/avatars'
-        $path = $avatar->store('avatars', 'public');
+        // Create a custom filename: user_id_timestamp.extension
+        $timestamp = time();
+        $extension = $avatar->getClientOriginalExtension();
+        $filename = "{$user->id}_{$timestamp}.{$extension}";
+
+        // Store new avatar in 'public/avatars' with the custom filename
+        $path = $avatar->storeAs('avatars', $filename, 'public');
         
         $user->update(['avatar_path' => $path]);
 
