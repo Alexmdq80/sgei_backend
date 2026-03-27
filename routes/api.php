@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\ProfileController;
 use App\Http\Controllers\Api\V1\Auth\VerificationController;
+use App\Http\Controllers\Api\V1\DocumentoTipoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +24,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/check-id', function (Request $request) {
         return $request->session()->getId();
     });
+
+    // Catálogos Públicos
+    Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
 
     // Rutas de Autenticación
     Route::prefix('auth')->group(function () {
