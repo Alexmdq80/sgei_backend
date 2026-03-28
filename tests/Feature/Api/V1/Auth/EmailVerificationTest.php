@@ -32,7 +32,8 @@ class EmailVerificationTest extends TestCase
 
         // We need to be an admin to create a user
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
-        $admin = Usuario::where('email', 'adminfull@example.com')->first();
+        $admin = Usuario::factory()->create(['es_administrador' => true]);
+        $admin->assignRole('admin_full');
         $this->actingAs($admin, 'sanctum');
 
         $response = $this->postJson('/api/v1/usuarios', $userData);

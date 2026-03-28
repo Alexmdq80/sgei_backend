@@ -19,8 +19,9 @@ class UsuarioCrudTest extends TestCase
         $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 
-        // Pick an admin user from the seeder
-        $this->adminUser = Usuario::where('email', 'adminfull@example.com')->first();
+        // Create admin user and assign role
+        $this->adminUser = Usuario::factory()->create(['es_administrador' => true]);
+        $this->adminUser->assignRole('admin_full');
         $this->actingAs($this->adminUser, 'sanctum');
     }
 

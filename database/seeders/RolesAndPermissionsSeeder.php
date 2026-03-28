@@ -2,11 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Usuario;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Support\Facades\Hash;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -18,67 +16,89 @@ class RolesAndPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create Permissions
-        Permission::firstOrCreate(['name' => 'manage-users', 'guard_name' => 'sanctum']);
-        Permission::firstOrCreate(['name' => 'view-reports', 'guard_name' => 'sanctum']);
-        Permission::firstOrCreate(['name' => 'manage-schools', 'guard_name' => 'sanctum']);
-        Permission::firstOrCreate(['name' => 'edit-own-profile', 'guard_name' => 'sanctum']);
+        // --- DEFINICIÓN DE PERMISOS ATÓMICOS ---
+
+        $permissions = [
+            // Gestión Institucional
+            'institucion.ver', 'institucion.editar', 'institucion.configurar', 'institucion.ciclos',
+            
+            // Gestión de Estudiantes (ex-alumnos)
+            'estudiantes.ver', 'estudiantes.ver.sensible', 'estudiantes.crear', 'estudiantes.editar', 
+            'estudiantes.inscribir', 'estudiantes.pases', 'estudiantes.bajas',
+            
+            // Gestión de Personal
+            'personal.ver', 'personal.gestionar', 'personal.asignar',
+            
+            // Gestión Académica
+            'notas.ver', 'notas.cargar', 'notas.cerrar',
+            'asistencia.ver', 'asistencia.cargar', 'asistencia.justificar',
+            'boletines.generar',
+            
+            // Familia y Vínculos
+            'familia.gestionar', 'familia.notificar',
+            
+            // Sistema y Seguridad
+            'sistema.usuarios', 'sistema.roles', 'sistema.auditoria',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'sanctum']);
+        }
+
+        // --- DEFINICIÓN DE ROLES ---
+
+        // 1. Super Administrador (Acceso Total)
+        $superUser = Role::firstOrCreate(['name' => 'superuser', 'guard_name' => 'sanctum']);
+        $superUser->givePermissionTo(Permission::all());
+
+        // 2. Roles Directivos (Director / Vicedirector)
+        $director = Role::firstOrCreate(['name' => 'director', 'guard_name' => 'sanctum']);
+        $vicedirector = Role::firstOrCreate(['name' => 'vicedirector', 'guard_name' => 'sanctum']);
         
-        // Create Roles and Assign Permissions
-        $superUserRole = Role::firstOrCreate(['name' => 'superuser', 'guard_name' => 'sanctum']);
-        $adminFullRole = Role::firstOrCreate(['name' => 'admin_full', 'guard_name' => 'sanctum']);
-        $adminStandardRole = Role::firstOrCreate(['name' => 'admin_standard', 'guard_name' => 'sanctum']);
+        $directivoPermissions = [
+            'institucion.ver', 'institucion.editar', 'institucion.configurar', 'institucion.ciclos',
+            'estudiantes.ver', 'estudiantes.ver.sensible', 'estudiantes.crear', 'estudiantes.editar', 'estudiantes.inscribir', 'estudiantes.pases', 'estudiantes.bajas',
+            'personal.ver', 'personal.gestionar', 'personal.asignar',
+            'notas.ver', 'notas.cargar', 'notas.cerrar',
+            'asistencia.ver', 'asistencia.cargar', 'asistencia.justificar',
+            'boletines.generar', 'familia.gestionar', 'familia.notificar',
+            'sistema.usuarios' // Solo gestión de usuarios locales
+        ];
+        $director->givePermissionTo($directivoPermissions);
+        $vicedirector->givePermissionTo($directivoPermissions);
 
-        // Superuser gets all permissions (or you can assign them explicitly)
-        // For simplicity, we'll assign all existing permissions to superuser role
-        $superUserRole->givePermissionTo(Permission::all());
+        // 3. Roles Secretaría (Secretario / Prosecretario)
+        $secretario = Role::firstOrCreate(['name' => 'secretario', 'guard_name' => 'sanctum']);
+        $prosecretario = Role::firstOrCreate(['name' => 'prosecretario', 'guard_name' => 'sanctum']);
+        
+        $secretariaPermissions = [
+            'institucion.ver', 'institucion.ciclos',
+            'estudiantes.ver', 'estudiantes.crear', 'estudiantes.editar', 'estudiantes.inscribir', 'estudiantes.pases', 'estudiantes.bajas',
+            'personal.ver', 'asistencia.ver', 'boletines.generar', 'familia.gestionar'
+        ];
+        $secretario->givePermissionTo($secretariaPermissions);
+        $prosecretario->givePermissionTo($secretariaPermissions);
 
-        // Admin Full Role Permissions
-        $adminFullRole->givePermissionTo(['manage-users', 'view-reports', 'manage-schools', 'edit-own-profile']);
+        // 4. Preceptor
+        $preceptor = Role::firstOrCreate(['name' => 'preceptor', 'guard_name' => 'sanctum']);
+        $preceptor->givePermissionTo([
+            'institucion.ver', 'estudiantes.ver', 'asistencia.ver', 'asistencia.cargar', 
+            'asistencia.justificar', 'notas.ver', 'familia.notificar'
+        ]);
 
-        // Admin Standard Role Permissions
-        $adminStandardRole->givePermissionTo(['view-reports', 'edit-own-profile']);
+        // 5. Profesor
+        $profesor = Role::firstOrCreate(['name' => 'profesor', 'guard_name' => 'sanctum']);
+        $profesor->givePermissionTo([
+            'institucion.ver', 'estudiantes.ver', 'notas.ver', 'notas.cargar', 
+            'asistencia.cargar', 'boletines.generar'
+        ]);
 
-        // Create a Superuser
-        $superUser = Usuario::firstOrCreate(
-            ['email' => 'superuser@example.com'],
-            [
-                'nombre' => 'Super',
-                'documento_tipo_id' => 1,
-                'documento_numero' => '99999999',
-                'es_administrador' => true,
-                'password' => Hash::make('password'), // Set a default password
-                'email_verified_at' => now(),
-            ]
-        );
-        $superUser->assignRole($superUserRole);
+        // 6. Estudiante
+        $estudiante = Role::firstOrCreate(['name' => 'estudiante', 'guard_name' => 'sanctum']);
+        $estudiante->givePermissionTo(['institucion.ver', 'estudiantes.ver', 'notas.ver', 'asistencia.ver']);
 
-        // Create an Admin Full User
-        $adminFullUser = Usuario::firstOrCreate(
-            ['email' => 'adminfull@example.com'],
-            [
-                'nombre' => 'Admin',
-                'documento_tipo_id' => 1,
-                'documento_numero' => '88888888',
-                'es_administrador' => true,
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $adminFullUser->assignRole($adminFullRole);
-
-        // Create an Admin Standard User
-        $adminStandardUser = Usuario::firstOrCreate(
-            ['email' => 'adminstandard@example.com'],
-            [
-                'nombre' => 'Admin',
-                'documento_tipo_id' => 1,
-                'documento_numero' => '77777777',
-                'es_administrador' => true,
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $adminStandardUser->assignRole($adminStandardRole);
+        // 7. Responsable (Padre/Madre/Tutor)
+        $responsable = Role::firstOrCreate(['name' => 'responsable', 'guard_name' => 'sanctum']);
+        $responsable->givePermissionTo(['institucion.ver', 'estudiantes.ver', 'notas.ver', 'asistencia.ver']);
     }
 }

@@ -26,10 +26,25 @@ class RBACAuthorizationTest extends TestCase
         $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 
-        // Fetch users created by the seeder or create if not present
-        $this->superUser = Usuario::where('email', 'superuser@example.com')->first();
-        $this->adminFullUser = Usuario::where('email', 'adminfull@example.com')->first();
-        $this->adminStandardUser = Usuario::where('email', 'adminstandard@example.com')->first();
+        // Create test users and assign roles
+        $this->superUser = Usuario::factory()->create([
+            'email' => 'superuser@test.com',
+            'es_administrador' => true,
+        ]);
+        $this->superUser->assignRole('superuser');
+
+        $this->adminFullUser = Usuario::factory()->create([
+            'email' => 'adminfull@test.com',
+            'es_administrador' => true,
+        ]);
+        $this->adminFullUser->assignRole('admin_full');
+
+        $this->adminStandardUser = Usuario::factory()->create([
+            'email' => 'adminstandard@test.com',
+            'es_administrador' => true,
+        ]);
+        $this->adminStandardUser->assignRole('admin_standard');
+
         $this->regularUser = Usuario::factory()->create(['password' => Hash::make('password')]);
     }
 
