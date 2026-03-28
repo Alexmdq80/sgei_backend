@@ -12,11 +12,18 @@ class DocumentoTipoSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('documento_tipos')->insert([
-            ['id' => 1, 'nombre' => 'DNI', 'orden' => 1, 'vigente' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 2, 'nombre' => 'PASAPORTE', 'orden' => 2, 'vigente' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 3, 'nombre' => 'LE', 'orden' => 3, 'vigente' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 4, 'nombre' => 'LC', 'orden' => 4, 'vigente' => true, 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        $tipos = [
+            ['id' => 1, 'nombre' => 'DNI', 'orden' => 1, 'vigente' => true],
+            ['id' => 2, 'nombre' => 'PASAPORTE', 'orden' => 2, 'vigente' => true],
+            ['id' => 3, 'nombre' => 'LE', 'orden' => 3, 'vigente' => true],
+            ['id' => 4, 'nombre' => 'LC', 'orden' => 4, 'vigente' => true],
+        ];
+
+        foreach ($tipos as $tipo) {
+            DB::table('documento_tipos')->updateOrInsert(
+                ['id' => $tipo['id']],
+                array_merge($tipo, ['created_at' => now(), 'updated_at' => now()])
+            );
+        }
     }
 }

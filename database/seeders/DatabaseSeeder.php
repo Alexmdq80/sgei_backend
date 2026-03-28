@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DocumentoTipoSeeder::class,
             RolesAndPermissionsSeeder::class,
+            AdminSistemaSeeder::class,
             UsuarioTestSeeder::class,
         ]);
     }

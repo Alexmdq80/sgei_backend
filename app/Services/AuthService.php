@@ -34,22 +34,6 @@ class AuthService
         /** @var Usuario $usuario */
         $usuario = Auth::user();
 
-        if (!$usuario->hasVerifiedEmail()) {
-            $usuario->tokens()->delete(); // Revoke all tokens
-            Auth::guard('web')->logout();
-            
-            if ($request->hasSession()) {
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-            }
-
-            $this->auditLogin($identifier, 'login_unverified', $request, $usuario);
-
-            throw ValidationException::withMessages([
-                'email' => ['Debes verificar tu correo electrónico antes de iniciar sesión.'],
-            ]);
-        }
-
         if ($request->hasSession()) {
             $request->session()->regenerate();
         }

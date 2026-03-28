@@ -28,22 +28,22 @@ class VerificationController extends Controller
             'token' => 'required|string',
         ]);
 
-        $user = Usuario::where('email', $request->email)
-                       ->where('verification_token', $request->token)
-                       ->first();
+        $user = Usuario::where('email', $request->email)->first();
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'Token o email de verificación inválido.',
-                'code' => 400
-            ], 400);
-        }
-
+        // Si el usuario ya está verificado, devolvemos éxito directamente
         if ($user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'El correo electrónico ya ha sido verificado.',
                 'code' => 200
             ]);
+        }
+
+        // Si no está verificado, validamos el token
+        if ($user->verification_token !== $request->token) {
+            return response()->json([
+                'message' => 'Token de verificación inválido o expirado.',
+                'code' => 400
+            ], 400);
         }
 
         $user->markEmailAsVerified();
