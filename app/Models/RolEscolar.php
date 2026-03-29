@@ -7,26 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class UsuarioTipo extends Model
+class RolEscolar extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    protected $table = 'roles_escolares';
+
     protected $fillable = [
-        "nombre",
-        "orden",
-        "vigente"
+        'nombre',
+        'orden',
+        'vigente'
     ];
 
     /**
-     * Relationship to the school users associated with this user type.
+     * Relationship to users associated with this school role.
      */
     public function escuelaUsuarios(): HasMany
     {
-        return $this->hasMany(EscuelaUsuario::class);
+        return $this->hasMany(EscuelaUsuario::class, 'rol_escolar_id');
     }
 }

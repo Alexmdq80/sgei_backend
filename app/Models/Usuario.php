@@ -95,6 +95,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         $this->forceFill([
             'email_verified_at' => now(),
             'verification_token' => null,
+            'estado' => $this->es_administrador ? 'activo' : 'email_verificado',
         ])->save();
 
         // Intentar vincular con Persona automáticamente al verificar email

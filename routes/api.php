@@ -6,6 +6,10 @@ use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\ProfileController;
 use App\Http\Controllers\Api\V1\Auth\VerificationController;
 use App\Http\Controllers\Api\V1\DocumentoTipoController;
+use App\Http\Controllers\Api\V1\EscuelaController;
+use App\Http\Controllers\Api\V1\GeografiaController;
+
+use App\Http\Controllers\Api\V1\Auth\RegisterController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,10 +31,17 @@ Route::prefix('v1')->group(function () {
 
     // Catálogos Públicos
     Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
+    Route::get('/escuelas', [EscuelaController::class, 'index']);
+
+    // Geografía (Catálogos)
+    Route::get('/provincias', [GeografiaController::class, 'provincias']);
+    Route::get('/departamentos', [GeografiaController::class, 'departamentos']);
+    Route::get('/localidades', [GeografiaController::class, 'localidades']);
 
     // Rutas de Autenticación
     Route::prefix('auth')->group(function () {
         Route::post('/login', [LoginController::class, 'login']);
+        Route::post('/register', [RegisterController::class, 'register']);
         
         // Verificación de Email (Pública)
         Route::get('/verify', [VerificationController::class, 'verify']);
@@ -39,7 +50,11 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [LoginController::class, 'logout']);
             Route::get('/me', [ProfileController::class, 'me']);
-            
+
+            // Selección de Escuela (Post-Registro)
+            Route::post('/escuelas/join', [EscuelaController::class, 'requestJoin']);
+            Route::post('/escuelas/cancel-join', [EscuelaController::class, 'cancelJoin']);
+
             // Reenvío de Verificación
             Route::post('/verify/resend', [VerificationController::class, 'resend']);
             
