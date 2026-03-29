@@ -24,7 +24,7 @@ class ProfileController extends Controller
     public function me(): JsonResponse
     {
         return response()->json([
-            'user' => Auth::user()->load(['persona', 'documentoTipo'])
+            'user' => Auth::user()->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])
         ]);
     }
 
@@ -44,7 +44,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Perfil actualizado con éxito.',
-            'user' => $user->load(['persona', 'documentoTipo'])
+            'user' => $user->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])
         ]);
     }
 

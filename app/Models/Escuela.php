@@ -140,8 +140,7 @@ class Escuela extends Model
      */
     public function modalidadesNiveles(): BelongsToMany
     {
-        return $this->belongsToMany(ModalidadNivel::class, 'escuela_modalidad_nivel')
-                    ->using(EscuelaModalidadNivel::class);
+        return $this->belongsToMany(ModalidadNivel::class, 'escuela_modalidad_nivel', 'escuela_id', 'modalidad_nivel_id');
     }
 
     /**

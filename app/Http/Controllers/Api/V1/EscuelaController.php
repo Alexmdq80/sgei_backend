@@ -24,7 +24,7 @@ class EscuelaController extends Controller
     {
         try {
             $term = $request->query('search');
-            $filters = $request->only(['provincia_id', 'departamento_id', 'localidad_id', 'nivel_id']);
+            $filters = $request->only(['provincia_id', 'departamento_id', 'localidad_id', 'nivel_id', 'sector_id']);
             
             $escuelas = $this->escuelaService->search($term, $filters);
 
@@ -44,6 +44,15 @@ class EscuelaController extends Controller
     {
         $niveles = \App\Models\Nivel::where('vigente', true)->orderBy('orden')->get(['id', 'nombre']);
         return response()->json($niveles);
+    }
+
+    /**
+     * Get all school sectors.
+     */
+    public function sectores(): JsonResponse
+    {
+        $sectores = \App\Models\Sector::where('vigente', true)->orderBy('orden')->get(['id', 'nombre']);
+        return response()->json($sectores);
     }
 
     /**
@@ -71,14 +80,14 @@ class EscuelaController extends Controller
     /**
      * Cancel join request.
      */
-    public function cancelJoin(): JsonResponse
+    public function cancelJoin(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $this->escuelaService->cancelJoin($user);
+        $this->escuelaService->cancelJoin($user, $request->input('escuela_id'));
 
         return response()->json([
             'message' => 'Solicitud cancelada.',
-            'user' => $user->fresh()
+            'user' => $user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])
         ]);
     }
 }

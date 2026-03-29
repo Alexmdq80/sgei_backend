@@ -33,6 +33,12 @@ class AuthService
 
         /** @var Usuario $usuario */
         $usuario = Auth::user();
+        
+        \Illuminate\Support\Facades\Log::info('Login attempt successful', [
+            'attempted_identifier' => $identifier,
+            'actual_user_email' => $usuario->email,
+            'actual_user_id' => $usuario->id
+        ]);
 
         if ($request->hasSession()) {
             $request->session()->regenerate();

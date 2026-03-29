@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Escuela;
 use App\Models\Usuario;
+use App\Models\EscuelaUsuario;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -15,7 +16,7 @@ class EscuelaService
      */
     public function search(string $term = null, array $filters = []): Collection
     {
-        $query = Escuela::query()->select(['id', 'nombre', 'numero', 'cue_anexo', 'clave_provincial', 'localidad_id']);
+        $query = Escuela::query()->select(['id', 'nombre', 'numero', 'cue_anexo', 'clave_provincial', 'localidad_id', 'sector_id']);
 
         // Filtro por término de búsqueda
         if ($term) {
@@ -43,11 +44,16 @@ class EscuelaService
         // Filtro por Nivel
         if (!empty($filters['nivel_id'])) {
             $query->whereHas('modalidadesNiveles', function ($q) use ($filters) {
-                $q->where('modalidad_nivels.nivel_id', $filters['nivel_id']);
+                $q->where('modalidad_nivel.nivel_id', $filters['nivel_id']);
             });
         }
 
-        return $query->with('localidad:id,nombre')->limit(50)->get();
+        // Filtro por Sector
+        if (!empty($filters['sector_id'])) {
+            $query->where('sector_id', $filters['sector_id']);
+        }
+
+        return $query->with(['localidad:id,nombre', 'sector:id,nombre'])->limit(50)->get();
     }
 
     /**
@@ -55,15 +61,14 @@ class EscuelaService
      */
     public function requestJoin(Usuario $user, int $escuelaId, int $rolEscolarId = 1): void
     {
-        DB::table('escuela_usuario')->updateOrInsert(
-            ['usuario_id' => $user->id],
+        EscuelaUsuario::updateOrCreate(
             [
-                'id' => (string) Str::uuid(),
-                'escuela_id' => $escuelaId,
+                'usuario_id' => $user->id,
+                'escuela_id' => $escuelaId
+            ],
+            [
                 'rol_escolar_id' => $rolEscolarId,
                 'verified_at' => null,
-                'created_at' => now(),
-                'updated_at' => now()
             ]
         );
 
@@ -73,9 +78,19 @@ class EscuelaService
     /**
      * Cancel join request.
      */
-    public function cancelJoin(Usuario $user): void
+    public function cancelJoin(Usuario $user, ?int $escuelaId = null): void
     {
-        DB::table('escuela_usuario')->where('usuario_id', $user->id)->delete();
-        $user->update(['estado' => 'email_verificado']);
+        $query = EscuelaUsuario::where('usuario_id', $user->id);
+        
+        if ($escuelaId) {
+            $query->where('escuela_id', $escuelaId);
+        }
+
+        $query->delete();
+
+        // Si no quedan solicitudes, volver al estado inicial de post-verificación
+        if (EscuelaUsuario::where('usuario_id', $user->id)->count() === 0) {
+            $user->update(['estado' => 'email_verificado']);
+        }
     }
 }

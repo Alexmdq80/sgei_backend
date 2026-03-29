@@ -3,19 +3,32 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use OwenIt\Auditing\Auditable;
-use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class EscuelaUsuario extends \Illuminate\Database\Eloquent\Relations\Pivot implements AuditableContract
+class EscuelaUsuario extends Model
 {
-    use SoftDeletes, Auditable, HasUuids;
+    use SoftDeletes, HasUuids; // AuditableTrait removed for debugging
 
     protected $table = 'escuela_usuario';
 
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+
+    /**
+     * The "type" of the primary key ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
     protected $fillable = [
+        "id",
         "escuela_id",
         "usuario_id",
         "verified_at",
