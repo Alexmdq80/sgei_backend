@@ -20,7 +20,7 @@ class Propuesta extends Model
      */
     protected $fillable = [
         "escuela_id",
-        "plan_anio_id",
+        "anio_plan_id",
         "turno_inicio_id",
         "turno_fin_id",
         "jornada_id",
@@ -36,11 +36,11 @@ class Propuesta extends Model
     }
 
     /**
-     * Relationship to the plan year.
+     * Relationship to the academic year plan.
      */
-    public function planAnio(): BelongsTo
+    public function anioPlan(): BelongsTo
     {
-        return $this->belongsTo(PlanAnio::class);
+        return $this->belongsTo(AnioPlan::class);
     }
 
     /**
@@ -81,14 +81,5 @@ class Propuesta extends Model
     public function espacios(): HasMany
     {
         return $this->hasMany(Espacio::class);
-    }
-
-    /**
-     * Relationship to the schools.
-     */
-    public function escuelas(): BelongsToMany
-    {
-        return $this->belongsToMany(Escuela::class, 'escuela_propuesta', 'propuesta_id', 'escuela_id')
-                    ->using(EscuelaPropuesta::class);
     }
 }

@@ -65,7 +65,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('plan_anios', function (Blueprint $table) {
+        Schema::create('anio_plan', function (Blueprint $table) {
             $table->id();
             $table->foreignId('plan_id')->constrained('plans');
             $table->foreignId('anio_id')->constrained('anios');
@@ -79,7 +79,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedMediumInteger('escuela_id');
             $table->foreign('escuela_id')->references('id')->on('escuelas');
-            $table->foreignId('plan_anio_id')->constrained('plan_anios');
+            $table->foreignId('anio_plan_id')->constrained('anio_plan');
             $table->unsignedTinyInteger('turno_inicio_id')->nullable();
             $table->foreign('turno_inicio_id')->references('id')->on('turnos');
             $table->unsignedTinyInteger('turno_fin_id')->nullable();
@@ -100,7 +100,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('propuestas');
-        Schema::dropIfExists('plan_anios');
+        Schema::dropIfExists('anio_plan');
         Schema::dropIfExists('plans');
         Schema::dropIfExists('plan_ciclos');
         Schema::dropIfExists('anios');

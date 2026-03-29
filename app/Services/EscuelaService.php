@@ -40,6 +40,13 @@ class EscuelaService
             });
         }
 
+        // Filtro por Nivel
+        if (!empty($filters['nivel_id'])) {
+            $query->whereHas('modalidadesNiveles', function ($q) use ($filters) {
+                $q->where('modalidad_nivels.nivel_id', $filters['nivel_id']);
+            });
+        }
+
         return $query->with('localidad:id,nombre')->limit(50)->get();
     }
 

@@ -73,7 +73,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('persona_vinculo_personas', function (Blueprint $table) {
+        Schema::create('persona_vinculo_persona', function (Blueprint $table) {
             $table->charset = 'utf8mb4';
             $table->collation = 'utf8mb4_unicode_ci';
             $table->id();
@@ -134,7 +134,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('contactos');
         Schema::dropIfExists('domicilios');
-        Schema::dropIfExists('persona_vinculo_personas');
+        Schema::dropIfExists('persona_vinculo_persona');
         Schema::dropIfExists('personas');
         Schema::dropIfExists('vinculos');
         Schema::dropIfExists('vinculo_tipos');

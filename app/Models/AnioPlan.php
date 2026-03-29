@@ -8,9 +8,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class PlanAnio extends Model
+class AnioPlan extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'anio_plan';
 
     /**
      * The attributes that are mass assignable.

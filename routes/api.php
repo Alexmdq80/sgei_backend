@@ -32,6 +32,7 @@ Route::prefix('v1')->group(function () {
     // Catálogos Públicos
     Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
     Route::get('/escuelas', [EscuelaController::class, 'index']);
+    Route::get('/niveles', [EscuelaController::class, 'niveles']);
 
     // Geografía (Catálogos)
     Route::get('/provincias', [GeografiaController::class, 'provincias']);

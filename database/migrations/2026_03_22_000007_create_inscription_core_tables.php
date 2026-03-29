@@ -106,9 +106,9 @@ return new class extends Migration
             $table->unsignedTinyInteger('modalidad_id')->nullable();
             $table->foreign('modalidad_id')->references('id')->on('modalidads');
             $table->foreignId('condicion_id')->nullable()->constrained('condicions');
-            $table->foreignId('persona_vinculo_persona_1_id')->nullable()->constrained('persona_vinculo_personas');
-            $table->foreignId('persona_vinculo_persona_2_id')->nullable()->constrained('persona_vinculo_personas');
-            $table->foreignId('persona_vinculo_persona_3_id')->nullable()->constrained('persona_vinculo_personas');
+            $table->foreignId('persona_vinculo_persona_1_id')->nullable()->constrained('persona_vinculo_persona');
+            $table->foreignId('persona_vinculo_persona_2_id')->nullable()->constrained('persona_vinculo_persona');
+            $table->foreignId('persona_vinculo_persona_3_id')->nullable()->constrained('persona_vinculo_persona');
             $table->string('codigo_abc')->nullable();
             $table->boolean('proyecto_inclusion_si')->default(false);
             $table->boolean('concurre_especial_si')->default(false);
@@ -133,9 +133,9 @@ return new class extends Migration
             $table->unsignedTinyInteger('modalidad_id')->nullable();
             $table->foreign('modalidad_id')->references('id')->on('modalidads');
             $table->foreignId('condicion_id')->nullable()->constrained('condicions');
-            $table->foreignId('persona_vinculo_persona_1_id')->nullable()->constrained('persona_vinculo_personas');
-            $table->foreignId('persona_vinculo_persona_2_id')->nullable()->constrained('persona_vinculo_personas');
-            $table->foreignId('persona_vinculo_persona_3_id')->nullable()->constrained('persona_vinculo_personas');
+            $table->foreignId('persona_vinculo_persona_1_id')->nullable()->constrained('persona_vinculo_persona');
+            $table->foreignId('persona_vinculo_persona_2_id')->nullable()->constrained('persona_vinculo_persona');
+            $table->foreignId('persona_vinculo_persona_3_id')->nullable()->constrained('persona_vinculo_persona');
             $table->string('codigo_abc')->nullable();
             $table->boolean('proyecto_inclusion_si')->default(false);
             $table->boolean('concurre_especial_si')->default(false);

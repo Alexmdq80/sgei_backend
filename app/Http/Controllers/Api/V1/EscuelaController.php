@@ -22,12 +22,28 @@ class EscuelaController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $term = $request->query('search');
-        $filters = $request->only(['provincia_id', 'departamento_id', 'localidad_id']);
-        
-        $escuelas = $this->escuelaService->search($term, $filters);
+        try {
+            $term = $request->query('search');
+            $filters = $request->only(['provincia_id', 'departamento_id', 'localidad_id', 'nivel_id']);
+            
+            $escuelas = $this->escuelaService->search($term, $filters);
 
-        return response()->json($escuelas);
+            return response()->json($escuelas);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al buscar escuelas',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all school levels.
+     */
+    public function niveles(): JsonResponse
+    {
+        $niveles = \App\Models\Nivel::where('vigente', true)->orderBy('orden')->get(['id', 'nombre']);
+        return response()->json($niveles);
     }
 
     /**

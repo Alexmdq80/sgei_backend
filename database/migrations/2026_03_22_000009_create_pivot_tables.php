@@ -23,18 +23,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Tabla pivote singular segun modelo Propuesta
-        Schema::create('escuela_propuesta', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedMediumInteger('escuela_id');
-            $table->foreign('escuela_id')->references('id')->on('escuelas');
-            $table->foreignId('propuesta_id')->constrained('propuestas');
-            $table->uuid('created_by')->nullable();
-            $table->uuid('updated_by')->nullable();
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
         // Convencion Laravel: orden alfabetico para tabla pivote escuela_oferta
         Schema::create('escuela_oferta', function (Blueprint $table) {
             $table->id();
@@ -54,7 +42,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('escuela_oferta');
-        Schema::dropIfExists('escuela_propuesta');
         Schema::dropIfExists('escuela_modalidad_nivel');
     }
 };
