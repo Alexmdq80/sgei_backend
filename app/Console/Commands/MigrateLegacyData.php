@@ -64,7 +64,7 @@ class MigrateLegacyData extends Command
             'escuela_tipos',
             'nivels',
             'modalidads',
-            'modalidad_nivels',
+            'modalidad_nivel',
             'jornadas',
             'turnos',
             'ofertas',
@@ -121,7 +121,6 @@ class MigrateLegacyData extends Command
         // Mapeo de nombres de tablas (Destino => Origen Legacy)
         $tableMappings = [
             'roles_escolares' => 'usuario_tipos',
-            'modalidad_nivels' => 'modalidad_nivel',
             'anio_plan' => 'plan_anios',
         ];
 

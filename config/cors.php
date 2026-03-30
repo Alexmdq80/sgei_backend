@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://sgei.local'],
+    'allowed_origins' => explode(',', env('FRONTEND_URL', 'http://sgei.local')),
 
     'allowed_origins_patterns' => [],
 

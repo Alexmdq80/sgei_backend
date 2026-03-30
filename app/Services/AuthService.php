@@ -23,9 +23,20 @@ class AuthService
     {
         $identifier = $credentials['email'] ?? "Doc: {$credentials['documento_tipo_id']}-{$credentials['documento_numero']}";
 
+        // Si ya hay una sesión activa de un usuario previo, la invalidamos
+        if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        }
+
         if (!Auth::guard('web')->attempt($credentials)) {
             $this->auditLogin($identifier, 'login_failed', $request);
             
+            \Illuminate\Support\Facades\Log::warning('Login fallido:', ['identifier' => $identifier]);
+
             throw ValidationException::withMessages([
                 'login' => ['Las credenciales proporcionadas son incorrectas.'],
             ])->status(401);
@@ -34,6 +45,11 @@ class AuthService
         /** @var Usuario $usuario */
         $usuario = Auth::user();
         
+        \Illuminate\Support\Facades\Log::info('Login exitoso:', [
+            'identifier' => $identifier,
+            'user_id' => $usuario->id,
+            'user_email' => $usuario->email
+        ]);
         // Check if email is verified
         if (!$usuario->hasVerifiedEmail()) {
             Auth::guard('web')->logout();
@@ -56,11 +72,8 @@ class AuthService
 
         $this->auditLogin($identifier, 'login_success', $request, $usuario);
 
-        $token = $usuario->createToken('auth_token')->plainTextToken;
-
         return [
-            'user' => $usuario,
-            'token' => $token
+            'user' => $usuario
         ];
     }
 

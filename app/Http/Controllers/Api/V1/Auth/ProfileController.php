@@ -23,8 +23,16 @@ class ProfileController extends Controller
      */
     public function me(): JsonResponse
     {
+        $usuario = Auth::user();
+        
+        \Illuminate\Support\Facades\Log::info('Accediendo a /me:', [
+            'user_id' => $usuario ? $usuario->id : 'null',
+            'user_email' => $usuario ? $usuario->email : 'null',
+            'session_id' => request()->session()->getId()
+        ]);
+
         return response()->json([
-            'user' => Auth::user()->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])
+            'user' => $usuario->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])
         ]);
     }
 

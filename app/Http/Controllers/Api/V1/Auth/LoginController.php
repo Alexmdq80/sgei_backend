@@ -47,8 +47,7 @@ class LoginController extends Controller
             $data = $this->authService->login($credentials, $request);
 
             return response()->json([
-                'user' => $data['user'],
-                'token' => $data['token']
+                'user' => $data['user']
             ], 200);
 
         } catch (ValidationException $e) {
