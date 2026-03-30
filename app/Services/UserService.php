@@ -37,8 +37,9 @@ class UserService
      */
     public function create(array $data): Usuario
     {
-        $data['password'] = Hash::make($data['password'] ?? 'sgei1234'); // Default password if not provided
+        $data['password'] = Hash::make($data['password'] ?? 'Sgei!2026_Admin'); // Default password if not provided
         $data['verification_token'] = Str::random(60);
+        $data['verification_token_created_at'] = now();
 
         $user = Usuario::create($data);
 
@@ -127,9 +128,10 @@ class UserService
             return;
         }
 
-        if (!$user->verification_token) {
-            $user->update(['verification_token' => Str::random(60)]);
-        }
+        $user->forceFill([
+            'verification_token' => Str::random(60),
+            'verification_token_created_at' => now(),
+        ])->save();
 
         $user->notify(new VerifyEmailNotification($user->verification_token));
     }
@@ -139,7 +141,32 @@ class UserService
      */
     public function updateProfile(Usuario $user, array $data): Usuario
     {
-        $user->update($data);
+        // Check for email change
+        if (isset($data['email']) && $data['email'] !== $user->email) {
+            $performer = \Illuminate\Support\Facades\Auth::user();
+            $isAdmin = $performer?->es_administrador || $performer?->hasRole('superuser');
+
+            if (!$isAdmin && !$user->canChangeEmail()) {
+                throw ValidationException::withMessages([
+                    'email' => ['Has alcanzado el límite máximo de cambios de correo electrónico (3).'],
+                ]);
+            }
+
+            // Prepare verification reset
+            $data['email_verified_at'] = null;
+            $data['verification_token'] = Str::random(60);
+            $data['verification_token_created_at'] = now();
+            $data['email_set_at'] = now();
+            $data['email_correction_attempts'] = $user->email_correction_attempts + 1;
+            $data['estado'] = 'email_pendiente';
+            
+            // Notify the user about the new verification
+            $user->update($data);
+            $user->notify(new VerifyEmailNotification($user->verification_token));
+        } else {
+            $user->update($data);
+        }
+
         $this->linkToPersona($user);
         return $user;
     }

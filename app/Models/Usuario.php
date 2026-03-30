@@ -19,6 +19,11 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids, AuditableTrait, HasRoles;
 
     /**
+     * Maximum number of times a user can change their email.
+     */
+    const MAX_EMAIL_CHANGES = 3;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -30,8 +35,11 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         'es_administrador',
         'email',
         'email_verified_at',
+        'email_set_at',
+        'email_correction_attempts',
         'password',
         'verification_token',
+        'verification_token_created_at',
         'avatar_path',
         'estado'
     ];
@@ -84,9 +92,32 @@ class Usuario extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'email_set_at' => 'datetime',
+        'verification_token_created_at' => 'datetime',
         'password' => 'hashed',
         'es_administrador' => 'boolean',
+        'email_correction_attempts' => 'integer',
     ];
+
+    /**
+     * Check if the verification token is expired (24 hours).
+     */
+    public function isVerificationTokenExpired(): bool
+    {
+        if (!$this->verification_token_created_at) {
+            return true;
+        }
+
+        return $this->verification_token_created_at->addHours(24)->isPast();
+    }
+
+    /**
+     * Check if the user can still change their email address.
+     */
+    public function canChangeEmail(): bool
+    {
+        return $this->email_correction_attempts < self::MAX_EMAIL_CHANGES;
+    }
 
     /**
      * Mark the user's email as verified.
@@ -96,6 +127,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         $this->forceFill([
             'email_verified_at' => now(),
             'verification_token' => null,
+            'verification_token_created_at' => null,
             'estado' => $this->es_administrador ? 'activo' : 'email_verificado',
         ])->save();
 
@@ -117,5 +149,18 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     public function refreshTokens(): HasMany
     {
         return $this->hasMany(RefreshToken::class);
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $url = env('FRONTEND_URL', 'http://localhost:5173') . '/reset-password?token=' . $token . '&email=' . $this->email;
+
+        $this->notify(new \Illuminate\Auth\Notifications\ResetPassword($url));
     }
 }

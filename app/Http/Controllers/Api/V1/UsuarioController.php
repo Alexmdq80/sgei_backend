@@ -8,6 +8,7 @@ use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\UsuarioResource;
+use Illuminate\Validation\Rules\Password;
 
 class UsuarioController extends Controller
 {
@@ -40,7 +41,7 @@ class UsuarioController extends Controller
             'documento_numero' => 'nullable|string|max:20',
             'es_administrador' => 'nullable|boolean',
             'email' => 'required|email|max:255|unique:usuarios,email',
-            'password' => 'nullable|string|min:8',
+            'password' => ['nullable', 'string', Password::defaults()],
         ]);
 
         $user = $this->userService->create($validatedData);
@@ -70,6 +71,7 @@ class UsuarioController extends Controller
             'documento_numero' => 'nullable|string|max:20',
             'es_administrador' => 'nullable|boolean',
             'email' => 'required|email|max:255|unique:usuarios,email,' . $usuario->id,
+            'password' => ['nullable', 'string', Password::defaults()],
         ]);
 
         $user = $this->userService->updateProfile($usuario, $validatedData);

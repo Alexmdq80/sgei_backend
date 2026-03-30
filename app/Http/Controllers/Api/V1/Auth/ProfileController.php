@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
+use App\Http\Resources\UsuarioResource;
 
 class ProfileController extends Controller
 {
@@ -25,14 +26,8 @@ class ProfileController extends Controller
     {
         $usuario = Auth::user();
         
-        \Illuminate\Support\Facades\Log::info('Accediendo a /me:', [
-            'user_id' => $usuario ? $usuario->id : 'null',
-            'user_email' => $usuario ? $usuario->email : 'null',
-            'session_id' => request()->session()->getId()
-        ]);
-
         return response()->json([
-            'user' => $usuario->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])
+            'user' => new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar']))
         ]);
     }
 
@@ -116,23 +111,13 @@ class ProfileController extends Controller
                 'current_password' => 'required|string',
                 'password' => [
                     'required',
-                    'string',
                     'confirmed',
-                    Password::min(10)
-                        ->letters()
-                        ->mixedCase()
-                        ->numbers()
-                        ->symbols()
-                ],
+                    Password::defaults()
+                ]
             ], [
                 'current_password.required' => 'La contraseña actual es obligatoria.',
                 'password.required' => 'La nueva contraseña es obligatoria.',
-                'password.min' => 'La nueva contraseña debe tener al menos 10 caracteres.',
                 'password.confirmed' => 'La confirmación de la nueva contraseña no coincide.',
-                'password.letters' => 'La contraseña debe contener al menos una letra.',
-                'password.mixed_case' => 'La contraseña debe contener mayúsculas y minúsculas.',
-                'password.numbers' => 'La contraseña debe contener al menos un número.',
-                'password.symbols' => 'La contraseña debe contener al menos un símbolo.',
             ]);
 
             $this->userService->updatePassword(Auth::user(), $request->current_password, $request->password);

@@ -161,8 +161,8 @@ class ProfileTest extends TestCase
 
     public function testCanUpdateAuthenticatedUserPassword(): void
     {
-        $oldPassword = 'Password123!';
-        $newPassword = 'NewSecurePassword1!';
+        $oldPassword = 'Sgei!2026_Test';
+        $newPassword = 'Sgei!2026_New';
 
         $this->user->password = bcrypt($oldPassword);
         $this->user->save();
@@ -181,9 +181,9 @@ class ProfileTest extends TestCase
 
     public function testCannotUpdatePasswordWithIncorrectCurrentPassword(): void
     {
-        $oldPassword = 'Password123!';
-        $wrongPassword = 'WrongPassword123!';
-        $newPassword = 'NewSecurePassword1!';
+        $oldPassword = 'Sgei!2026_Test';
+        $wrongPassword = 'Wrong!Sgei2026';
+        $newPassword = 'Sgei!2026_New';
 
         $this->user->password = bcrypt($oldPassword);
         $this->user->save();
@@ -206,7 +206,7 @@ class ProfileTest extends TestCase
 
     public function testCannotUpdatePasswordWithInvalidNewPassword(): void
     {
-        $oldPassword = 'password';
+        $oldPassword = 'Sgei!2026_Test';
         $newPassword = 'short'; // Invalid password
 
         $this->user->password = bcrypt($oldPassword);

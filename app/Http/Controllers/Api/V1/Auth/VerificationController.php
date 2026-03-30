@@ -41,7 +41,15 @@ class VerificationController extends Controller
         // Si no está verificado, validamos el token
         if ($user->verification_token !== $request->token) {
             return response()->json([
-                'message' => 'Token de verificación inválido o expirado.',
+                'message' => 'Token de verificación inválido.',
+                'code' => 400
+            ], 400);
+        }
+
+        // Validar expiración (24 horas)
+        if ($user->isVerificationTokenExpired()) {
+            return response()->json([
+                'message' => 'El enlace de verificación ha expirado. Por favor, solicita uno nuevo.',
                 'code' => 400
             ], 400);
         }

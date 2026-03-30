@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\ProfileController;
 use App\Http\Controllers\Api\V1\Auth\VerificationController;
+use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\DocumentoTipoController;
 use App\Http\Controllers\Api\V1\EscuelaController;
 use App\Http\Controllers\Api\V1\GeografiaController;
@@ -44,6 +45,9 @@ Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/login', [LoginController::class, 'login']);
         Route::post('/register', [RegisterController::class, 'register']);
+        Route::post('/refresh', [LoginController::class, 'refresh']);
+        Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:forgot-password');
+        Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('password.reset');
         
         // Verificación de Email (Pública)
         Route::get('/verify', [VerificationController::class, 'verify']);
@@ -58,7 +62,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/escuelas/cancel-join', [EscuelaController::class, 'cancelJoin']);
 
             // Reenvío de Verificación
-            Route::post('/verify/resend', [VerificationController::class, 'resend']);
+            Route::post('/verify/resend', [VerificationController::class, 'resend'])->middleware('throttle:resend-verification');
             
             // Perfil de Usuario
             Route::put('/profile', [ProfileController::class, 'update']);

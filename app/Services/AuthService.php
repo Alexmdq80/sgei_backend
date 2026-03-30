@@ -4,10 +4,13 @@ namespace App\Services;
 
 use App\Models\Usuario;
 use App\Models\AuthenticationAudit;
+use App\Models\RefreshToken;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AuthService
 {
@@ -72,9 +75,100 @@ class AuthService
 
         $this->auditLogin($identifier, 'login_success', $request, $usuario);
 
+        $token = $usuario->createToken('auth-token')->plainTextToken;
+        $refreshToken = $this->createRefreshToken($usuario);
+
         return [
-            'user' => $usuario
+            'user' => $usuario,
+            'token' => $token,
+            'refresh_token' => $refreshToken->token
         ];
+    }
+
+    /**
+     * Create a new refresh token for the user.
+     */
+    protected function createRefreshToken(Usuario $user): RefreshToken
+    {
+        return RefreshToken::create([
+            'usuario_id' => $user->id,
+            'token' => Str::random(64),
+            'expires_at' => now()->addDays(7), // Long-lived (7 days)
+            'device_id' => request()->userAgent() // Simple device tracking
+        ]);
+    }
+
+    /**
+     * Refresh the access token using a valid refresh token.
+     */
+    public function refreshToken(string $token): array
+    {
+        $refreshToken = RefreshToken::where('token', $token)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$refreshToken) {
+            throw ValidationException::withMessages([
+                'refresh_token' => ['El token de refresco es inválido o ha expirado.'],
+            ])->status(401);
+        }
+
+        $usuario = $refreshToken->usuario;
+        
+        // Revoke current access tokens (to enforce only one session per device or full rotation)
+        $usuario->tokens()->delete();
+
+        // Generate new access token (2h limit applied automatically by Sanctum config)
+        $newAccessToken = $usuario->createToken('auth-token')->plainTextToken;
+
+        return [
+            'token' => $newAccessToken,
+            'refresh_token' => $refreshToken->token // Keep the same or rotate later
+        ];
+    }
+
+    /**
+     * Send a password reset link to the given user.
+     */
+    public function forgotPassword(string $email): string
+    {
+        $status = Password::broker()->sendResetLink(['email' => $email]);
+
+        if ($status !== Password::RESET_LINK_SENT) {
+            throw ValidationException::withMessages([
+                'email' => [__($status)],
+            ]);
+        }
+
+        return __($status);
+    }
+
+    /**
+     * Reset the given user's password.
+     */
+    public function resetPassword(array $credentials): string
+    {
+        $status = Password::broker()->reset(
+            $credentials,
+            function (Usuario $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->setRememberToken(\Illuminate\Support\Str::random(60));
+
+                $user->save();
+                
+                // Revocar todos los tokens actuales para forzar re-login
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            throw ValidationException::withMessages([
+                'email' => [__($status)],
+            ]);
+        }
+
+        return __($status);
     }
 
     /**

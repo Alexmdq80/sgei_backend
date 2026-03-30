@@ -22,7 +22,7 @@ class LoginTest extends TestCase
      */
     public function test_user_can_login_with_correct_credentials(): void
     {
-        $password = 'secret-password';
+        $password = 'Sgei!2026_Test';
         $usuario = Usuario::factory()->create([
             'email' => 'user@example.com',
             'password' => Hash::make($password),
@@ -51,7 +51,7 @@ class LoginTest extends TestCase
      */
     public function test_user_can_login_with_document_credentials(): void
     {
-        $password = 'secret-password';
+        $password = 'Sgei!2026_Test';
         $usuario = Usuario::factory()->create([
             'documento_tipo_id' => 1, // DNI
             'documento_numero' => '12345678',
@@ -82,7 +82,7 @@ class LoginTest extends TestCase
      */
     public function test_user_cannot_login_with_incorrect_document_number(): void
     {
-        $password = 'secret-password';
+        $password = 'Sgei!2026_Test';
         $usuario = Usuario::factory()->create([
             'documento_tipo_id' => 1,
             'documento_numero' => '12345678',
@@ -110,7 +110,7 @@ class LoginTest extends TestCase
      */
     public function test_user_cannot_login_with_document_if_email_is_unverified(): void
     {
-        $password = 'secret-password';
+        $password = 'Sgei!2026_Test';
         $usuario = Usuario::factory()->create([
             'documento_tipo_id' => 1,
             'documento_numero' => '12345678',
@@ -138,7 +138,7 @@ class LoginTest extends TestCase
     {
         $usuario = Usuario::factory()->create([
             'email' => 'user@example.com',
-            'password' => Hash::make('correct-password'),
+            'password' => Hash::make('Sgei!2026_Test'),
             'email_verified_at' => now(),
         ]);
 

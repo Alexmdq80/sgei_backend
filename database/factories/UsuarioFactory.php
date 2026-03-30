@@ -40,7 +40,7 @@ class UsuarioFactory extends Factory
             'es_administrador' => false,
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'password' => static::$password ??= Hash::make('Sgei!2026_Test'),
             'remember_token' => Str::random(10),
             'verification_token' => null,
         ];
@@ -54,6 +54,7 @@ class UsuarioFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
             'verification_token' => Str::random(40),
+            'verification_token_created_at' => now(),
         ]);
     }
 }

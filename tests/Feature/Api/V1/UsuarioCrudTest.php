@@ -54,7 +54,7 @@ class UsuarioCrudTest extends TestCase
             'documento_tipo_id' => 1,
             'documento_numero' => '12345678',
             'email' => 'newuser@example.com',
-            'password' => 'password123',
+            'password' => 'Sgei!2026_Test',
         ];
 
         $response = $this->postJson('/api/v1/usuarios', $userData);

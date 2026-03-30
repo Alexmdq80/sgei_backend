@@ -38,7 +38,7 @@ class RBACAuthorizationTest extends TestCase
         ]);
         $this->adminUser->assignRole('director');
 
-        $this->regularUser = Usuario::factory()->create(['password' => Hash::make('password')]);
+        $this->regularUser = Usuario::factory()->create(['password' => Hash::make('Sgei!2026_Test')]);
     }
 
     // --- Profile Controller Tests (Autogestión) ---
@@ -88,7 +88,7 @@ class RBACAuthorizationTest extends TestCase
             'documento_tipo_id' => 1,
             'documento_numero' => '10101010',
             'email' => 'creator@example.com',
-            'password' => 'password123',
+            'password' => 'Sgei!2026_Test',
         ];
         $response = $this->postJson('/api/v1/usuarios', $userData);
         $response->assertStatus(201);

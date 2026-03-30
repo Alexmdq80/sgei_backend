@@ -47,7 +47,9 @@ class LoginController extends Controller
             $data = $this->authService->login($credentials, $request);
 
             return response()->json([
-                'user' => $data['user']
+                'user' => $data['user'],
+                'token' => $data['token'],
+                'refresh_token' => $data['refresh_token']
             ], 200);
 
         } catch (ValidationException $e) {
@@ -64,8 +66,27 @@ class LoginController extends Controller
     }
 
     /**
+     * Refresh the access token.
+     */
+    public function refresh(Request $request): JsonResponse
+    {
+        $request->validate(['refresh_token' => 'required|string']);
+
+        try {
+            $data = $this->authService->refreshToken($request->refresh_token);
+
+            return response()->json($data, 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => $e->errors()['refresh_token'][0] ?? 'Token de refresco inválido.',
+                'code' => 401
+            ], 401);
+        }
+    }
+
+    /**
      * Log out the user and revoke the token.
-     *
+     */
      * @param Request $request
      * @return JsonResponse
      */
