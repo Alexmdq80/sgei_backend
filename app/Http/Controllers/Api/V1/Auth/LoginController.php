@@ -53,9 +53,9 @@ class LoginController extends Controller
 
         } catch (ValidationException $e) {
             return response()->json([
-                'error' => $e->getMessage(),
-                'code' => 401
-            ], 401);
+                'error' => $e->validator->errors()->first(),
+                'code' => $e->status
+            ], $e->status);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Ocurrió un error inesperado durante la autenticación.',

@@ -68,7 +68,7 @@ Route::prefix('v1')->group(function () {
         });
     });
     // Gestión de Usuarios (Administrativa) - Fuera del grupo 'auth'
-    Route::middleware(['auth:sanctum', 'permission:manage-users'])->group(function () {
+    Route::middleware(['auth:sanctum', 'permission:sistema.usuarios'])->group(function () {
         Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
     });
 });

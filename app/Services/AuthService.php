@@ -28,12 +28,22 @@ class AuthService
             
             throw ValidationException::withMessages([
                 'login' => ['Las credenciales proporcionadas son incorrectas.'],
-            ]);
+            ])->status(401);
         }
 
         /** @var Usuario $usuario */
         $usuario = Auth::user();
         
+        // Check if email is verified
+        if (!$usuario->hasVerifiedEmail()) {
+            Auth::guard('web')->logout();
+            $this->auditLogin($identifier, 'login_failed_unverified', $request, $usuario);
+
+            throw ValidationException::withMessages([
+                'login' => ['Debes verificar tu correo electrónico antes de iniciar sesión.'],
+            ])->status(401);
+        }
+
         \Illuminate\Support\Facades\Log::info('Login attempt successful', [
             'attempted_identifier' => $identifier,
             'actual_user_email' => $usuario->email,

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
+use App\Models\DocumentoTipo;
+
 /**
  * @extends Factory<Usuario>
  */
@@ -33,7 +35,7 @@ class UsuarioFactory extends Factory
     {
         return [
             'nombre' => fake()->firstName(),
-            'documento_tipo_id' => 1, // Defaulting to 1, should be seeded
+            'documento_tipo_id' => DocumentoTipo::factory(),
             'documento_numero' => fake()->unique()->numerify('########'),
             'es_administrador' => false,
             'email' => fake()->unique()->safeEmail(),

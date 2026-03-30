@@ -33,7 +33,7 @@ class EmailVerificationTest extends TestCase
         // We need to be an admin to create a user
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
         $admin = Usuario::factory()->create(['es_administrador' => true]);
-        $admin->assignRole('admin_full');
+        $admin->assignRole('superuser');
         $this->actingAs($admin, 'sanctum');
 
         $response = $this->postJson('/api/v1/usuarios', $userData);
@@ -74,7 +74,7 @@ class EmailVerificationTest extends TestCase
         $response = $this->getJson("/api/v1/auth/verify?token=invalid-token&email={$user->email}");
 
         $response->assertStatus(400)
-                 ->assertJson(['message' => 'Token o email de verificación inválido.']);
+                 ->assertJson(['message' => 'Token de verificación inválido o expirado.']);
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
     }

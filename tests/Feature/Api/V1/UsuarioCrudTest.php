@@ -21,7 +21,7 @@ class UsuarioCrudTest extends TestCase
 
         // Create admin user and assign role
         $this->adminUser = Usuario::factory()->create(['es_administrador' => true]);
-        $this->adminUser->assignRole('admin_full');
+        $this->adminUser->assignRole('superuser');
         $this->actingAs($this->adminUser, 'sanctum');
     }
 
@@ -44,7 +44,7 @@ class UsuarioCrudTest extends TestCase
                          'first', 'last', 'prev', 'next'
                      ]
                  ])
-                 ->assertJsonCount(8, 'data'); // 5 created + 3 from seeder
+                 ->assertJsonCount(6, 'data'); // 5 created + 1 admin from setup
     }
 
     public function testCanCreateANewUser(): void

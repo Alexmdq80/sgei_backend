@@ -14,8 +14,7 @@ class RBACAuthorizationTest extends TestCase
     use RefreshDatabase;
 
     protected Usuario $superUser;
-    protected Usuario $adminFullUser;
-    protected Usuario $adminStandardUser;
+    protected Usuario $adminUser; // Director rol has sistema.usuarios
     protected Usuario $regularUser; // A user without specific admin roles
 
     protected function setUp(): void
@@ -33,17 +32,11 @@ class RBACAuthorizationTest extends TestCase
         ]);
         $this->superUser->assignRole('superuser');
 
-        $this->adminFullUser = Usuario::factory()->create([
-            'email' => 'adminfull@test.com',
+        $this->adminUser = Usuario::factory()->create([
+            'email' => 'director@test.com',
             'es_administrador' => true,
         ]);
-        $this->adminFullUser->assignRole('admin_full');
-
-        $this->adminStandardUser = Usuario::factory()->create([
-            'email' => 'adminstandard@test.com',
-            'es_administrador' => true,
-        ]);
-        $this->adminStandardUser->assignRole('admin_standard');
+        $this->adminUser->assignRole('director');
 
         $this->regularUser = Usuario::factory()->create(['password' => Hash::make('password')]);
     }
@@ -73,18 +66,11 @@ class RBACAuthorizationTest extends TestCase
         $response->assertOk(); // Should be able to list users
     }
 
-    public function testAdminFullUserCanManageUsers(): void
+    public function testAdminUserCanManageUsers(): void
     {
-        $this->actingAs($this->adminFullUser, 'sanctum');
+        $this->actingAs($this->adminUser, 'sanctum');
         $response = $this->getJson('/api/v1/usuarios');
         $response->assertOk(); // Should be able to list users
-    }
-
-    public function testAdminStandardUserCannotManageUsers(): void
-    {
-        $this->actingAs($this->adminStandardUser, 'sanctum');
-        $response = $this->getJson('/api/v1/usuarios');
-        $response->assertStatus(403); // Forbidden
     }
 
     public function testRegularUserCannotManageUsers(): void
@@ -94,9 +80,9 @@ class RBACAuthorizationTest extends TestCase
         $response->assertStatus(403); // Forbidden
     }
 
-    public function testAdminFullUserCanCreateUser(): void
+    public function testAdminUserCanCreateUser(): void
     {
-        $this->actingAs($this->adminFullUser, 'sanctum');
+        $this->actingAs($this->adminUser, 'sanctum');
         $userData = [
             'nombre' => 'Creator',
             'documento_tipo_id' => 1,
@@ -108,10 +94,10 @@ class RBACAuthorizationTest extends TestCase
         $response->assertStatus(201);
     }
 
-    public function testAdminFullUserCanUpdateUser(): void
+    public function testAdminUserCanUpdateUser(): void
     {
         $userToUpdate = Usuario::factory()->create();
-        $this->actingAs($this->adminFullUser, 'sanctum');
+        $this->actingAs($this->adminUser, 'sanctum');
         $updatedData = [
             'nombre' => 'Updated Admin',
             'documento_tipo_id' => 1,
@@ -122,10 +108,10 @@ class RBACAuthorizationTest extends TestCase
         $response->assertOk();
     }
 
-    public function testAdminFullUserCanDeleteUser(): void
+    public function testAdminUserCanDeleteUser(): void
     {
         $userToDelete = Usuario::factory()->create();
-        $this->actingAs($this->adminFullUser, 'sanctum');
+        $this->actingAs($this->adminUser, 'sanctum');
         $response = $this->deleteJson('/api/v1/usuarios/' . $userToDelete->id);
         $response->assertOk();
         $this->assertSoftDeleted('usuarios', ['id' => $userToDelete->id]);
