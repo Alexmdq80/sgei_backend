@@ -14,6 +14,13 @@ class Escuela extends Model
     use HasFactory, SoftDeletes, AuditableTrait;
 
     /**
+     * Group for segmented auditing.
+     *
+     * @var string
+     */
+    protected $auditGroup = 'entities';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>

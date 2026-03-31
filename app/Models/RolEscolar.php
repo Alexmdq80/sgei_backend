@@ -11,6 +11,8 @@ class RolEscolar extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
 
+    protected $auditGroup = "entities";
+
     protected $table = 'roles_escolares';
 
     protected $fillable = [

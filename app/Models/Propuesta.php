@@ -13,6 +13,8 @@ class Propuesta extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
 
+    protected $auditGroup = "academic";
+
     /**
      * The attributes that are mass assignable.
      *

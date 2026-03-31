@@ -115,15 +115,16 @@ class AuthService
 
         $usuario = $refreshToken->usuario;
         
-        // Revoke current access tokens (to enforce only one session per device or full rotation)
-        $usuario->tokens()->delete();
+        // Rotate the Refresh Token: Generate a new one and delete the old one
+        $newRefreshToken = $this->createRefreshToken($usuario);
+        $refreshToken->delete();
 
-        // Generate new access token (2h limit applied automatically by Sanctum config)
+        // Generate new access token
         $newAccessToken = $usuario->createToken('auth-token')->plainTextToken;
 
         return [
             'token' => $newAccessToken,
-            'refresh_token' => $refreshToken->token // Keep the same or rotate later
+            'refresh_token' => $newRefreshToken->token
         ];
     }
 
@@ -176,8 +177,15 @@ class AuthService
      */
     public function logout(Usuario $usuario, Request $request): void
     {
-        // Revocar el token actual de Sanctum si existe
+        // Revoke current access token
         $usuario->currentAccessToken()?->delete();
+
+        // Revoke refresh token if provided
+        if ($request->has('refresh_token')) {
+            RefreshToken::where('token', $request->refresh_token)
+                ->where('usuario_id', $usuario->id)
+                ->delete();
+        }
 
         Auth::guard('web')->logout();
         

@@ -11,6 +11,8 @@ class Legajo extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
 
+    protected $auditGroup = "entities";
+
     /**
      * The attributes that are mass assignable.
      *

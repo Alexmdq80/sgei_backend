@@ -86,12 +86,16 @@ class LoginController extends Controller
 
     /**
      * Log out the user and revoke the token.
-     */
+     * 
      * @param Request $request
      * @return JsonResponse
      */
     public function logout(Request $request): JsonResponse
     {
+        $request->validate([
+            'refresh_token' => 'sometimes|string'
+        ]);
+
         $this->authService->logout($request->user(), $request);
 
         return response()->json([

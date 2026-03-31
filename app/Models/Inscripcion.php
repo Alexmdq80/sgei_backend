@@ -14,6 +14,13 @@ class Inscripcion extends Model
     use HasFactory, HasUuids, SoftDeletes, AuditableTrait;
 
     /**
+     * Group for segmented auditing.
+     *
+     * @var string
+     */
+    protected $auditGroup = 'academic';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>

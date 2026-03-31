@@ -12,6 +12,8 @@ class AnioPlan extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
 
+    protected $auditGroup = "academic";
+
     /**
      * The table associated with the model.
      *

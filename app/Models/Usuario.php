@@ -19,6 +19,13 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids, AuditableTrait, HasRoles;
 
     /**
+     * Group for segmented auditing.
+     *
+     * @var string
+     */
+    protected $auditGroup = 'entities';
+
+    /**
      * Maximum number of times a user can change their email.
      */
     const MAX_EMAIL_CHANGES = 3;
