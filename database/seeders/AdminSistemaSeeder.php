@@ -30,8 +30,8 @@ class AdminSistemaSeeder extends Seeder
             return;
         }
 
-        $email = env('ADMIN_EMAIL', 'admin@sgei.com');
-        $password = env('ADMIN_PASSWORD', 'admin1234');
+        $email = config('app.admin_email');
+        $password = config('app.admin_pass');
 
         // 3. Crear o actualizar el administrador del sistema
         $admin = Usuario::updateOrCreate(

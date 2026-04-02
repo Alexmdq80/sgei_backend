@@ -26,13 +26,11 @@ class AuthService
     {
         $identifier = $credentials['email'] ?? "Doc: {$credentials['documento_tipo_id']}-{$credentials['documento_numero']}";
 
-        // Si ya hay una sesión activa de un usuario previo, la invalidamos
-        if (Auth::guard('web')->check()) {
-            Auth::guard('web')->logout();
-            if ($request->hasSession()) {
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-            }
+        // Siempre invalidar la sesión actual antes de un nuevo login para evitar colisiones entre usuarios
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
         if (!Auth::guard('web')->attempt($credentials)) {
@@ -45,23 +43,19 @@ class AuthService
             ])->status(401);
         }
 
+        // Recuperar el usuario explícitamente del guard web para evitar estados cacheados
         /** @var Usuario $usuario */
-        $usuario = Auth::user();
+        $usuario = Auth::guard('web')->user();
+
+        if (!$usuario) {
+            throw new \Exception('Error crítico: No se pudo recuperar el usuario tras autenticación exitosa.');
+        }
         
         \Illuminate\Support\Facades\Log::info('Login exitoso:', [
             'identifier' => $identifier,
             'user_id' => $usuario->id,
             'user_email' => $usuario->email
         ]);
-        // Check if email is verified
-        if (!$usuario->hasVerifiedEmail()) {
-            Auth::guard('web')->logout();
-            $this->auditLogin($identifier, 'login_failed_unverified', $request, $usuario);
-
-            throw ValidationException::withMessages([
-                'login' => ['Debes verificar tu correo electrónico antes de iniciar sesión.'],
-            ])->status(401);
-        }
 
         \Illuminate\Support\Facades\Log::info('Login attempt successful', [
             'attempted_identifier' => $identifier,

@@ -37,10 +37,29 @@ class ProfileController extends Controller
     public function update(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255|unique:usuarios,nombre,' . Auth::id(),
             'documento_tipo_id' => 'nullable|integer|exists:documento_tipos,id',
-            'documento_numero' => 'nullable|string|max:20',
+            'documento_numero' => [
+                'nullable',
+                'numeric',
+                'digits_between:7,15',
+                \Illuminate\Validation\Rule::unique('usuarios')
+                    ->where(function ($query) use ($request) {
+                        return $query->where('documento_tipo_id', $request->documento_tipo_id);
+                    })
+                    ->ignore(Auth::id()),
+            ],
             'email' => 'required|email|max:255|unique:usuarios,email,' . Auth::id(),
+        ], [
+            'nombre.required' => 'El nombre de usuario es obligatorio.',
+            'nombre.unique' => 'Este nombre de usuario ya está siendo utilizado.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico debe ser una dirección válida.',
+            'email.unique' => 'Este correo electrónico ya está siendo utilizado por otro usuario.',
+            'documento_tipo_id.exists' => 'El tipo de documento seleccionado no es válido.',
+            'documento_numero.numeric' => 'El número de documento debe contener solo números.',
+            'documento_numero.digits_between' => 'El número de documento debe tener entre 7 y 15 dígitos.',
+            'documento_numero.unique' => 'Ya existe otro usuario registrado con este tipo y número de documento.',
         ]);
 
         $user = $this->userService->updateProfile(Auth::user(), $validatedData);
@@ -118,6 +137,11 @@ class ProfileController extends Controller
                 'current_password.required' => 'La contraseña actual es obligatoria.',
                 'password.required' => 'La nueva contraseña es obligatoria.',
                 'password.confirmed' => 'La confirmación de la nueva contraseña no coincide.',
+                'password.min' => 'La contraseña debe tener al menos 10 caracteres.',
+                'password.letters' => 'La contraseña debe incluir al menos una letra.',
+                'password.mixed' => 'La contraseña debe incluir letras mayúsculas y minúsculas.',
+                'password.numbers' => 'La contraseña debe incluir al menos un número.',
+                'password.symbols' => 'La contraseña debe incluir al menos un símbolo.',
             ]);
 
             $this->userService->updatePassword(Auth::user(), $request->current_password, $request->password);

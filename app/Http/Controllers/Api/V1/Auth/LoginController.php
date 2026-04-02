@@ -30,8 +30,11 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required_without_all:documento_tipo_id,documento_numero|email',
             'documento_tipo_id' => 'required_without:email|integer|exists:documento_tipos,id',
-            'documento_numero' => 'required_without:email|string',
+            'documento_numero' => 'required_without:email|numeric|digits_between:7,15',
             'password' => 'required|string',
+        ], [
+            'documento_numero.numeric' => 'El número de documento debe contener solo números.',
+            'documento_numero.digits_between' => 'El número de documento debe tener entre 7 y 15 dígitos.',
         ]);
 
         $credentials = $request->only(['password']);

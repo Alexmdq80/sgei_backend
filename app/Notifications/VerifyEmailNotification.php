@@ -36,7 +36,8 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $frontendUrls = explode(',', env('FRONTEND_URL', 'http://localhost:5173'));
+        $frontendUrl = trim($frontendUrls[0]); // Usar la primera URL configurada
         $verificationUrl = $frontendUrl . '/verificar-email?token=' . $this->token . '&email=' . urlencode($notifiable->email);
 
         return (new MailMessage)

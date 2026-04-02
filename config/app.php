@@ -122,5 +122,9 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    
+    'admin_pass' => env('ADMIN_PASSWORD', 'Sgei!2026_Admin'),
+    'admin_email' => env('ADMIN_EMAIL', 'admin@sgei.com')
+    
 
 ];
