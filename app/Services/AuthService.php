@@ -171,8 +171,11 @@ class AuthService
      */
     public function logout(Usuario $usuario, Request $request): void
     {
-        // Revoke current access token
-        $usuario->currentAccessToken()?->delete();
+        // Revoke current access token only if it's not a TransientToken (used by Sanctum for cookies)
+        $token = $usuario->currentAccessToken();
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
 
         // Revoke refresh token if provided
         if ($request->has('refresh_token')) {

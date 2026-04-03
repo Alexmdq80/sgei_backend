@@ -59,7 +59,7 @@ class EscuelaService
     /**
      * Request to join a school.
      */
-    public function requestJoin(Usuario $user, int $escuelaId, int $rolEscolarId = 1): void
+    public function requestJoin(Usuario $user, int $escuelaId, int $rolEscolarId = 5): void
     {
         EscuelaUsuario::updateOrCreate(
             [
@@ -76,21 +76,67 @@ class EscuelaService
     }
 
     /**
-     * Cancel join request.
+     * Get pending school join requests.
      */
-    public function cancelJoin(Usuario $user, ?int $escuelaId = null): void
+    public function getPendingRequests(array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        $query = EscuelaUsuario::where('usuario_id', $user->id);
-        
-        if ($escuelaId) {
-            $query->where('escuela_id', $escuelaId);
+        $query = EscuelaUsuario::whereNull('verified_at')
+            ->with(['usuario.persona', 'escuela', 'rolEscolar']);
+
+        if (!empty($filters['escuela_id'])) {
+            $query->where('escuela_id', $filters['escuela_id']);
         }
 
-        $query->delete();
+        if (!empty($filters['search'])) {
+            $term = $filters['search'];
+            $query->whereHas('usuario', function ($q) use ($term) {
+                $q->where('nombre', 'like', "%{$term}%")
+                  ->orWhere('email', 'like', "%{$term}%");
+            });
+        }
 
-        // Si no quedan solicitudes, volver al estado inicial de post-verificación
-        if (EscuelaUsuario::where('usuario_id', $user->id)->count() === 0) {
-            $user->update(['estado' => 'email_verificado']);
+        return $query->paginate($filters['per_page'] ?? 15);
+    }
+
+    /**
+     * Approve a school join request.
+     */
+    public function approveJoin(string $requestId): EscuelaUsuario
+    {
+        $request = EscuelaUsuario::findOrFail($requestId);
+        
+        $request->update([
+            'verified_at' => now(),
+            'updated_by' => auth()->id()
+        ]);
+
+        // Actualizar el estado del usuario si era "espera_aprobacion"
+        $usuario = $request->usuario;
+        if ($usuario->estado === 'espera_aprobacion') {
+            $usuario->update(['estado' => 'activo']);
+        }
+
+        return $request->load(['usuario.persona', 'escuela', 'rolEscolar']);
+    }
+
+    /**
+     * Reject a school join request.
+     */
+    public function rejectJoin(string $requestId, ?string $reason = null): void
+    {
+        $request = EscuelaUsuario::findOrFail($requestId);
+        $usuario = $request->usuario;
+
+        // Si se proporciona una razón, guardarla en el usuario (opcional, según lógica de negocio)
+        if ($reason) {
+            $usuario->update(['motivo_rechazo' => $reason]);
+        }
+
+        $request->delete();
+
+        // Si no quedan solicitudes, volver al estado inicial
+        if (EscuelaUsuario::where('usuario_id', $usuario->id)->count() === 0) {
+            $usuario->update(['estado' => 'email_verificado']);
         }
     }
 }

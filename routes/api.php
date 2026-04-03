@@ -71,8 +71,13 @@ Route::prefix('v1')->group(function () {
             Route::put('/password', [ProfileController::class, 'updatePassword']);
         });
     });
-    // Gestión de Usuarios (Administrativa) - Fuera del grupo 'auth'
-    Route::middleware(['auth:sanctum', 'permission:sistema.usuarios'])->group(function () {
+    // Gestión Administrativa
+    Route::middleware(['auth:sanctum', 'permission:sistema.usuarios'])->prefix('admin')->group(function () {
         Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
+        
+        // Gestión de Solicitudes de Unión a Escuela
+        Route::get('/escuelas/pending', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'indexPending']);
+        Route::post('/escuelas/requests/{id}/approve', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'approve']);
+        Route::post('/escuelas/requests/{id}/reject', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'reject']);
     });
 });

@@ -25,8 +25,10 @@ class UsuarioResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'avatar_url' => $this->avatar_url,
+            'permissions' => $this->getAllPermissions()->pluck('name'),
             'documento_tipo' => $this->whenLoaded('documentoTipo'),
             'persona' => $this->whenLoaded('persona'),
+            'escuela_usuarios' => EscuelaUsuarioResource::collection($this->whenLoaded('escuelaUsuarios')),
         ];
     }
 }

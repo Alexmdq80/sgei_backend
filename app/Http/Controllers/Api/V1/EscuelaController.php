@@ -66,14 +66,14 @@ class EscuelaController extends Controller
         ]);
 
         $user = Auth::user();
-        
-        $rolEscolarId = $request->input('rol_escolar_id', 1);
+        $rolEscolarId = $request->input('rol_escolar_id', 5);
 
         $this->escuelaService->requestJoin($user, $request->escuela_id, $rolEscolarId);
 
+
         return response()->json([
             'message' => 'Solicitud enviada con éxito. Espere la aprobación del administrador.',
-            'user' => $user->fresh()
+            'user' => new \App\Http\Resources\UsuarioResource($user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar']))
         ]);
     }
 
@@ -87,7 +87,7 @@ class EscuelaController extends Controller
 
         return response()->json([
             'message' => 'Solicitud cancelada.',
-            'user' => $user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])
+            'user' => new \App\Http\Resources\UsuarioResource($user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar']))
         ]);
     }
 }
