@@ -31,14 +31,43 @@ class EscuelaUsuarioController extends Controller
     /**
      * Approve a join request.
      */
-    public function approve(string $id): JsonResponse
+    public function approve(Request $request, string $id): JsonResponse
     {
+        $request->validate([
+            'rol_escolar_id' => 'nullable|integer|exists:rol_escolares,id'
+        ]);
+
         try {
-            $updated = $this->escuelaService->approveJoin($id);
+            $updated = $this->escuelaService->approveJoin($id, $request->rol_escolar_id);
             
             return response()->json([
                 'message' => 'Solicitud aprobada con éxito.',
                 'data' => new EscuelaUsuarioResource($updated)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'code' => 400
+            ], 400);
+        }
+    }
+
+    /**
+     * Update an existing school-user link (change role).
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'rol_escolar_id' => 'required|integer|exists:rol_escolares,id'
+        ]);
+
+        try {
+            $link = \App\Models\EscuelaUsuario::findOrFail($id);
+            $link->update(['rol_escolar_id' => $request->rol_escolar_id]);
+
+            return response()->json([
+                'message' => 'Rol institucional actualizado con éxito.',
+                'data' => new EscuelaUsuarioResource($link->load(['usuario.persona', 'escuela', 'rolEscolar']))
             ]);
         } catch (\Exception $e) {
             return response()->json([

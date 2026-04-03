@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\DocumentoTipo;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class DocumentoTipoSeeder extends Seeder
 {
@@ -14,16 +14,15 @@ class DocumentoTipoSeeder extends Seeder
     {
         $tipos = [
             ['id' => 1, 'nombre' => 'DNI', 'orden' => 1, 'vigente' => true],
-            ['id' => 2, 'nombre' => 'PASAPORTE', 'orden' => 2, 'vigente' => true],
-            ['id' => 3, 'nombre' => 'LE', 'orden' => 3, 'vigente' => true],
-            ['id' => 4, 'nombre' => 'LC', 'orden' => 4, 'vigente' => true],
+            ['id' => 2, 'nombre' => 'CDI', 'orden' => 2, 'vigente' => true],
+            ['id' => 3, 'nombre' => 'LC', 'orden' => 3, 'vigente' => true],
+            ['id' => 4, 'nombre' => 'PASAPORTE', 'orden' => 4, 'vigente' => true],
+            ['id' => 5, 'nombre' => 'OTRO', 'orden' => 5, 'vigente' => true],
+            ['id' => 6, 'nombre' => 'INDOCUMENTADO', 'orden' => 6, 'vigente' => true],
         ];
 
         foreach ($tipos as $tipo) {
-            DB::table('documento_tipos')->updateOrInsert(
-                ['id' => $tipo['id']],
-                array_merge($tipo, ['created_at' => now(), 'updated_at' => now()])
-            );
+            DocumentoTipo::updateOrCreate(['id' => $tipo['id']], $tipo);
         }
     }
 }

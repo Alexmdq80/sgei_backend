@@ -15,7 +15,7 @@ class SectorFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => $this->faker->unique()->randomElement(['Estatal', 'Privado', 'Social']),
+            'nombre' => $this->faker->randomElement(['Estatal', 'Privado', 'Social']),
             'orden' => $this->faker->numberBetween(1, 10),
             'vigente' => true,
         ];

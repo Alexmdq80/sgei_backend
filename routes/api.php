@@ -27,11 +27,12 @@ use App\Http\Controllers\Api\V1\Auth\RegisterController;
 Route::prefix('v1')->group(function () {
     // RUTA DE PRUEBA
     Route::get('/check-id', function (Request $request) {
-        return $request->session()->getId();
+        return $request->hasSession() ? $request->session()->getId() : 'no-session';
     });
 
     // Catálogos Públicos
     Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
+    Route::get('/rol-escolares', [App\Http\Controllers\Api\V1\RolEscolarController::class, 'index']);
     Route::get('/escuelas', [EscuelaController::class, 'index']);
     Route::get('/niveles', [EscuelaController::class, 'niveles']);
     Route::get('/sectores', [EscuelaController::class, 'sectores']);
@@ -77,6 +78,7 @@ Route::prefix('v1')->group(function () {
         
         // Gestión de Solicitudes de Unión a Escuela
         Route::get('/escuelas/pending', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'indexPending']);
+        Route::put('/escuelas/requests/{id}', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'update']);
         Route::post('/escuelas/requests/{id}/approve', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'approve']);
         Route::post('/escuelas/requests/{id}/reject', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'reject']);
     });

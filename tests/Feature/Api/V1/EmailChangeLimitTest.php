@@ -79,7 +79,7 @@ class EmailChangeLimitTest extends TestCase
         $this->actingAs($admin, 'sanctum');
 
         $newEmail = 'admin-correction@example.com';
-        $response = $this->putJson("/api/v1/usuarios/{$targetUser->id}", [
+        $response = $this->putJson("/api/v1/admin/usuarios/{$targetUser->id}", [
             'nombre' => 'Corrected User',
             'email' => $newEmail,
         ]);

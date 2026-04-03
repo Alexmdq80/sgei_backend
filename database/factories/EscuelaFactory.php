@@ -16,7 +16,7 @@ class EscuelaFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => 'Escuela ' . $this->faker->unique()->company(),
+            'nombre' => 'Escuela ' . $this->faker->company(),
             'numero' => $this->faker->numerify('####'),
             'cue_anexo' => $this->faker->numerify('#########'),
             'sector_id' => Sector::factory(),

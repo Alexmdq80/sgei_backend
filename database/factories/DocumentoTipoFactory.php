@@ -20,7 +20,7 @@ class DocumentoTipoFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => $this->faker->unique()->randomElement(['DNI', 'Pasaporte', 'CUIL', 'CUIT', 'LE', 'LC']),
+            'nombre' => $this->faker->randomElement(['DNI', 'Pasaporte', 'CUIL', 'CUIT', 'LE', 'LC']),
             'orden' => $this->faker->numberBetween(1, 10),
             'vigente' => true,
         ];

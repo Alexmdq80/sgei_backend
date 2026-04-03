@@ -50,7 +50,18 @@ class AuthService
         if (!$usuario) {
             throw new \Exception('Error crítico: No se pudo recuperar el usuario tras autenticación exitosa.');
         }
-        
+
+        /* 
+        // VERIFICACIÓN DE EMAIL OBLIGATORIA (Comentado para permitir acceso al Perfil post-registro)
+        if (!$usuario->hasVerifiedEmail()) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'error' => ['Debes verificar tu correo electrónico antes de iniciar sesión.'],
+                'code' => 401
+            ])->status(401);
+        }
+        */        
         \Illuminate\Support\Facades\Log::info('Login exitoso:', [
             'identifier' => $identifier,
             'user_id' => $usuario->id,

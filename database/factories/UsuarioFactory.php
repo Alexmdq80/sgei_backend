@@ -34,7 +34,7 @@ class UsuarioFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => fake()->firstName(),
+            'nombre' => fake()->unique()->firstName(),
             'documento_tipo_id' => DocumentoTipo::factory(),
             'documento_numero' => fake()->unique()->numerify('########'),
             'es_administrador' => false,

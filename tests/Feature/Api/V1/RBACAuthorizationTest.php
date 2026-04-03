@@ -62,21 +62,21 @@ class RBACAuthorizationTest extends TestCase
     public function testSuperUserCanManageUsers(): void
     {
         $this->actingAs($this->superUser, 'sanctum');
-        $response = $this->getJson('/api/v1/usuarios');
+        $response = $this->getJson('/api/v1/admin/usuarios');
         $response->assertOk(); // Should be able to list users
     }
 
     public function testAdminUserCanManageUsers(): void
     {
         $this->actingAs($this->adminUser, 'sanctum');
-        $response = $this->getJson('/api/v1/usuarios');
+        $response = $this->getJson('/api/v1/admin/usuarios');
         $response->assertOk(); // Should be able to list users
     }
 
     public function testRegularUserCannotManageUsers(): void
     {
         $this->actingAs($this->regularUser, 'sanctum');
-        $response = $this->getJson('/api/v1/usuarios');
+        $response = $this->getJson('/api/v1/admin/usuarios');
         $response->assertStatus(403); // Forbidden
     }
 
@@ -90,7 +90,7 @@ class RBACAuthorizationTest extends TestCase
             'email' => 'creator@example.com',
             'password' => 'Sgei!2026_Test',
         ];
-        $response = $this->postJson('/api/v1/usuarios', $userData);
+        $response = $this->postJson('/api/v1/admin/usuarios', $userData);
         $response->assertStatus(201);
     }
 
@@ -104,7 +104,7 @@ class RBACAuthorizationTest extends TestCase
             'documento_numero' => '20202020',
             'email' => 'updated.admin@example.com',
         ];
-        $response = $this->putJson('/api/v1/usuarios/' . $userToUpdate->id, $updatedData);
+        $response = $this->putJson('/api/v1/admin/usuarios/' . $userToUpdate->id, $updatedData);
         $response->assertOk();
     }
 
@@ -112,7 +112,7 @@ class RBACAuthorizationTest extends TestCase
     {
         $userToDelete = Usuario::factory()->create();
         $this->actingAs($this->adminUser, 'sanctum');
-        $response = $this->deleteJson('/api/v1/usuarios/' . $userToDelete->id);
+        $response = $this->deleteJson('/api/v1/admin/usuarios/' . $userToDelete->id);
         $response->assertOk();
         $this->assertSoftDeleted('usuarios', ['id' => $userToDelete->id]);
     }

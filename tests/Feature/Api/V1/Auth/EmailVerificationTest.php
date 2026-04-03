@@ -36,7 +36,7 @@ class EmailVerificationTest extends TestCase
         $admin->assignRole('superuser');
         $this->actingAs($admin, 'sanctum');
 
-        $response = $this->postJson('/api/v1/usuarios', $userData);
+        $response = $this->postJson('/api/v1/admin/usuarios', $userData);
 
         $response->assertStatus(201);
         
@@ -114,7 +114,7 @@ class EmailVerificationTest extends TestCase
         $response->assertStatus(429);
     }
 
-    public function testUnverifiedUserCannotLogin(): void
+    public function testUnverifiedUserCanLogin(): void
     {
         $password = 'Password123!';
         $user = Usuario::factory()->unverified()->create([
@@ -126,11 +126,11 @@ class EmailVerificationTest extends TestCase
             'password' => $password
         ]);
 
-        $response->assertStatus(401)
-                 ->assertJson([
-                     'error' => 'Debes verificar tu correo electrónico antes de iniciar sesión.',
-                     'code' => 401
-                 ]);
+        $response->assertOk()
+                 ->assertJsonStructure([
+                     'user' => ['id', 'email', 'email_verified_at']
+                 ])
+                 ->assertJsonPath('user.email_verified_at', null);
     }
 
     public function testUserCanResendVerificationEmail(): void

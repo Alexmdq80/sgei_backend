@@ -37,7 +37,10 @@ class UserService
      */
     public function create(array $data): Usuario
     {
-        $data['password'] = Hash::make($data['password'] ?? 'Sgei!2026_Admin'); // Default password if not provided
+        // Asegurar contraseña: si está vacía, usar el default del sistema
+        $password = !empty($data['password']) ? $data['password'] : 'Sgei!2026_Admin';
+        $data['password'] = Hash::make($password);
+        
         $data['verification_token'] = Str::random(60);
         $data['verification_token_created_at'] = now();
 
@@ -141,6 +144,13 @@ class UserService
      */
     public function updateProfile(Usuario $user, array $data): Usuario
     {
+        // Handle password update if provided
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']); // Don't try to update password if empty
+        }
+
         // Check for email change
         if (isset($data['email']) && $data['email'] !== $user->email) {
             $performer = \Illuminate\Support\Facades\Auth::user();

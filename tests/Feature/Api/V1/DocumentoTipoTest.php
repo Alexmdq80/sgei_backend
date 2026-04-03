@@ -12,11 +12,11 @@ class DocumentoTipoTest extends TestCase
 
     public function test_can_list_document_types(): void
     {
+        $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
         DocumentoTipo::factory()->count(2)->create(['vigente' => true]);
 
         $response = $this->getJson('/api/v1/documento-tipos');
 
         $response->assertStatus(200)
-            ->assertJsonCount(2, 'data');
-    }
+             ->assertJsonCount(8, 'data');    }
 }

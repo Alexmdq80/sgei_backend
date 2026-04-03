@@ -101,14 +101,21 @@ class EscuelaService
     /**
      * Approve a school join request.
      */
-    public function approveJoin(string $requestId): EscuelaUsuario
+    public function approveJoin(string $requestId, ?int $rolEscolarId = null): EscuelaUsuario
     {
         $request = EscuelaUsuario::findOrFail($requestId);
         
-        $request->update([
+        $data = [
             'verified_at' => now(),
             'updated_by' => auth()->id()
-        ]);
+        ];
+
+        // Si el administrador asigna un rol diferente al solicitado
+        if ($rolEscolarId) {
+            $data['rol_escolar_id'] = $rolEscolarId;
+        }
+
+        $request->update($data);
 
         // Actualizar el estado del usuario si era "espera_aprobacion"
         $usuario = $request->usuario;
@@ -137,6 +144,24 @@ class EscuelaService
         // Si no quedan solicitudes, volver al estado inicial
         if (EscuelaUsuario::where('usuario_id', $usuario->id)->count() === 0) {
             $usuario->update(['estado' => 'email_verificado']);
+        }
+    }
+
+    /**
+     * Cancel a school join request.
+     */
+    public function cancelJoin(Usuario $user, int $escuelaId): void
+    {
+        $request = EscuelaUsuario::where('usuario_id', $user->id)
+            ->where('escuela_id', $escuelaId)
+            ->whereNull('verified_at')
+            ->firstOrFail();
+
+        $request->delete();
+
+        // Si no quedan solicitudes, volver al estado inicial
+        if (EscuelaUsuario::where('usuario_id', $user->id)->count() === 0) {
+            $user->update(['estado' => 'email_verificado']);
         }
     }
 }

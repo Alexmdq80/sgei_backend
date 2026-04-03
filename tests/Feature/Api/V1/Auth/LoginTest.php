@@ -106,9 +106,9 @@ class LoginTest extends TestCase
     }
 
     /**
-     * Test login fails with unverified email using document.
+     * Test user can login with document even if email is unverified.
      */
-    public function test_user_cannot_login_with_document_if_email_is_unverified(): void
+    public function test_user_can_login_with_document_even_if_email_is_unverified(): void
     {
         $password = 'Sgei!2026_Test';
         $usuario = Usuario::factory()->create([
@@ -124,11 +124,11 @@ class LoginTest extends TestCase
             'password' => $password,
         ]);
 
-        $response->assertStatus(401)
-            ->assertJson([
-                'error' => 'Debes verificar tu correo electrónico antes de iniciar sesión.',
-                'code' => 401
-            ]);
+        $response->assertOk()
+            ->assertJsonStructure([
+                'user' => ['id', 'email', 'email_verified_at']
+            ])
+            ->assertJsonPath('user.email_verified_at', null);
     }
 
     /**
