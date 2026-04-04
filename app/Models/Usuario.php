@@ -26,6 +26,13 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     protected $auditGroup = 'entities';
 
     /**
+     * Specified guard for Spatie roles and permissions.
+     * 
+     * @var string
+     */
+    protected $guard_name = 'sanctum';
+
+    /**
      * Maximum number of times a user can change their email.
      */
     const MAX_EMAIL_CHANGES = 3;
