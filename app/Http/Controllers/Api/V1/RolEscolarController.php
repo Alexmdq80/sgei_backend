@@ -3,16 +3,20 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\RolEscolar;
-use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\RoleResource;
 
 class RolEscolarController extends Controller
 {
     /**
-     * Display a listing of the school roles.
+     * Display a listing of institutional roles (from Spatie).
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        return response()->json(RolEscolar::all());
+        // Solo devolvemos roles que tengan sentido institucional, 
+        // excluyendo superuser o roles técnicos si fuera necesario.
+        $roles = Role::where('guard_name', 'sanctum')->get();
+        return response()->json(RoleResource::collection($roles));
     }
 }

@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Permission\Models\Role;
 
 class EscuelaUsuario extends Model
 {
-    use SoftDeletes, HasUuids, HasFactory; // AuditableTrait removed for debugging
+    use SoftDeletes, HasUuids, HasFactory;
 
     protected $table = 'escuela_usuario';
 
@@ -33,7 +34,7 @@ class EscuelaUsuario extends Model
         "escuela_id",
         "usuario_id",
         "verified_at",
-        "rol_escolar_id"
+        "role_id"
     ];
 
     protected $casts = [
@@ -50,8 +51,11 @@ class EscuelaUsuario extends Model
         return $this->belongsTo(Usuario::class);
     }
 
-    public function rolEscolar(): BelongsTo
+    /**
+     * Relationship to the Spatie role.
+     */
+    public function role(): BelongsTo
     {
-        return $this->belongsTo(RolEscolar::class, 'rol_escolar_id');
+        return $this->belongsTo(Role::class, 'role_id');
     }
 }

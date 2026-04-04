@@ -21,7 +21,6 @@ class AdminEscuelaUsuarioTest extends TestCase
         
         // Seeders necesarios
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
-        $this->artisan('db:seed', ['--class' => 'RolEscolarSeeder']);
         $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
         
         // Crear administrador con permisos
@@ -52,9 +51,9 @@ class AdminEscuelaUsuarioTest extends TestCase
      */
     public function test_admin_can_list_pending_requests(): void
     {
-        $roleId = \App\Models\RolEscolar::where('nombre', 'Director')->first()->id;
-        EscuelaUsuario::factory()->count(3)->create(['verified_at' => null, 'rol_escolar_id' => $roleId]);
-        EscuelaUsuario::factory()->count(2)->create(['verified_at' => now(), 'rol_escolar_id' => $roleId]);
+        $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
+        EscuelaUsuario::factory()->count(3)->create(['verified_at' => null, 'role_id' => $roleId]);
+        EscuelaUsuario::factory()->count(2)->create(['verified_at' => now(), 'role_id' => $roleId]);
 
         $response = $this->actingAs($this->admin, 'sanctum')
                          ->getJson('/api/v1/admin/escuelas/pending');
@@ -68,11 +67,11 @@ class AdminEscuelaUsuarioTest extends TestCase
      */
     public function test_admin_can_approve_a_request(): void
     {
-        $roleId = \App\Models\RolEscolar::where('nombre', 'Director')->first()->id;
+        $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
         $user = Usuario::factory()->create(['estado' => 'espera_aprobacion']);
         $request = EscuelaUsuario::factory()->create([
             'usuario_id' => $user->id,
-            'rol_escolar_id' => $roleId,
+            'role_id' => $roleId,
             'verified_at' => null
         ]);
 
@@ -98,11 +97,11 @@ class AdminEscuelaUsuarioTest extends TestCase
      */
     public function test_admin_can_reject_a_request(): void
     {
-        $roleId = \App\Models\RolEscolar::where('nombre', 'Director')->first()->id;
+        $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
         $user = Usuario::factory()->create(['estado' => 'espera_aprobacion']);
         $request = EscuelaUsuario::factory()->create([
             'usuario_id' => $user->id,
-            'rol_escolar_id' => $roleId,
+            'role_id' => $roleId,
             'verified_at' => null
         ]);
 

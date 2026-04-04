@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Artisan;
 // Seeder previo para los roles y permisos necesarios
 beforeEach(function () {
     Artisan::call('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
-    Artisan::call('db:seed', ['--class' => 'RolEscolarSeeder']);
     Artisan::call('db:seed', ['--class' => 'DocumentoTipoSeeder']);
     
     // Administrador con permiso específico de sistema.usuarios
@@ -65,24 +64,24 @@ test('el administrador puede crear un nuevo usuario mediante la API', function (
 // =========================================================================
 // GESTIÓN DE SOLICITUDES DE UNIÓN (ESCUELA_USUARIO)
 // =========================================================================
-
 test('el administrador puede listar solicitudes de unión pendientes', function () {
-    $roleId = \App\Models\RolEscolar::where('nombre', 'Director')->first()->id;
-    EscuelaUsuario::factory()->count(3)->create(['verified_at' => null, 'rol_escolar_id' => $roleId]);
-    EscuelaUsuario::factory()->count(2)->create(['verified_at' => now(), 'rol_escolar_id' => $roleId]);
+    $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
+    EscuelaUsuario::factory()->count(3)->create(['verified_at' => null, 'role_id' => $roleId]);
+    EscuelaUsuario::factory()->count(2)->create(['verified_at' => now(), 'role_id' => $roleId]);
 
-    $this->actingAs($this->admin, 'sanctum')
-         ->getJson('/api/v1/admin/escuelas/pending')
-         ->assertStatus(200)
-         ->assertJsonCount(3, 'data');
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/escuelas/pending');
+
+    $response->assertStatus(200)
+        ->assertJsonCount(3, 'data');
 });
 
 test('el administrador puede aprobar una solicitud de unión escolar', function () {
-    $roleId = \App\Models\RolEscolar::where('nombre', 'Director')->first()->id;
+    $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
     $user = Usuario::factory()->create(['estado' => 'espera_aprobacion']);
     $request = EscuelaUsuario::factory()->create([
         'usuario_id' => $user->id,
-        'rol_escolar_id' => $roleId,
+        'role_id' => $roleId,
         'verified_at' => null
     ]);
 
@@ -96,11 +95,11 @@ test('el administrador puede aprobar una solicitud de unión escolar', function 
 });
 
 test('el administrador puede rechazar una solicitud de unión escolar', function () {
-    $roleId = \App\Models\RolEscolar::where('nombre', 'Director')->first()->id;
+    $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
     $user = Usuario::factory()->create(['estado' => 'espera_aprobacion']);
     $request = EscuelaUsuario::factory()->create([
         'usuario_id' => $user->id,
-        'rol_escolar_id' => $roleId,
+        'role_id' => $roleId,
         'verified_at' => null
     ]);
 
@@ -111,7 +110,6 @@ test('el administrador puede rechazar una solicitud de unión escolar', function
          ->assertStatus(200)
          ->assertJsonPath('message', 'Solicitud rechazada y eliminada.');
 
-    // Soft delete (si aplica) o borrado real
     $this->assertSoftDeleted('escuela_usuario', ['id' => $request->id]);
     
     expect($user->fresh()->estado)->toBe('email_verificado');

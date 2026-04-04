@@ -24,7 +24,7 @@ class UsuarioController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['search', 'per_page']);
+        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page']);
         $users = $this->userService->getAll($filters);
 
         return UsuarioResource::collection($users);

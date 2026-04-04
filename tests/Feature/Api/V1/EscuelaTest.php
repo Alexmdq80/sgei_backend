@@ -4,15 +4,22 @@ namespace Tests\Feature\Api\V1;
 
 use App\Models\Escuela;
 use App\Models\Nivel;
-use App\Models\RolEscolar;
 use App\Models\Sector;
 use App\Models\Usuario;
+use Spatie\Permission\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class EscuelaTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Asegurar que los roles existan
+        $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+    }
 
     public function test_can_list_schools(): void
     {
@@ -66,12 +73,12 @@ class EscuelaTest extends TestCase
     {
         $user = Usuario::factory()->create();
         $escuela = Escuela::factory()->create();
-        $rol = RolEscolar::factory()->create();
+        $rol = Role::where('name', 'standard')->first();
 
         $response = $this->actingAs($user)
             ->postJson('/api/v1/auth/escuelas/join', [
                 'escuela_id' => $escuela->id,
-                'rol_escolar_id' => $rol->id
+                'role_id' => $rol->id
             ]);
 
         $response->assertStatus(200)
@@ -80,7 +87,7 @@ class EscuelaTest extends TestCase
         $this->assertDatabaseHas('escuela_usuario', [
             'usuario_id' => $user->id,
             'escuela_id' => $escuela->id,
-            'rol_escolar_id' => $rol->id,
+            'role_id' => $rol->id,
             'verified_at' => null
         ]);
     }
@@ -89,13 +96,14 @@ class EscuelaTest extends TestCase
     {
         $user = Usuario::factory()->create();
         $escuela = Escuela::factory()->create();
-        $rol = RolEscolar::factory()->create();
+        $rol = Role::where('name', 'standard')->first();
 
         // Crear la solicitud previa usando el modelo EscuelaUsuario
         \App\Models\EscuelaUsuario::create([
+            'id' => \Illuminate\Support\Str::uuid(),
             'usuario_id' => $user->id,
             'escuela_id' => $escuela->id,
-            'rol_escolar_id' => $rol->id,
+            'role_id' => $rol->id,
             'verified_at' => null
         ]);
 

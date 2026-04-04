@@ -34,11 +34,11 @@ class EscuelaUsuarioController extends Controller
     public function approve(Request $request, string $id): JsonResponse
     {
         $request->validate([
-            'rol_escolar_id' => 'nullable|integer|exists:rol_escolares,id'
+            'role_id' => 'nullable|integer|exists:roles,id'
         ]);
 
         try {
-            $updated = $this->escuelaService->approveJoin($id, $request->rol_escolar_id);
+            $updated = $this->escuelaService->approveJoin($id, $request->role_id);
             
             return response()->json([
                 'message' => 'Solicitud aprobada con éxito.',
@@ -58,16 +58,16 @@ class EscuelaUsuarioController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $request->validate([
-            'rol_escolar_id' => 'required|integer|exists:rol_escolares,id'
+            'role_id' => 'required|integer|exists:roles,id'
         ]);
 
         try {
             $link = \App\Models\EscuelaUsuario::findOrFail($id);
-            $link->update(['rol_escolar_id' => $request->rol_escolar_id]);
+            $link->update(['role_id' => $request->role_id]);
 
             return response()->json([
                 'message' => 'Rol institucional actualizado con éxito.',
-                'data' => new EscuelaUsuarioResource($link->load(['usuario.persona', 'escuela', 'rolEscolar']))
+                'data' => new EscuelaUsuarioResource($link->load(['usuario.persona', 'escuela', 'role']))
             ]);
         } catch (\Exception $e) {
             return response()->json([

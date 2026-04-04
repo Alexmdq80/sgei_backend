@@ -19,7 +19,12 @@ class UserService
      */
     public function getAll(array $filters = []): LengthAwarePaginator
     {
-        $query = Usuario::query()->with(['persona', 'documentoTipo']);
+        $query = Usuario::query()->with([
+            'persona', 
+            'documentoTipo', 
+            'escuelaUsuarios.escuela', 
+            'escuelaUsuarios.role'
+        ]);
 
         if (!empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
@@ -29,7 +34,33 @@ class UserService
             });
         }
 
-        return $query->paginate($filters['per_page'] ?? 15);
+        // Filtro por Escuela específica (ID o CUE)
+        if (!empty($filters['escuela_id'])) {
+            $query->whereHas('escuelaUsuarios', function ($q) use ($filters) {
+                $q->where('escuela_id', $filters['escuela_id']);
+            });
+        }
+
+        if (!empty($filters['cue_anexo'])) {
+            $query->whereHas('escuelaUsuarios.escuela', function ($q) use ($filters) {
+                $q->where('cue_anexo', $filters['cue_anexo']);
+            });
+        }
+
+        // Filtro por Estado de Vinculación
+        if (!empty($filters['vinculation'])) {
+            if ($filters['vinculation'] === 'vinculated') {
+                $query->whereHas('escuelaUsuarios', function ($q) {
+                    $q->whereNotNull('verified_at');
+                });
+            } elseif ($filters['vinculation'] === 'pending') {
+                $query->whereHas('escuelaUsuarios', function ($q) {
+                    $q->whereNull('verified_at');
+                });
+            }
+        }
+
+        return $query->orderBy('created_at', 'desc')->paginate($filters['per_page'] ?? 15);
     }
 
     /**

@@ -74,7 +74,6 @@ class MigrateLegacyData extends Command
             'plans',
             'anio_plan',
             'escuelas',
-            'roles_escolares',
             'personas',
             'usuarios',
             'escuela_usuario',
@@ -110,6 +109,11 @@ class MigrateLegacyData extends Command
     }
 
     /**
+     * Mapeo de roles de legacy a Spatie (Cache local para el comando).
+     */
+    private array $roleMap = [];
+
+    /**
      * Migra una tabla específica de legacy a default.
      * 
      * @param string $tableName El nombre de la tabla en la base de datos NUEVA.
@@ -120,14 +124,13 @@ class MigrateLegacyData extends Command
 
         // Mapeo de nombres de tablas (Destino => Origen Legacy)
         $tableMappings = [
-            'roles_escolares' => 'usuario_tipos',
             'anio_plan' => 'plan_anios',
         ];
 
         // Mapeo de nombres de columnas (Destino => Origen Legacy)
         $columnMappings = [
             'escuela_usuario' => [
-                'rol_escolar_id' => 'usuario_tipo_id'
+                'role_id' => 'usuario_tipo_id'
             ],
             'propuestas' => [
                 'anio_plan_id' => 'plan_anio_id'
@@ -137,16 +140,15 @@ class MigrateLegacyData extends Command
         $legacyTableName = $tableMappings[$tableName] ?? $tableName;
 
         try {
-            // Verificar si la tabla existe en legacy
+            // ... (resto del try-catch inicial hasta el map de dataToInsert)
+            
+            // Re-obtener los datos y columnas para que la lógica de mapeo use los nuevos nombres
             if (!Schema::connection('legacy')->hasTable($legacyTableName)) {
                 $this->warn("La tabla '{$legacyTableName}' no existe en la base de datos legacy.");
                 return;
             }
 
-            // Obtener columnas de la tabla DESTINO
             $destinationColumns = Schema::getColumnListing($tableName);
-
-            // Obtener datos de la base legacy
             $legacyData = DB::connection('legacy')->table($legacyTableName)->get();
 
             if ($legacyData->isEmpty()) {
@@ -157,17 +159,40 @@ class MigrateLegacyData extends Command
             // Limpiar tabla destino antes de insertar
             DB::table($tableName)->truncate();
 
+            // Cargar mapeo de roles solo una vez cuando se migre escuela_usuario
+            if ($tableName === 'escuela_usuario') {
+                $legacyRoles = DB::connection('legacy')->table('usuario_tipos')->get();
+                $spatieRoles = \Spatie\Permission\Models\Role::all();
+
+                foreach ($legacyRoles as $lr) {
+                    $nameMatch = strtolower($lr->nombre);
+                    // Mapeos especiales
+                    if ($nameMatch === 'administrador') $nameMatch = 'director';
+                    if ($nameMatch === 'personal') $nameMatch = 'profesor';
+
+                    $role = $spatieRoles->firstWhere('name', $nameMatch);
+                    if ($role) {
+                        $this->roleMap[$lr->id] = $role->id;
+                    }
+                }
+            }
+
             // Convertir y filtrar datos
             $dataToInsert = $legacyData->map(function ($item) use ($tableName, $destinationColumns, $columnMappings) {
                 $legacyArray = (array) $item;
                 $filteredArray = [];
 
                 foreach ($destinationColumns as $column) {
-                    // Si hay un mapeo de columna para esta tabla y columna destino
                     $legacyColumnName = $columnMappings[$tableName][$column] ?? $column;
 
                     if (array_key_exists($legacyColumnName, $legacyArray)) {
                         $value = $legacyArray[$legacyColumnName];
+
+                        // Lógica Especial: Mapeo de Roles de Legacy a Spatie
+                        if ($tableName === 'escuela_usuario' && $column === 'role_id') {
+                            $value = $this->roleMap[$value] ?? null;
+                            if (!$value) return null; // Saltar si no hay rol equivalente
+                        }
 
                         // Manejo de booleanos obligatorios que vienen nulos
                         $booleanColumns = ['asistente_externo_si', 'proyecto_inclusion_si', 'concurre_especial_si'];

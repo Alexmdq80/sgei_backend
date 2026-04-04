@@ -59,15 +59,20 @@ class EscuelaService
     /**
      * Request to join a school.
      */
-    public function requestJoin(Usuario $user, int $escuelaId, int $rolEscolarId = 5): void
+    public function requestJoin(Usuario $user, int $escuelaId, ?int $roleId = null): void
     {
+        // Si no se provee rol, buscamos el rol 'standard' en Spatie (ID 5 según histórico, pero buscamos por nombre por seguridad)
+        if (!$roleId) {
+            $roleId = \Spatie\Permission\Models\Role::where('name', 'standard')->first()?->id ?? 5;
+        }
+
         EscuelaUsuario::updateOrCreate(
             [
                 'usuario_id' => $user->id,
                 'escuela_id' => $escuelaId
             ],
             [
-                'rol_escolar_id' => $rolEscolarId,
+                'role_id' => $roleId,
                 'verified_at' => null,
             ]
         );
@@ -81,7 +86,7 @@ class EscuelaService
     public function getPendingRequests(array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = EscuelaUsuario::whereNull('verified_at')
-            ->with(['usuario.persona', 'escuela', 'rolEscolar']);
+            ->with(['usuario.persona', 'escuela', 'role']);
 
         if (!empty($filters['escuela_id'])) {
             $query->where('escuela_id', $filters['escuela_id']);
@@ -101,7 +106,7 @@ class EscuelaService
     /**
      * Approve a school join request.
      */
-    public function approveJoin(string $requestId, ?int $rolEscolarId = null): EscuelaUsuario
+    public function approveJoin(string $requestId, ?int $roleId = null): EscuelaUsuario
     {
         $request = EscuelaUsuario::findOrFail($requestId);
         
@@ -111,8 +116,8 @@ class EscuelaService
         ];
 
         // Si el administrador asigna un rol diferente al solicitado
-        if ($rolEscolarId) {
-            $data['rol_escolar_id'] = $rolEscolarId;
+        if ($roleId) {
+            $data['role_id'] = $roleId;
         }
 
         $request->update($data);
@@ -123,7 +128,7 @@ class EscuelaService
             $usuario->update(['estado' => 'activo']);
         }
 
-        return $request->load(['usuario.persona', 'escuela', 'rolEscolar']);
+        return $request->load(['usuario.persona', 'escuela', 'role']);
     }
 
     /**
