@@ -1,119 +1,96 @@
 <?php
 
-namespace Tests\Feature\Api\V1;
-
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Hash;
 
-class RBACAuthorizationTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    protected Usuario $superUser;
-    protected Usuario $adminUser; // Director rol has sistema.usuarios
-    protected Usuario $regularUser; // A user without specific admin roles
+beforeEach(function () {
+    // Ensure roles and permissions are seeded
+    $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
+    $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 
-    protected function setUp(): void
-    {
-        parent::setUp();
+    // Create test users and assign roles
+    $this->superUser = Usuario::factory()->create([
+        'email' => 'superuser@test.com',
+        'es_administrador' => true,
+    ]);
+    $this->superUser->assignRole('superuser');
 
-        // Ensure roles and permissions are seeded
-        $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
-        $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
+    $this->adminUser = Usuario::factory()->create([
+        'email' => 'director@test.com',
+        'es_administrador' => true,
+    ]);
+    $this->adminUser->assignRole('director');
 
-        // Create test users and assign roles
-        $this->superUser = Usuario::factory()->create([
-            'email' => 'superuser@test.com',
-            'es_administrador' => true,
-        ]);
-        $this->superUser->assignRole('superuser');
+    $this->regularUser = Usuario::factory()->create(['password' => Hash::make('Sgei!2026_Test')]);
+});
 
-        $this->adminUser = Usuario::factory()->create([
-            'email' => 'director@test.com',
-            'es_administrador' => true,
-        ]);
-        $this->adminUser->assignRole('director');
+// --- Profile Controller Tests (Autogestión) ---
 
-        $this->regularUser = Usuario::factory()->create(['password' => Hash::make('Sgei!2026_Test')]);
-    }
+test('authenticated user can access their own profile', function () {
+    $this->actingAs($this->regularUser, 'sanctum');
+    $response = $this->getJson('/api/v1/auth/me');
+    $response->assertOk()
+             ->assertJson(['user' => ['id' => $this->regularUser->id]]);
+});
 
-    // --- Profile Controller Tests (Autogestión) ---
+test('unauthenticated user cannot access profile routes', function () {
+    $response = $this->getJson('/api/v1/auth/me');
+    $response->assertStatus(401); // Unauthorized
+});
 
-    public function testAuthenticatedUserCanAccessTheirOwnProfile(): void
-    {
-        $this->actingAs($this->regularUser, 'sanctum');
-        $response = $this->getJson('/api/v1/auth/me');
-        $response->assertOk()
-                 ->assertJson(['user' => ['id' => $this->regularUser->id]]);
-    }
+// --- UsuarioController (Admin CRUD) Tests ---
 
-    public function testUnauthenticatedUserCannotAccessProfileRoutes(): void
-    {
-        $response = $this->getJson('/api/v1/auth/me');
-        $response->assertStatus(401); // Unauthorized
-    }
+test('super user can manage users', function () {
+    $this->actingAs($this->superUser, 'sanctum');
+    $response = $this->getJson('/api/v1/admin/usuarios');
+    $response->assertOk(); // Should be able to list users
+});
 
-    // --- UsuarioController (Admin CRUD) Tests ---
+test('admin user can manage users', function () {
+    $this->actingAs($this->adminUser, 'sanctum');
+    $response = $this->getJson('/api/v1/admin/usuarios');
+    $response->assertOk(); // Should be able to list users
+});
 
-    public function testSuperUserCanManageUsers(): void
-    {
-        $this->actingAs($this->superUser, 'sanctum');
-        $response = $this->getJson('/api/v1/admin/usuarios');
-        $response->assertOk(); // Should be able to list users
-    }
+test('regular user cannot manage users', function () {
+    $this->actingAs($this->regularUser, 'sanctum');
+    $response = $this->getJson('/api/v1/admin/usuarios');
+    $response->assertStatus(403); // Forbidden
+});
 
-    public function testAdminUserCanManageUsers(): void
-    {
-        $this->actingAs($this->adminUser, 'sanctum');
-        $response = $this->getJson('/api/v1/admin/usuarios');
-        $response->assertOk(); // Should be able to list users
-    }
+test('admin user can create user', function () {
+    $this->actingAs($this->adminUser, 'sanctum');
+    $userData = [
+        'nombre' => 'Creator',
+        'documento_tipo_id' => 1,
+        'documento_numero' => '10101010',
+        'email' => 'creator@example.com',
+        'password' => 'Sgei!2026_Test',
+    ];
+    $response = $this->postJson('/api/v1/admin/usuarios', $userData);
+    $response->assertStatus(201);
+});
 
-    public function testRegularUserCannotManageUsers(): void
-    {
-        $this->actingAs($this->regularUser, 'sanctum');
-        $response = $this->getJson('/api/v1/admin/usuarios');
-        $response->assertStatus(403); // Forbidden
-    }
+test('admin user can update user', function () {
+    $userToUpdate = Usuario::factory()->create();
+    $this->actingAs($this->adminUser, 'sanctum');
+    $updatedData = [
+        'nombre' => 'Updated Admin',
+        'documento_tipo_id' => 1,
+        'documento_numero' => '20202020',
+        'email' => 'updated.admin@example.com',
+    ];
+    $response = $this->putJson('/api/v1/admin/usuarios/' . $userToUpdate->id, $updatedData);
+    $response->assertOk();
+});
 
-    public function testAdminUserCanCreateUser(): void
-    {
-        $this->actingAs($this->adminUser, 'sanctum');
-        $userData = [
-            'nombre' => 'Creator',
-            'documento_tipo_id' => 1,
-            'documento_numero' => '10101010',
-            'email' => 'creator@example.com',
-            'password' => 'Sgei!2026_Test',
-        ];
-        $response = $this->postJson('/api/v1/admin/usuarios', $userData);
-        $response->assertStatus(201);
-    }
-
-    public function testAdminUserCanUpdateUser(): void
-    {
-        $userToUpdate = Usuario::factory()->create();
-        $this->actingAs($this->adminUser, 'sanctum');
-        $updatedData = [
-            'nombre' => 'Updated Admin',
-            'documento_tipo_id' => 1,
-            'documento_numero' => '20202020',
-            'email' => 'updated.admin@example.com',
-        ];
-        $response = $this->putJson('/api/v1/admin/usuarios/' . $userToUpdate->id, $updatedData);
-        $response->assertOk();
-    }
-
-    public function testAdminUserCanDeleteUser(): void
-    {
-        $userToDelete = Usuario::factory()->create();
-        $this->actingAs($this->adminUser, 'sanctum');
-        $response = $this->deleteJson('/api/v1/admin/usuarios/' . $userToDelete->id);
-        $response->assertOk();
-        $this->assertSoftDeleted('usuarios', ['id' => $userToDelete->id]);
-    }
-}
+test('admin user can delete user', function () {
+    $userToDelete = Usuario::factory()->create();
+    $this->actingAs($this->adminUser, 'sanctum');
+    $response = $this->deleteJson('/api/v1/admin/usuarios/' . $userToDelete->id);
+    $response->assertOk();
+    $this->assertSoftDeleted('usuarios', ['id' => $userToDelete->id]);
+});

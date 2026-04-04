@@ -105,5 +105,5 @@ test('la respuesta de usuarios incluye el CUE y el nombre del rol escolar', func
 
     $response->assertStatus(200)
         ->assertJsonPath('data.0.escuela_usuarios.0.escuela.cue_anexo', '111111100')
-        ->assertJsonPath('data.0.escuela_usuarios.0.rol_escolar.nombre', 'Director');
+        ->assertJsonPath('data.0.escuela_usuarios.0.role.name', 'director');
 });

@@ -62,18 +62,18 @@ class EscuelaController extends Controller
     {
         $request->validate([
             'escuela_id' => 'required|integer|exists:escuelas,id',
-            'rol_escolar_id' => 'nullable|integer|exists:roles_escolares,id'
+            'role_id' => 'nullable|integer|exists:roles,id'
         ]);
 
         $user = Auth::user();
-        $rolEscolarId = $request->input('rol_escolar_id', 5);
+        $roleId = $request->input('role_id');
 
-        $this->escuelaService->requestJoin($user, $request->escuela_id, $rolEscolarId);
+        $this->escuelaService->requestJoin($user, $request->escuela_id, $roleId);
 
 
         return response()->json([
             'message' => 'Solicitud enviada con éxito. Espere la aprobación del administrador.',
-            'user' => new \App\Http\Resources\UsuarioResource($user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar']))
+            'user' => new \App\Http\Resources\UsuarioResource($user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.role']))
         ]);
     }
 
@@ -87,7 +87,7 @@ class EscuelaController extends Controller
 
         return response()->json([
             'message' => 'Solicitud cancelada.',
-            'user' => new \App\Http\Resources\UsuarioResource($user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar']))
+            'user' => new \App\Http\Resources\UsuarioResource($user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.role']))
         ]);
     }
 }

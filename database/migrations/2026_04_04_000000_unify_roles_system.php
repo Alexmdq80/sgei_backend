@@ -38,21 +38,40 @@ return new class extends Migration
             }
         }
 
-        // 3. Eliminar la columna vieja y su FK rebelde
+        // 3. Limpieza de estructura vieja (Desactivamos FKs para evitar bloqueos en MySQL/SQLite)
+        Schema::disableForeignKeyConstraints();
+
         if (Schema::hasColumn('escuela_usuario', 'rol_escolar_id')) {
-            Schema::table('escuela_usuario', function (Blueprint $table) {
-                // SQLite no soporta borrar FKs por nombre, así que solo lo intentamos en otros drivers
-                if (DB::getDriverName() !== 'sqlite') {
-                    try {
-                        $table->dropForeign('escuela_usuario_usuario_tipo_id_foreign');
-                    } catch (\Exception $e) {}
-                }
-                
-                $table->dropColumn('rol_escolar_id');
-            });
+            // Intentamos borrar FKs uno por uno en llamadas separadas
+            try {
+                Schema::table('escuela_usuario', function (Blueprint $table) {
+                    $table->dropForeign(['rol_escolar_id']);
+                });
+            } catch (\Exception $e) {}
+
+            try {
+                Schema::table('escuela_usuario', function (Blueprint $table) {
+                    $table->dropForeign('escuela_usuario_usuario_tipo_id_foreign');
+                });
+            } catch (\Exception $e) {}
+
+            try {
+                Schema::table('escuela_usuario', function (Blueprint $table) {
+                    $table->dropForeign('escuela_usuario_rol_escolar_id_foreign');
+                });
+            } catch (\Exception $e) {}
+            
+            // Finalmente borramos la columna
+            try {
+                Schema::table('escuela_usuario', function (Blueprint $table) {
+                    $table->dropColumn('rol_escolar_id');
+                });
+            } catch (\Exception $e) {}
         }
 
         Schema::dropIfExists('roles_escolares');
+        
+        Schema::enableForeignKeyConstraints();
     }
 
     public function down(): void {}

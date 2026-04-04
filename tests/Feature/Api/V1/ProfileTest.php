@@ -1,224 +1,203 @@
 <?php
 
-namespace Tests\Feature\Api\V1;
-
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Tests\TestCase;
 
-class ProfileTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    protected Usuario $user;
+beforeEach(function () {
+    $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
+    $this->user = Usuario::factory()->create();
+    $this->actingAs($this->user, 'sanctum');
+});
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
-        $this->user = Usuario::factory()->create();
-        $this->actingAs($this->user, 'sanctum');
-    }
+test('can get authenticated user profile', function () {
+    $response = $this->getJson('/api/v1/auth/me');
 
-    public function testCanGetAuthenticatedUserProfile(): void
-    {
-        $response = $this->getJson('/api/v1/auth/me');
+    $response->assertOk()
+             ->assertJson([
+                 'user' => [
+                     'id' => $this->user->id,
+                     'nombre' => $this->user->nombre,
+                     'documento_numero' => $this->user->documento_numero,
+                     'email' => $this->user->email,
+                 ]
+             ]);
+});
 
-        $response->assertOk()
-                 ->assertJson([
-                     'user' => [
-                         'id' => $this->user->id,
-                         'nombre' => $this->user->nombre,
-                         'documento_numero' => $this->user->documento_numero,
-                         'email' => $this->user->email,
-                     ]
-                 ]);
-    }
+test('can update authenticated user profile', function () {
+    $newData = [
+        'nombre' => 'Jane',
+        'documento_tipo_id' => 1,
+        'documento_numero' => '98765432',
+        'email' => 'jane.doe.updated@example.com',
+    ];
 
-    public function testCanUpdateAuthenticatedUserProfile(): void
-    {
-        $newData = [
-            'nombre' => 'Jane',
-            'documento_tipo_id' => 1,
-            'documento_numero' => '98765432',
-            'email' => 'jane.doe.updated@example.com',
-        ];
+    $response = $this->putJson('/api/v1/auth/profile', $newData);
 
-        $response = $this->putJson('/api/v1/auth/profile', $newData);
+    $response->assertOk()
+             ->assertJson([
+                 'message' => 'Perfil actualizado con éxito.',
+                 'user' => [
+                     'nombre' => 'Jane',
+                     'documento_tipo_id' => 1,
+                     'documento_numero' => '98765432',
+                     'email' => 'jane.doe.updated@example.com',
+                 ],
+             ]);
 
-        $response->assertOk()
-                 ->assertJson([
-                     'message' => 'Perfil actualizado con éxito.',
-                     'user' => [
-                         'nombre' => 'Jane',
-                         'documento_tipo_id' => 1,
-                         'documento_numero' => '98765432',
-                         'email' => 'jane.doe.updated@example.com',
-                     ],
-                 ]);
+    $this->assertDatabaseHas('usuarios', [
+        'id' => $this->user->id,
+        'nombre' => 'Jane',
+        'documento_numero' => '98765432',
+        'email' => 'jane.doe.updated@example.com',
+    ]);
+});
 
-        $this->assertDatabaseHas('usuarios', [
-            'id' => $this->user->id,
-            'nombre' => 'Jane',
-            'documento_numero' => '98765432',
-            'email' => 'jane.doe.updated@example.com',
-        ]);
-    }
+test('cannot update profile with invalid data', function () {
+    $newData = [
+        'nombre' => '', // Invalid
+        'email' => 'invalid-email', // Invalid
+    ];
 
-    public function testCannotUpdateProfileWithInvalidData(): void
-    {
-        $newData = [
-            'nombre' => '', // Invalid
-            'email' => 'invalid-email', // Invalid
-        ];
+    $response = $this->putJson('/api/v1/auth/profile', $newData);
 
-        $response = $this->putJson('/api/v1/auth/profile', $newData);
+    $response->assertStatus(422)
+             ->assertJsonValidationErrors(['nombre', 'email']);
+});
 
-        $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['nombre', 'email']);
-    }
+test('cannot update profile with duplicate email', function () {
+    Usuario::factory()->create(['email' => 'other@example.com']);
 
-    public function testCannotUpdateProfileWithDuplicateEmail(): void
-    {
-        Usuario::factory()->create(['email' => 'other@example.com']);
+    $newData = [
+        'nombre' => 'Jane',
+        'documento_tipo_id' => 1,
+        'documento_numero' => '98765432',
+        'email' => 'other@example.com',
+    ];
 
-        $newData = [
-            'nombre' => 'Jane',
-            'documento_tipo_id' => 1,
-            'documento_numero' => '98765432',
-            'email' => 'other@example.com',
-        ];
+    $response = $this->putJson('/api/v1/auth/profile', $newData);
 
-        $response = $this->putJson('/api/v1/auth/profile', $newData);
+    $response->assertStatus(422)
+             ->assertJsonValidationErrors(['email']);
+});
 
-        $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['email']);
-    }
+test('can update authenticated user avatar', function () {
+    Storage::fake('public');
 
-    public function testCanUpdateAuthenticatedUserAvatar(): void
-    {
-        Storage::fake('public');
+    $file = UploadedFile::fake()->image('avatar.jpg');
 
-        $file = UploadedFile::fake()->image('avatar.jpg');
+    $response = $this->postJson('/api/v1/auth/avatar', ['avatar' => $file]);
 
-        $response = $this->postJson('/api/v1/auth/avatar', ['avatar' => $file]);
+    $response->assertOk()
+             ->assertJsonStructure(['message', 'avatar_url']);
 
-        $response->assertOk()
-                 ->assertJsonStructure(['message', 'avatar_url']);
+    // Check if user's avatar_path was updated in the database and file exists
+    $this->user->refresh();
+    expect($this->user->avatar_path)->not->toBeNull();
+    
+    // The filename should start with user_id_ and end with .jpg
+    expect($this->user->avatar_path)->toStartWith('avatars/' . $this->user->id . '_');
+    expect($this->user->avatar_path)->toEndWith('.jpg');
+    
+    Storage::disk('public')->assertExists($this->user->avatar_path);
+});
 
-        // Check if user's avatar_path was updated in the database and file exists
-        $this->user->refresh();
-        $this->assertNotNull($this->user->avatar_path);
-        
-        // The filename should start with user_id_ and end with .jpg
-        $this->assertStringStartsWith('avatars/' . $this->user->id . '_', $this->user->avatar_path);
-        $this->assertStringEndsWith('.jpg', $this->user->avatar_path);
-        
-        Storage::disk('public')->assertExists($this->user->avatar_path);
-    }
+test('old avatar is deleted when updating a new one', function () {
+    Storage::fake('public');
 
-    public function testOldAvatarIsDeletedWhenUpdatingANewOne(): void
-    {
-        Storage::fake('public');
+    // First avatar
+    $firstFile = UploadedFile::fake()->image('first.jpg');
+    $this->postJson('/api/v1/auth/avatar', ['avatar' => $firstFile]);
+    $this->user->refresh();
+    $oldAvatarPath = $this->user->avatar_path;
+    Storage::disk('public')->assertExists($oldAvatarPath);
 
-        // First avatar
-        $firstFile = UploadedFile::fake()->image('first.jpg');
-        $this->postJson('/api/v1/auth/avatar', ['avatar' => $firstFile]);
-        $this->user->refresh();
-        $oldAvatarPath = $this->user->avatar_path;
-        Storage::disk('public')->assertExists($oldAvatarPath);
+    // Wait a second to ensure a different timestamp if needed
+    sleep(1);
 
-        // Wait a second to ensure a different timestamp if needed (though user_id is enough to distinguish from other users, same user needs timestamp)
-        // Actually time() changes every second.
-        sleep(1);
+    // Second avatar
+    $secondFile = UploadedFile::fake()->image('second.png');
+    $this->postJson('/api/v1/auth/avatar', ['avatar' => $secondFile]);
 
-        // Second avatar
-        $secondFile = UploadedFile::fake()->image('second.png');
-        $this->postJson('/api/v1/auth/avatar', ['avatar' => $secondFile]);
+    // Old avatar should be deleted
+    Storage::disk('public')->assertMissing($oldAvatarPath);
+    
+    $this->user->refresh();
+    Storage::disk('public')->assertExists($this->user->avatar_path);
+    expect($this->user->avatar_path)->toStartWith('avatars/' . $this->user->id . '_');
+    expect($this->user->avatar_path)->toEndWith('.png');
+});
 
-        // Old avatar should be deleted
-        Storage::disk('public')->assertMissing($oldAvatarPath);
-        
-        $this->user->refresh();
-        Storage::disk('public')->assertExists($this->user->avatar_path);
-        $this->assertStringStartsWith('avatars/' . $this->user->id . '_', $this->user->avatar_path);
-        $this->assertStringEndsWith('.png', $this->user->avatar_path);
-    }
+test('cannot upload invalid avatar file', function () {
+    Storage::fake('public');
 
-    public function testCannotUploadInvalidAvatarFile(): void
-    {
-        Storage::fake('public');
+    $invalidFile = UploadedFile::fake()->create('document.pdf'); // Not an image
 
-        $invalidFile = UploadedFile::fake()->create('document.pdf'); // Not an image
+    $response = $this->postJson('/api/v1/auth/avatar', ['avatar' => $invalidFile]);
 
-        $response = $this->postJson('/api/v1/auth/avatar', ['avatar' => $invalidFile]);
+    $response->assertStatus(422)
+             ->assertJsonValidationErrors(['avatar']);
+});
 
-        $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['avatar']);
-    }
+test('can update authenticated user password', function () {
+    $oldPassword = 'Sgei!2026_Test';
+    $newPassword = 'Sgei!2026_New';
 
-    public function testCanUpdateAuthenticatedUserPassword(): void
-    {
-        $oldPassword = 'Sgei!2026_Test';
-        $newPassword = 'Sgei!2026_New';
+    $this->user->password = bcrypt($oldPassword);
+    $this->user->save();
 
-        $this->user->password = bcrypt($oldPassword);
-        $this->user->save();
+    $response = $this->putJson('/api/v1/auth/password', [
+        'current_password' => $oldPassword,
+        'password' => $newPassword,
+        'password_confirmation' => $newPassword,
+    ]);
 
-        $response = $this->putJson('/api/v1/auth/password', [
-            'current_password' => $oldPassword,
-            'password' => $newPassword,
-            'password_confirmation' => $newPassword,
-        ]);
+    $response->assertOk()
+             ->assertJson(['message' => 'Contraseña actualizada con éxito.']);
 
-        $response->assertOk()
-                 ->assertJson(['message' => 'Contraseña actualizada con éxito.']);
+    expect(password_verify($newPassword, $this->user->fresh()->password))->toBeTrue();
+});
 
-        $this->assertTrue(password_verify($newPassword, $this->user->fresh()->password));
-    }
+test('cannot update password with incorrect current password', function () {
+    $oldPassword = 'Sgei!2026_Test';
+    $wrongPassword = 'Wrong!Sgei2026';
+    $newPassword = 'Sgei!2026_New';
 
-    public function testCannotUpdatePasswordWithIncorrectCurrentPassword(): void
-    {
-        $oldPassword = 'Sgei!2026_Test';
-        $wrongPassword = 'Wrong!Sgei2026';
-        $newPassword = 'Sgei!2026_New';
+    $this->user->password = bcrypt($oldPassword);
+    $this->user->save();
 
-        $this->user->password = bcrypt($oldPassword);
-        $this->user->save();
+    $response = $this->putJson('/api/v1/auth/password', [
+        'current_password' => $wrongPassword,
+        'password' => $newPassword,
+        'password_confirmation' => $newPassword,
+    ]);
 
-        $response = $this->putJson('/api/v1/auth/password', [
-            'current_password' => $wrongPassword,
-            'password' => $newPassword,
-            'password_confirmation' => $newPassword,
-        ]);
+    $response->assertStatus(422)
+             ->assertJson([
+                 'error' => 'Error de validación.',
+                 'errors' => [
+                     'current_password' => ['La contraseña actual es incorrecta.']
+                 ],
+                 'code' => 422
+             ]);
+});
 
-        $response->assertStatus(422)
-                 ->assertJson([
-                     'error' => 'Error de validación.',
-                     'errors' => [
-                         'current_password' => ['La contraseña actual es incorrecta.']
-                     ],
-                     'code' => 422
-                 ]);
-    }
+test('cannot update password with invalid new password', function () {
+    $oldPassword = 'Sgei!2026_Test';
+    $newPassword = 'short'; // Invalid password
 
-    public function testCannotUpdatePasswordWithInvalidNewPassword(): void
-    {
-        $oldPassword = 'Sgei!2026_Test';
-        $newPassword = 'short'; // Invalid password
+    $this->user->password = bcrypt($oldPassword);
+    $this->user->save();
 
-        $this->user->password = bcrypt($oldPassword);
-        $this->user->save();
+    $response = $this->putJson('/api/v1/auth/password', [
+        'current_password' => $oldPassword,
+        'password' => $newPassword,
+        'password_confirmation' => $newPassword,
+    ]);
 
-        $response = $this->putJson('/api/v1/auth/password', [
-            'current_password' => $oldPassword,
-            'password' => $newPassword,
-            'password_confirmation' => $newPassword,
-        ]);
-
-        $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['password']);
-    }
-}
+    $response->assertStatus(422)
+             ->assertJsonValidationErrors(['password']);
+});

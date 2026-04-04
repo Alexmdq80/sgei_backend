@@ -61,9 +61,9 @@ class EscuelaService
      */
     public function requestJoin(Usuario $user, int $escuelaId, ?int $roleId = null): void
     {
-        // Si no se provee rol, buscamos el rol 'standard' en Spatie (ID 5 según histórico, pero buscamos por nombre por seguridad)
+        // Si no se provee rol, buscamos el rol 'profesor' como predeterminado (o 'responsable' según lógica de negocio)
         if (!$roleId) {
-            $roleId = \Spatie\Permission\Models\Role::where('name', 'standard')->first()?->id ?? 5;
+            $roleId = \Spatie\Permission\Models\Role::where('name', 'profesor')->where('guard_name', 'sanctum')->first()?->id;
         }
 
         EscuelaUsuario::updateOrCreate(

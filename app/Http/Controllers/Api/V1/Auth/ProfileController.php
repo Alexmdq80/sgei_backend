@@ -66,7 +66,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Perfil actualizado con éxito.',
-            'user' => $user->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])
+            'user' => $user->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.role'])
         ]);
     }
 

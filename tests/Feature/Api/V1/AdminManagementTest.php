@@ -61,6 +61,15 @@ test('el administrador puede crear un nuevo usuario mediante la API', function (
     $this->assertDatabaseHas('usuarios', ['email' => 'admin_created@sgei.local']);
 });
 
+test('el administrador puede ver el detalle de un usuario específico', function () {
+    $user = Usuario::factory()->create(['nombre' => 'User Specific Detail']);
+
+    $this->actingAs($this->admin, 'sanctum')
+         ->getJson("/api/v1/admin/usuarios/{$user->id}")
+         ->assertStatus(200)
+         ->assertJsonPath('data.nombre', 'User Specific Detail');
+});
+
 // =========================================================================
 // GESTIÓN DE SOLICITUDES DE UNIÓN (ESCUELA_USUARIO)
 // =========================================================================
@@ -114,4 +123,25 @@ test('el administrador puede rechazar una solicitud de unión escolar', function
     
     expect($user->fresh()->estado)->toBe('email_verificado');
     expect($user->fresh()->motivo_rechazo)->toBe('Documentación incompleta o errónea');
+});
+
+test('el administrador puede actualizar el rol institucional de un vínculo escuela-usuario ya aprobado', function () {
+    $roleDirector = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
+    $roleSecretario = \Spatie\Permission\Models\Role::where('name', 'secretario')->first()->id;
+    
+    $user = Usuario::factory()->create();
+    $link = EscuelaUsuario::factory()->create([
+        'usuario_id' => $user->id,
+        'role_id' => $roleDirector,
+        'verified_at' => now()
+    ]);
+
+    $this->actingAs($this->admin, 'sanctum')
+         ->putJson("/api/v1/admin/escuelas/requests/{$link->id}", [
+             'role_id' => $roleSecretario
+         ])
+         ->assertStatus(200)
+         ->assertJsonPath('message', 'Rol institucional actualizado con éxito.');
+
+    expect(EscuelaUsuario::find($link->id)->role_id)->toBe($roleSecretario);
 });

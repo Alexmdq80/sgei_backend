@@ -50,7 +50,7 @@ class LoginController extends Controller
             $data = $this->authService->login($credentials, $request);
 
             return response()->json([
-                'user' => new \App\Http\Resources\UsuarioResource($data['user']->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar'])),
+                'user' => new \App\Http\Resources\UsuarioResource($data['user']->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.role'])),
                 'token' => $data['token'],
                 'refresh_token' => $data['refresh_token']
             ], 200);
