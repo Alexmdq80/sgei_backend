@@ -74,7 +74,8 @@ class RolesAndPermissionsSeeder extends Seeder
         $secretariaPermissions = [
             'institucion.ver', 'institucion.ciclos',
             'estudiantes.ver', 'estudiantes.crear', 'estudiantes.editar', 'estudiantes.inscribir', 'estudiantes.pases', 'estudiantes.bajas',
-            'personal.ver', 'asistencia.ver', 'boletines.generar', 'familia.gestionar'
+            'personal.ver', 'asistencia.ver', 'boletines.generar', 'familia.gestionar',
+            'sistema.usuarios' // Habilitado para gestión delegada
         ];
         $secretario->givePermissionTo($secretariaPermissions);
         $prosecretario->givePermissionTo($secretariaPermissions);

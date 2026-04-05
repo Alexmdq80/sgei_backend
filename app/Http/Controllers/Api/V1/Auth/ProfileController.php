@@ -25,9 +25,10 @@ class ProfileController extends Controller
     public function me(): JsonResponse
     {
         $usuario = Auth::user();
+        $usuario->refresh(); // Forzar lectura de base de datos para obtener cambios recientes (ej: email_verified_at)
         
         return response()->json([
-            'user' => new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.rolEscolar']))
+            'user' => new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.role']))
         ]);
     }
 

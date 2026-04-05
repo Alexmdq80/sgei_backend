@@ -44,11 +44,17 @@ Route::prefix('v1')->group(function () {
 
     // Rutas de Autenticación
     Route::prefix('auth')->group(function () {
-        Route::post('/login', [LoginController::class, 'login']);
+        Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
         Route::post('/register', [RegisterController::class, 'register']);
         Route::post('/refresh', [LoginController::class, 'refresh']);
         Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:forgot-password');
-        Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('password.reset');
+        
+        // Esta ruta existe solo para que Laravel no de error al generar notificaciones (Route [password.reset] not defined)
+        Route::get('/reset-password', function () {
+            return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/reset-password?' . http_build_query(request()->all()));
+        })->name('password.reset');
+
+        Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('api.password.reset');
         
         // Verificación de Email (Pública)
         Route::get('/verify', [VerificationController::class, 'verify']);

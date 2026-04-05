@@ -28,6 +28,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // 3. TrustProxies es correcto si usas Apache como Proxy.
         $middleware->trustProxies(at: '*');
+
+        // 4. Exceptuar rutas de autenticación pública del CSRF
+        $middleware->validateCsrfTokens(except: [
+            'api/v1/auth/forgot-password',
+            'api/v1/auth/reset-password',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, Request $request) {

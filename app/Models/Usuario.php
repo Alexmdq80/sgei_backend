@@ -46,7 +46,6 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         'nombre',
         'documento_tipo_id',
         'documento_numero',
-        'es_administrador',
         'email',
         'email_verified_at',
         'email_set_at',
@@ -164,18 +163,5 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     public function refreshTokens(): HasMany
     {
         return $this->hasMany(RefreshToken::class);
-    }
-
-    /**
-     * Send the password reset notification.
-     *
-     * @param  string  $token
-     * @return void
-     */
-    public function sendPasswordResetNotification($token): void
-    {
-        $url = env('FRONTEND_URL', 'http://localhost:5173') . '/reset-password?token=' . $token . '&email=' . $this->email;
-
-        $this->notify(new \Illuminate\Auth\Notifications\ResetPassword($url));
     }
 }
