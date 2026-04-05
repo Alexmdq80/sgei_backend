@@ -85,8 +85,32 @@ class EscuelaService
      */
     public function getPendingRequests(array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
+        $user = auth()->user();
+        $isSuperUser = $user->hasRole('superuser');
+        $hierarchicalRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+
         $query = EscuelaUsuario::whereNull('verified_at')
             ->with(['usuario.persona', 'escuela', 'role']);
+
+        if ($isSuperUser) {
+            // El Super Admin ve principalmente las solicitudes de roles jerárquicos
+            // Pero permitimos ver todo si se filtra por escuela específica
+            if (empty($filters['escuela_id'])) {
+                $query->whereHas('role', function($q) use ($hierarchicalRoles) {
+                    $q->whereIn('name', $hierarchicalRoles);
+                });
+            }
+        } else {
+            // El personal jerárquico solo ve solicitudes operativas de sus escuelas vinculadas
+            $escuelasIds = $user->escuelaUsuarios()
+                ->whereNotNull('verified_at')
+                ->pluck('escuela_id');
+
+            $query->whereIn('escuela_id', $escuelasIds)
+                ->whereHas('role', function($q) use ($hierarchicalRoles) {
+                    $q->whereNotIn('name', $hierarchicalRoles);
+                });
+        }
 
         if (!empty($filters['escuela_id'])) {
             $query->where('escuela_id', $filters['escuela_id']);
@@ -109,10 +133,40 @@ class EscuelaService
     public function approveJoin(string $requestId, ?int $roleId = null): EscuelaUsuario
     {
         $request = EscuelaUsuario::findOrFail($requestId);
+        $user = auth()->user();
+        $isSuperUser = $user->hasRole('superuser');
+        $hierarchicalRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+        
+        // Determinar el rol final para validar permisos
+        $targetRoleId = $roleId ?: $request->role_id;
+        $targetRole = \Spatie\Permission\Models\Role::findOrFail($targetRoleId);
+        $isTargetHierarchical = in_array($targetRole->name, $hierarchicalRoles);
+
+        // 1. Solo superuser puede aprobar roles jerárquicos
+        if ($isTargetHierarchical && !$isSuperUser) {
+            throw new \Exception("No tienes permisos para aprobar roles jerárquicos.", 403);
+        }
+
+        // 2. Si no es superuser, debe pertenecer a la misma escuela y estar verificado
+        if (!$isSuperUser) {
+            $isLinked = $user->escuelaUsuarios()
+                ->where('escuela_id', $request->escuela_id)
+                ->whereNotNull('verified_at')
+                ->exists();
+            
+            if (!$isLinked) {
+                throw new \Exception("No perteneces a esta institución para realizar aprobaciones.", 403);
+            }
+
+            // Opcional: Verificar que tenga permiso de sistema.usuarios
+            if (!$user->hasPermissionTo('sistema.usuarios')) {
+                throw new \Exception("No tienes permisos de gestión de usuarios.", 403);
+            }
+        }
         
         $data = [
             'verified_at' => now(),
-            'updated_by' => auth()->id()
+            'updated_by' => $user->id
         ];
 
         // Si el administrador asigna un rol diferente al solicitado

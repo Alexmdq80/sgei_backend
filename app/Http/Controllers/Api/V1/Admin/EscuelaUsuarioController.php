@@ -45,10 +45,13 @@ class EscuelaUsuarioController extends Controller
                 'data' => new EscuelaUsuarioResource($updated)
             ]);
         } catch (\Exception $e) {
+            $code = $e->getCode();
+            $status = ($code >= 400 && $code < 600) ? $code : 400;
+
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => 400
-            ], 400);
+                'code' => $status
+            ], $status);
         }
     }
 
@@ -70,10 +73,13 @@ class EscuelaUsuarioController extends Controller
                 'data' => new EscuelaUsuarioResource($link->load(['usuario.persona', 'escuela', 'role']))
             ]);
         } catch (\Exception $e) {
+            $code = $e->getCode();
+            $status = ($code >= 400 && $code < 600) ? $code : 400;
+
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => 400
-            ], 400);
+                'code' => $status
+            ], $status);
         }
     }
 
@@ -93,10 +99,13 @@ class EscuelaUsuarioController extends Controller
                 'message' => 'Solicitud rechazada y eliminada.'
             ]);
         } catch (\Exception $e) {
+            $code = $e->getCode();
+            $status = ($code >= 400 && $code < 600) ? $code : 400;
+
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => 400
-            ], 400);
+                'code' => $status
+            ], $status);
         }
     }
 }
