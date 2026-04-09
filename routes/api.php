@@ -78,9 +78,25 @@ Route::prefix('v1')->group(function () {
             Route::put('/password', [ProfileController::class, 'updatePassword']);
         });
     });
+
+    // Gestión Académica (Planes de Estudio)
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::apiResource('planes', App\Http\Controllers\Api\V1\PlanController::class);
+        
+        // Gestión de Asignaturas
+        Route::get('anio-plan/{id}/asignaturas', [App\Http\Controllers\Api\V1\AsignaturaController::class, 'indexByAnioPlan']);
+        Route::apiResource('asignaturas', App\Http\Controllers\Api\V1\AsignaturaController::class)->except(['index']);
+        
+        // Catálogos relacionados (si se necesitan)
+        Route::get('/planes-ciclos', function() {
+            return response()->json(\App\Models\PlanCiclo::all());
+        });
+    });
+
     // Gestión Administrativa
     Route::middleware(['auth:sanctum', 'permission:sistema.usuarios'])->prefix('admin')->group(function () {
         Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
+        Route::post('/usuarios/{usuario}/toggle-supervisor', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleSupervisorRole']);
         
         // Gestión de Solicitudes de Unión a Escuela
         Route::get('/escuelas/pending', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'indexPending']);

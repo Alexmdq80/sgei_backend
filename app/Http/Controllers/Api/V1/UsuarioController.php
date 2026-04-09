@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\UsuarioResource;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Gate;
 
 class UsuarioController extends Controller
 {
@@ -91,6 +92,24 @@ class UsuarioController extends Controller
 
         return response()->json([
             'message' => 'Usuario eliminado con éxito.'
+        ]);
+    }
+
+    /**
+     * Toggle the Supervisor Curricular role for a user.
+     */
+    public function toggleSupervisorRole(Usuario $usuario): JsonResponse
+    {
+        Gate::authorize('sistema.roles');
+
+        $this->userService->toggleRole($usuario, 'supervisor_curricular');
+
+        $hasRole = $usuario->fresh()->hasRole('supervisor_curricular');
+        $status = $hasRole ? 'asignado' : 'revocado';
+
+        return response()->json([
+            'message' => "Rol de Supervisor Curricular {$status} con éxito.",
+            'has_role' => $hasRole
         ]);
     }
 }

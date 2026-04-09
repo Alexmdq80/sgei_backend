@@ -11,6 +11,8 @@ class PlanCiclo extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
 
+    protected $table = 'plan_ciclos';
+
     /**
      * The attributes that are mass assignable.
      *

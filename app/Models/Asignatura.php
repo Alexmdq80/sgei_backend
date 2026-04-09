@@ -6,13 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Plan extends Model
+class Asignatura extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
-
-    protected $table = 'plans';
 
     protected $auditGroup = "academic";
 
@@ -22,27 +19,19 @@ class Plan extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "plan_ciclo_id",
         "nombre",
         "nombre_completo",
-        "duracion_anios",
-        "resolucion",
-        "orientacion"
+        "anio_plan_id",
+        "horas_semanales",
+        "codigo",
+        "orden"
     ];
 
     /**
-     * Relationship to the years in this plan.
+     * Relationship to the specific plan year.
      */
-    public function anioPlanes(): HasMany
+    public function anioPlan(): BelongsTo
     {
-        return $this->hasMany(AnioPlan::class);
-    }
-
-    /**
-     * Relationship to the cycle this plan belongs to.
-     */
-    public function planCiclo(): BelongsTo
-    {
-        return $this->belongsTo(PlanCiclo::class);
+        return $this->belongsTo(AnioPlan::class);
     }
 }

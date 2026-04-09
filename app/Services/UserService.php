@@ -213,6 +213,18 @@ class UserService
     }
 
     /**
+     * Assign or revoke a role from a user.
+     */
+    public function toggleRole(Usuario $user, string $roleName): void
+    {
+        if ($user->hasRole($roleName)) {
+            $user->removeRole($roleName);
+        } else {
+            $user->assignRole($roleName);
+        }
+    }
+
+    /**
      * Delete a user (Soft Delete).
      */
     public function delete(Usuario $user): bool

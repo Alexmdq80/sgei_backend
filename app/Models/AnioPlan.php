@@ -48,6 +48,14 @@ class AnioPlan extends Model
     }
 
     /**
+     * Relationship to the asignaturas in this plan year.
+     */
+    public function asignaturas(): HasMany
+    {
+        return $this->hasMany(Asignatura::class);
+    }
+
+    /**
      * Relationship to the proposals.
      */
     public function propuestas(): HasMany
