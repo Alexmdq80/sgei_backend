@@ -28,7 +28,7 @@ class ProfileController extends Controller
         $usuario->refresh(); // Forzar lectura de base de datos para obtener cambios recientes (ej: email_verified_at)
         
         return response()->json([
-            'user' => new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.role']))
+            'user' => new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'roles', 'escuelaUsuarios.escuela', 'escuelaUsuarios.role']))
         ]);
     }
 

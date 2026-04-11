@@ -9,8 +9,12 @@ beforeEach(function () {
     Artisan::call('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
     Artisan::call('db:seed', ['--class' => 'DocumentoTipoSeeder']);
     
-    // Administrador con permiso específico de sistema.usuarios
+    // Limpiar caché de permisos de Spatie para el proceso actual
+    $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+    // Administrador con rol superuser y permiso específico
     $this->admin = Usuario::factory()->create();
+    $this->admin->assignRole('superuser');
     $this->admin->givePermissionTo('sistema.usuarios');
 
     // Usuario sin permisos administrativos

@@ -23,7 +23,8 @@ class UserService
             'persona', 
             'documentoTipo', 
             'escuelaUsuarios.escuela', 
-            'escuelaUsuarios.role'
+            'escuelaUsuarios.role',
+            'roles'
         ]);
 
         if (!empty($filters['search'])) {

@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Hash;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
+    // Limpiar caché de permisos
+    $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 });
 
 test('user can login with correct credentials', function () {
@@ -38,15 +39,13 @@ test('user can login with correct credentials', function () {
 test('user can login with document credentials', function () {
     $password = 'Sgei!2026_Test';
     $usuario = Usuario::factory()->create([
-        'documento_tipo_id' => 1, // DNI
-        'documento_numero' => '12345678',
         'password' => Hash::make($password),
         'email_verified_at' => now(),
     ]);
 
     $response = $this->postJson('/api/v1/auth/login', [
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
+        'documento_tipo_id' => $usuario->documento_tipo_id,
+        'documento_numero' => $usuario->documento_numero,
         'password' => $password,
     ]);
 
@@ -59,21 +58,19 @@ test('user can login with document credentials', function () {
             ],
             'token',
         ])
-        ->assertJsonPath('user.documento_numero', '12345678');
+        ->assertJsonPath('user.documento_numero', $usuario->documento_numero);
 });
 
 test('user cannot login with incorrect document number', function () {
     $password = 'Sgei!2026_Test';
     $usuario = Usuario::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
         'password' => Hash::make($password),
         'email_verified_at' => now(),
     ]);
 
     $response = $this->postJson('/api/v1/auth/login', [
-        'documento_tipo_id' => 1,
-        'documento_numero' => '87654321', // Wrong number
+        'documento_tipo_id' => $usuario->documento_tipo_id,
+        'documento_numero' => '87654321', // Wrong number (not the one in factory)
         'password' => $password,
     ]);
 
@@ -89,15 +86,13 @@ test('user cannot login with incorrect document number', function () {
 test('user can login with document even if email is unverified', function () {
     $password = 'Sgei!2026_Test';
     $usuario = Usuario::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
         'password' => Hash::make($password),
         'email_verified_at' => null, // Not verified
     ]);
 
     $response = $this->postJson('/api/v1/auth/login', [
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
+        'documento_tipo_id' => $usuario->documento_tipo_id,
+        'documento_numero' => $usuario->documento_numero,
         'password' => $password,
     ]);
 

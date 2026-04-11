@@ -58,7 +58,7 @@ class UsuarioController extends Controller
      */
     public function show(Usuario $usuario)
     {
-        return new UsuarioResource($usuario->load(['persona', 'documentoTipo']));
+        return new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'roles']));
     }
 
     /**

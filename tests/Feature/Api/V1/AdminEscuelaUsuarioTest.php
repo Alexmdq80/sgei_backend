@@ -12,8 +12,12 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
     $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
     
-    // Crear administrador con permisos
+    // Limpiar caché de permisos de Spatie
+    $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+    // Crear administrador con rol superuser y permisos
     $this->admin = Usuario::factory()->create();
+    $this->admin->assignRole('superuser');
     $this->admin->givePermissionTo('sistema.usuarios');
 
     // Crear usuario normal sin permisos
