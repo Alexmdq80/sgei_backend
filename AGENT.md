@@ -38,7 +38,7 @@
 ## Flujo de Trabajo (Gentleman AI Stack)
 
 - **Memoria:** Tras finalizar una tarea o decidir un cambio arquitectónico, ejecutar `mem_save` en Engram.
-- **Testing:** Priorizar el uso de Pest PHP para los tests en /backend/tests.
+- **Testing:** Sólo usar `php artisan test`. No ejecutar directamente `./vendor/bin/pest` Priorizar el uso de Pest PHP para los tests en `/backend/tests`.
 - **Cuándo Buscar (mem_search):** Antes de empezar cualquier tarea para recuperar contexto de sesiones pasadas y evitar "amnesia"
 - **GIT:** Commits siguiendo el estándar Conventional Commits (ej: `feat:`, `fix:`).
 - **Cierre:** de Sesión: Antes de terminar, el agente debe ejecutar siempre mem_session_summary para que la próxima vez sepa exactamente dónde quedó

@@ -103,5 +103,11 @@ Route::prefix('v1')->group(function () {
         Route::put('/escuelas/requests/{id}', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'update']);
         Route::post('/escuelas/requests/{id}/approve', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'approve']);
         Route::post('/escuelas/requests/{id}/reject', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'reject']);
+
+        // Gestión de CUPOF y Agentes
+        Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);
+        Route::apiResource('cupofs', App\Http\Controllers\Api\V1\CupofController::class);
+        Route::post('cupofs/{cupof}/assign', [App\Http\Controllers\Api\V1\CupofController::class, 'assign']);
+        Route::post('cupofs/{cupof}/release', [App\Http\Controllers\Api\V1\CupofController::class, 'release']);
     });
 });
