@@ -29,6 +29,9 @@ class AsignaturaPolicy
      */
     public function create(Usuario $user): bool
     {
+        if ($user->hasRole('jefe_distrital')) {
+            return false;
+        }
         return $user->can('asignaturas.gestionar');
     }
 
@@ -37,6 +40,9 @@ class AsignaturaPolicy
      */
     public function update(Usuario $user, Asignatura $asignatura): bool
     {
+        if ($user->hasRole('jefe_distrital')) {
+            return false;
+        }
         return $user->can('asignaturas.gestionar');
     }
 
@@ -45,6 +51,9 @@ class AsignaturaPolicy
      */
     public function delete(Usuario $user, Asignatura $asignatura): bool
     {
+        if ($user->hasRole('jefe_distrital')) {
+            return false;
+        }
         return $user->can('asignaturas.gestionar');
     }
 }

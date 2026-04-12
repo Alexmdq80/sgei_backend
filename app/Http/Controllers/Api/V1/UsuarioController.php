@@ -36,6 +36,12 @@ class UsuarioController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        Gate::authorize('sistema.usuarios');
+
+        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
+            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
+        }
+
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:255',
             'documento_tipo_id' => 'nullable|integer|exists:documento_tipos,id',
@@ -66,6 +72,20 @@ class UsuarioController extends Controller
      */
     public function update(Request $request, Usuario $usuario): JsonResponse
     {
+        Gate::authorize('sistema.usuarios');
+
+        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
+            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
+        }
+
+        // Impedir modificar al superusuario
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'No se puede modificar la cuenta del Superusuario desde la interfaz administrativa.',
+                'code' => 403
+            ], 403);
+        }
+
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:255',
             'documento_tipo_id' => 'nullable|integer|exists:documento_tipos,id',
@@ -83,11 +103,22 @@ class UsuarioController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified user from storage (Soft Delete).
-     */
     public function destroy(Usuario $usuario): JsonResponse
     {
+        Gate::authorize('sistema.usuarios');
+
+        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
+            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
+        }
+
+        // Impedir eliminar al superusuario
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'No se puede eliminar la cuenta del Superusuario.',
+                'code' => 403
+            ], 403);
+        }
+
         $this->userService->delete($usuario);
 
         return response()->json([
@@ -102,6 +133,18 @@ class UsuarioController extends Controller
     {
         Gate::authorize('sistema.roles');
 
+        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
+            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
+        }
+
+        // Prevent assigning the supervisor_curricular role to superusers
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'No se puede asignar el rol de Supervisor Curricular a un Superusuario.',
+                'code' => 403
+            ], 403);
+        }
+
         $this->userService->toggleRole($usuario, 'supervisor_curricular');
 
         $hasRole = $usuario->fresh()->hasRole('supervisor_curricular');
@@ -109,6 +152,36 @@ class UsuarioController extends Controller
 
         return response()->json([
             'message' => "Rol de Supervisor Curricular {$status} con éxito.",
+            'has_role' => $hasRole
+        ]);
+    }
+
+    /**
+     * Toggle the Jefe Distrital role for a user.
+     */
+    public function toggleJefeDistritalRole(Usuario $usuario): JsonResponse
+    {
+        Gate::authorize('sistema.roles');
+
+        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
+            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
+        }
+
+        // Prevent assigning to superusers
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'No se puede asignar el rol de Jefe Distrital a un Superusuario.',
+                'code' => 403
+            ], 403);
+        }
+
+        $this->userService->toggleRole($usuario, 'jefe_distrital');
+
+        $hasRole = $usuario->fresh()->hasRole('jefe_distrital');
+        $status = $hasRole ? 'asignado' : 'revocado';
+
+        return response()->json([
+            'message' => "Rol de Jefe Distrital {$status} con éxito.",
             'has_role' => $hasRole
         ]);
     }

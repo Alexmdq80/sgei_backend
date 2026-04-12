@@ -101,5 +101,29 @@ class RolesAndPermissionsSeeder extends Seeder
         // 7. Responsable (Padre/Madre/Tutor)
         $responsable = Role::firstOrCreate(['name' => 'responsable', 'guard_name' => 'sanctum']);
         $responsable->givePermissionTo(['institucion.ver', 'estudiantes.ver', 'notas.ver', 'asistencia.ver']);
+
+        // 8. Jefe Distrital (Regional Admin)
+        $jefeDistrital = Role::firstOrCreate(['name' => 'jefe_distrital', 'guard_name' => 'sanctum']);
+        $jefeDistrital->givePermissionTo([
+            'institucion.ver',
+            'personal.ver',
+            'planes.ver',
+            'sistema.usuarios',
+            'sistema.roles'
+        ]);
+
+        // 9. Supervisor Curricular (Academic Focus)
+        $supervisor = Role::firstOrCreate(['name' => 'supervisor_curricular', 'guard_name' => 'sanctum']);
+        $supervisor->givePermissionTo([
+            'institucion.ver',
+            'personal.ver',
+            'planes.ver',
+            'planes.crear',
+            'planes.editar',
+            'planes.eliminar',
+            'asignaturas.ver',
+            'asignaturas.gestionar',
+            'sistema.usuarios' // Solo lectura (protegido por controlador)
+        ]);
     }
 }

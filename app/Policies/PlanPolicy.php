@@ -29,7 +29,10 @@ class PlanPolicy
      */
     public function create(Usuario $user): bool
     {
-        return $user->can('planes.gestionar');
+        if ($user->hasRole('jefe_distrital')) {
+            return false;
+        }
+        return $user->hasPermissionTo('planes.crear');
     }
 
     /**
@@ -37,7 +40,10 @@ class PlanPolicy
      */
     public function update(Usuario $user, Plan $plan): bool
     {
-        return $user->can('planes.gestionar');
+        if ($user->hasRole('jefe_distrital')) {
+            return false;
+        }
+        return $user->hasPermissionTo('planes.editar');
     }
 
     /**
@@ -45,6 +51,10 @@ class PlanPolicy
      */
     public function delete(Usuario $user, Plan $plan): bool
     {
-        return $user->can('planes.gestionar');
+        if ($user->hasRole('jefe_distrital')) {
+            return false;
+        }
+        return $user->hasPermissionTo('planes.eliminar');
     }
+
 }

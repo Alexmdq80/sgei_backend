@@ -64,23 +64,26 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [LoginController::class, 'logout']);
             Route::get('/me', [ProfileController::class, 'me']);
 
-            // Selección de Escuela (Post-Registro)
-            Route::post('/escuelas/join', [EscuelaController::class, 'requestJoin']);
-            Route::post('/escuelas/cancel-join', [EscuelaController::class, 'cancelJoin']);
-
-            // Reenvío de Verificación
+            // Reenvío de Verificación (Permitido sin verificar email obviamente)
             Route::post('/verify/resend', [VerificationController::class, 'resend'])->middleware('throttle:resend-verification');
-            
-            // Perfil de Usuario
-            Route::put('/profile', [ProfileController::class, 'update']);
-            Route::post('/avatar', [ProfileController::class, 'updateAvatar']);
-            Route::delete('/avatar', [ProfileController::class, 'deleteAvatar']);
-            Route::put('/password', [ProfileController::class, 'updatePassword']);
+
+            // --- RUTAS QUE REQUIEREN VERIFICACIÓN ---
+            Route::middleware('verified')->group(function () {
+                // Selección de Escuela (Post-Registro)
+                Route::post('/escuelas/join', [EscuelaController::class, 'requestJoin']);
+                Route::post('/escuelas/cancel-join', [EscuelaController::class, 'cancelJoin']);
+                
+                // Perfil de Usuario
+                Route::put('/profile', [ProfileController::class, 'update']);
+                Route::post('/avatar', [ProfileController::class, 'updateAvatar']);
+                Route::delete('/avatar', [ProfileController::class, 'deleteAvatar']);
+                Route::put('/password', [ProfileController::class, 'updatePassword']);
+            });
         });
     });
 
     // Gestión Académica (Planes de Estudio)
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::apiResource('planes', App\Http\Controllers\Api\V1\PlanController::class);
         
         // Gestión de Asignaturas
@@ -94,9 +97,10 @@ Route::prefix('v1')->group(function () {
     });
 
     // Gestión Administrativa
-    Route::middleware(['auth:sanctum', 'permission:sistema.usuarios'])->prefix('admin')->group(function () {
+    Route::middleware(['auth:sanctum', 'verified', 'permission:sistema.usuarios'])->prefix('admin')->group(function () {
         Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
         Route::post('/usuarios/{usuario}/toggle-supervisor', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleSupervisorRole']);
+        Route::post('/usuarios/{usuario}/toggle-jefe-distrital', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleJefeDistritalRole']);
         
         // Gestión de Solicitudes de Unión a Escuela
         Route::get('/escuelas/pending', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'indexPending']);

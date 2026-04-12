@@ -87,19 +87,23 @@ class EscuelaService
     {
         $user = auth()->user();
         $isSuperUser = $user->hasRole('superuser');
+        $isJefeDistrital = $user->hasRole('jefe_distrital');
         $hierarchicalRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
         $query = EscuelaUsuario::whereNull('verified_at')
             ->with(['usuario.persona', 'escuela', 'role']);
 
-        if ($isSuperUser) {
-            // El Super Admin ve principalmente las solicitudes de roles jerárquicos
-            // Pero permitimos ver todo si se filtra por escuela específica
+        if ($isJefeDistrital) {
+            // El Jefe Distrital ve las solicitudes de roles jerárquicos de forma global
             if (empty($filters['escuela_id'])) {
                 $query->whereHas('role', function($q) use ($hierarchicalRoles) {
                     $q->whereIn('name', $hierarchicalRoles);
                 });
             }
+        } elseif ($isSuperUser) {
+            // El Superusuario no gestiona solicitudes de unión (rol técnico)
+            // Forzamos un resultado vacío si no hay filtros específicos de escuela
+            $query->whereRaw('1 = 0');
         } else {
             // El personal jerárquico solo ve solicitudes operativas de sus escuelas vinculadas
             $escuelasIds = $user->escuelaUsuarios()
@@ -135,6 +139,7 @@ class EscuelaService
         $request = EscuelaUsuario::findOrFail($requestId);
         $user = auth()->user();
         $isSuperUser = $user->hasRole('superuser');
+        $isJefeDistrital = $user->hasRole('jefe_distrital');
         $hierarchicalRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
         
         // Determinar el rol final para validar permisos
@@ -142,13 +147,13 @@ class EscuelaService
         $targetRole = \Spatie\Permission\Models\Role::findOrFail($targetRoleId);
         $isTargetHierarchical = in_array($targetRole->name, $hierarchicalRoles);
 
-        // 1. Solo superuser puede aprobar roles jerárquicos
-        if ($isTargetHierarchical && !$isSuperUser) {
+        // 1. Solo superuser o jefe distrital puede aprobar roles jerárquicos
+        if ($isTargetHierarchical && !($isSuperUser || $isJefeDistrital)) {
             throw new \Exception("No tienes permisos para aprobar roles jerárquicos.", 403);
         }
 
-        // 2. Si no es superuser, debe pertenecer a la misma escuela y estar verificado
-        if (!$isSuperUser) {
+        // 2. Si no es superuser ni jefe distrital, debe pertenecer a la misma escuela
+        if (!$isSuperUser && !$isJefeDistrital) {
             $isLinked = $user->escuelaUsuarios()
                 ->where('escuela_id', $request->escuela_id)
                 ->whereNotNull('verified_at')
