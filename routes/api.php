@@ -100,8 +100,9 @@ Route::prefix('v1')->group(function () {
         
         // Gestión de Vinculaciones Escolares
         Route::apiResource('escuela-usuarios', App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class);
-        Route::get('personas', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'index']);
-        Route::get('personas/{persona}', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'show']);
+        Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class)->only(['index', 'show', 'store']);
+        Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);
+        Route::post('personas/{persona}/unlink-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'unlinkUser']);
 
         // Gestión de CUPOF y Agentes
         Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);

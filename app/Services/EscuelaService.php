@@ -59,23 +59,30 @@ class EscuelaService
     }
 
     /**
-     * Direct assign a role to a user in a school (verified).
-     * This method is now intended for administrative overrides or CUPOF syncing.
+     * Valida si el usuario autenticado tiene permisos para asignar un rol específico en una escuela.
      */
-    public function assignDirect(Usuario $targetUser, int $escuelaId, int $roleId): EscuelaUsuario
+    public function validateAssignmentPermissions(int $escuelaId, int $roleId): void
     {
         $admin = auth()->user();
+        if (!$admin) {
+            throw new \Exception("Usuario no autenticado", 401);
+        }
+
         $isSuperUser = $admin->hasRole('superuser');
         $isJefeDistrital = $admin->hasRole('jefe_distrital');
         $role = \Spatie\Permission\Models\Role::findOrFail($roleId);
         $isTargetHierarchical = in_array($role->name, self::HIERARCHICAL_ROLES);
 
-        // Validaciones de Seguridad (Reglas del Negocio Actualizadas)
-        
-        // 1. Jefe Distrital puede asignar roles jerárquicos globalmente.
-        // 2. Personal Jerárquico puede asignar roles jerárquicos y operativos EN SU ESCUELA.
-        
-        if (!$isSuperUser && !$isJefeDistrital) {
+        if ($isSuperUser) {
+            return;
+        }
+
+        if (!$isJefeDistrital) {
+            // Personal Jerárquico Local
+            if ($isTargetHierarchical) {
+                 throw new \Exception("No tienes permisos para asignar roles jerárquicos.", 403);
+            }
+
             // Verificar si el admin tiene rol jerárquico en la escuela destino
             $isAdminHierarchicalInSchool = EscuelaUsuario::where('usuario_id', $admin->id)
                 ->where('escuela_id', $escuelaId)
@@ -88,14 +95,21 @@ class EscuelaService
             if (!$isAdminHierarchicalInSchool) {
                 throw new \Exception("No tienes autoridad (rol jerárquico) en esta institución para realizar asignaciones.", 403);
             }
+        } else {
+            // Jefe Distrital: Solo puede asignar roles jerárquicos
+            if (!$isTargetHierarchical) {
+                throw new \Exception("Los puestos operativos solo pueden ser asignados por personal jerárquico de la institución.", 403);
+            }
         }
+    }
 
-        // Si es Jefe Distrital pero el rol NO es jerárquico, él también puede (es un administrador regional)
-        // Pero tu instrucción dice: "el resto de los puestos serán definidos sólo por personal jerárquico de la institución".
-        // Ajustamos: Si NO es jerárquico, SOLO personal de la institución puede.
-        if (!$isSuperUser && $isJefeDistrital && !$isTargetHierarchical) {
-             throw new \Exception("Los puestos operativos solo pueden ser asignados por personal jerárquico de la institución.", 403);
-        }
+    /**
+     * Direct assign a role to a user in a school (verified).
+     * This method is now intended for administrative overrides or CUPOF syncing.
+     */
+    public function assignDirect(Usuario $targetUser, int $escuelaId, int $roleId): EscuelaUsuario
+    {
+        $this->validateAssignmentPermissions($escuelaId, $roleId);
 
         $link = EscuelaUsuario::updateOrCreate(
             [
@@ -105,7 +119,7 @@ class EscuelaService
             ],
             [
                 'verified_at' => now(),
-                'updated_by' => $admin->id
+                'updated_by' => auth()->id()
             ]
         );
 

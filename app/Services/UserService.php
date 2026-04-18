@@ -91,7 +91,7 @@ class UserService
 
     /**
      * Link the user to a persona if identification matches and email is verified.
-     * Requires triple match: documento_tipo_id, documento_numero, and email in Contacto.
+     * Requires match: documento_tipo_id and documento_numero.
      */
     public function linkToPersona(Usuario $user): void
     {
@@ -103,12 +103,9 @@ class UserService
             return;
         }
 
-        // Search for a persona with matching documents and email in their Contacto record
+        // Search for a persona with matching documents
         $persona = Persona::where('documento_tipo_id', $user->documento_tipo_id)
                           ->where('documento_numero', $user->documento_numero)
-                          ->whereHas('contacto', function ($query) use ($user) {
-                              $query->where('email', strtolower(trim($user->email)));
-                          })
                           ->whereNull('usuario_id') // Only link if not already linked
                           ->first();
 
@@ -118,8 +115,8 @@ class UserService
     }
 
     /**
-     * Link a persona to an existing user if a triple match is found.
-     * Useful when creating or updating a persona's contact information.
+     * Link a persona to an existing user if a match is found.
+     * Useful when creating or updating a persona.
      */
     public function linkPersonaToUser(Persona $persona): void
     {
@@ -131,17 +128,9 @@ class UserService
             return;
         }
 
-        // Get the email from the persona's contact record
-        $email = $persona->contacto?->email;
-
-        if (!$email) {
-            return;
-        }
-
-        // Search for a user with matching documents and email
+        // Search for a user with matching documents
         $user = Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
                        ->where('documento_numero', $persona->documento_numero)
-                       ->where('email', strtolower(trim($email)))
                        ->whereNotNull('email_verified_at') // Only link to verified users
                        ->first();
 

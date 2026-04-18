@@ -77,8 +77,14 @@ class EscuelaUsuarioController extends Controller
         try {
             $link = \App\Models\EscuelaUsuario::findOrFail($id);
             
-            // Re-usar lógica de validación de EscuelaService
-            $this->escuelaService->assignDirect($link->usuario, $link->escuela_id, $request->role_id);
+            // Validar permisos usando el nuevo método del servicio
+            $this->escuelaService->validateAssignmentPermissions($link->escuela_id, $request->role_id);
+
+            // Actualizar el rol del registro específico
+            $link->update([
+                'role_id' => $request->role_id,
+                'updated_by' => auth()->id()
+            ]);
 
             return response()->json([
                 'message' => 'Rol institucional actualizado con éxito.',
