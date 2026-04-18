@@ -75,61 +75,21 @@ test('el administrador puede ver el detalle de un usuario específico', function
 });
 
 // =========================================================================
-// GESTIÓN DE SOLICITUDES DE UNIÓN (ESCUELA_USUARIO)
+// GESTIÓN DE VÍNCULOS (ESCUELA_USUARIO)
 // =========================================================================
-test('el administrador puede listar solicitudes de unión pendientes', function () {
+
+test('el administrador puede listar todos los vínculos institucionales', function () {
     $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    EscuelaUsuario::factory()->count(3)->create(['verified_at' => null, 'role_id' => $roleId]);
-    EscuelaUsuario::factory()->count(2)->create(['verified_at' => now(), 'role_id' => $roleId]);
+    EscuelaUsuario::factory()->count(5)->create(['verified_at' => now(), 'role_id' => $roleId]);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-        ->getJson('/api/v1/admin/escuelas/pending');
+        ->getJson('/api/v1/admin/escuela-usuarios');
 
     $response->assertStatus(200)
-        ->assertJsonCount(3, 'data');
+        ->assertJsonCount(5, 'data');
 });
 
-test('el administrador puede aprobar una solicitud de unión escolar', function () {
-    $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    $user = Usuario::factory()->create(['estado' => 'espera_aprobacion']);
-    $request = EscuelaUsuario::factory()->create([
-        'usuario_id' => $user->id,
-        'role_id' => $roleId,
-        'verified_at' => null
-    ]);
-
-    $this->actingAs($this->admin, 'sanctum')
-         ->postJson("/api/v1/admin/escuelas/requests/{$request->id}/approve")
-         ->assertStatus(200)
-         ->assertJsonPath('message', 'Solicitud aprobada con éxito.');
-
-    expect(EscuelaUsuario::find($request->id)->verified_at)->not->toBeNull();
-    expect($user->fresh()->estado)->toBe('activo');
-});
-
-test('el administrador puede rechazar una solicitud de unión escolar', function () {
-    $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    $user = Usuario::factory()->create(['estado' => 'espera_aprobacion']);
-    $request = EscuelaUsuario::factory()->create([
-        'usuario_id' => $user->id,
-        'role_id' => $roleId,
-        'verified_at' => null
-    ]);
-
-    $this->actingAs($this->admin, 'sanctum')
-         ->postJson("/api/v1/admin/escuelas/requests/{$request->id}/reject", [
-             'motivo' => 'Documentación incompleta o errónea'
-         ])
-         ->assertStatus(200)
-         ->assertJsonPath('message', 'Solicitud rechazada y eliminada.');
-
-    $this->assertSoftDeleted('escuela_usuario', ['id' => $request->id]);
-    
-    expect($user->fresh()->estado)->toBe('email_verificado');
-    expect($user->fresh()->motivo_rechazo)->toBe('Documentación incompleta o errónea');
-});
-
-test('el administrador puede actualizar el rol institucional de un vínculo escuela-usuario ya aprobado', function () {
+test('el administrador puede actualizar el rol institucional de un vínculo escuela-usuario', function () {
     $roleDirector = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
     $roleSecretario = \Spatie\Permission\Models\Role::where('name', 'secretario')->first()->id;
     
@@ -141,7 +101,7 @@ test('el administrador puede actualizar el rol institucional de un vínculo escu
     ]);
 
     $this->actingAs($this->admin, 'sanctum')
-         ->putJson("/api/v1/admin/escuelas/requests/{$link->id}", [
+         ->putJson("/api/v1/admin/escuela-usuarios/{$link->id}", [
              'role_id' => $roleSecretario
          ])
          ->assertStatus(200)

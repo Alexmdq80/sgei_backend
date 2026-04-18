@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Services\EscuelaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 
 class EscuelaController extends Controller
 {
@@ -53,41 +52,5 @@ class EscuelaController extends Controller
     {
         $sectores = \App\Models\Sector::where('vigente', true)->orderBy('orden')->get(['id', 'nombre']);
         return response()->json($sectores);
-    }
-
-    /**
-     * Request to join a school.
-     */
-    public function requestJoin(Request $request): JsonResponse
-    {
-        $request->validate([
-            'escuela_id' => 'required|integer|exists:escuelas,id',
-            'role_id' => 'nullable|integer|exists:roles,id'
-        ]);
-
-        $user = Auth::user();
-        $roleId = $request->input('role_id');
-
-        $this->escuelaService->requestJoin($user, $request->escuela_id, $roleId);
-
-
-        return response()->json([
-            'message' => 'Solicitud enviada con éxito. Espere la aprobación del administrador.',
-            'user' => new \App\Http\Resources\UsuarioResource($user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.role']))
-        ]);
-    }
-
-    /**
-     * Cancel join request.
-     */
-    public function cancelJoin(Request $request): JsonResponse
-    {
-        $user = Auth::user();
-        $this->escuelaService->cancelJoin($user, $request->input('escuela_id'));
-
-        return response()->json([
-            'message' => 'Solicitud cancelada.',
-            'user' => new \App\Http\Resources\UsuarioResource($user->fresh()->load(['escuelaUsuarios.escuela', 'escuelaUsuarios.role']))
-        ]);
     }
 }

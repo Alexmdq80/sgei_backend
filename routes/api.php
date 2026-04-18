@@ -69,10 +69,6 @@ Route::prefix('v1')->group(function () {
 
             // --- RUTAS QUE REQUIEREN VERIFICACIÓN ---
             Route::middleware('verified')->group(function () {
-                // Selección de Escuela (Post-Registro)
-                Route::post('/escuelas/join', [EscuelaController::class, 'requestJoin']);
-                Route::post('/escuelas/cancel-join', [EscuelaController::class, 'cancelJoin']);
-                
                 // Perfil de Usuario
                 Route::put('/profile', [ProfileController::class, 'update']);
                 Route::post('/avatar', [ProfileController::class, 'updateAvatar']);
@@ -102,11 +98,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/usuarios/{usuario}/toggle-supervisor', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleSupervisorRole']);
         Route::post('/usuarios/{usuario}/toggle-jefe-distrital', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleJefeDistritalRole']);
         
-        // Gestión de Solicitudes de Unión a Escuela
-        Route::get('/escuelas/pending', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'indexPending']);
-        Route::put('/escuelas/requests/{id}', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'update']);
-        Route::post('/escuelas/requests/{id}/approve', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'approve']);
-        Route::post('/escuelas/requests/{id}/reject', [App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class, 'reject']);
+        // Gestión de Vinculaciones Escolares
+        Route::apiResource('escuela-usuarios', App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class);
+        Route::get('personas', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'index']);
+        Route::get('personas/{persona}', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'show']);
 
         // Gestión de CUPOF y Agentes
         Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);

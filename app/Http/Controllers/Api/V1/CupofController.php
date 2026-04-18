@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Agente;
+use App\Models\Persona;
 use App\Models\Cupof;
 use App\Services\CupofService;
 use Illuminate\Http\Request;
@@ -43,22 +43,22 @@ class CupofController extends Controller
     }
 
     /**
-     * Assign an agent to a CUPOF.
+     * Assign a persona to a CUPOF.
      */
     public function assign(Request $request, Cupof $cupof): JsonResponse
     {
         $validated = $request->validate([
-            'agente_id' => 'required|exists:agentes,id',
+            'persona_id' => 'required|exists:personas,id',
             'situacion_revista' => 'required|in:titular,provisional,suplente',
             'fecha_inicio' => 'required|date',
             'resolucion' => 'nullable|string'
         ]);
 
-        $agente = Agente::findOrFail($validated['agente_id']);
-        $movimiento = $this->cupofService->assignAgente($cupof, $agente, $validated);
+        $persona = Persona::findOrFail($validated['persona_id']);
+        $movimiento = $this->cupofService->assignPersona($cupof, $persona, $validated);
 
         return response()->json([
-            'message' => 'Agente asignado exitosamente',
+            'message' => 'Persona asignada exitosamente al CUPOF',
             'movimiento' => $movimiento
         ]);
     }

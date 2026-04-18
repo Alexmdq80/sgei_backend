@@ -180,6 +180,22 @@ class Persona extends Model
     }
 
     /**
+     * Relationship to CUPOF movements (occupancy of job slots).
+     */
+    public function movimientosCupof(): HasMany
+    {
+        return $this->hasMany(CupofMovimiento::class);
+    }
+
+    /**
+     * Relationship to active CUPOF movements.
+     */
+    public function movimientosCupofActivos(): HasMany
+    {
+        return $this->hasMany(CupofMovimiento::class)->where('activo', true);
+    }
+
+    /**
      * Relationship to other people as a student.
      */
     public function vinculosComoEstudiante(): BelongsToMany

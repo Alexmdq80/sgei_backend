@@ -17,7 +17,7 @@ class CupofMovimiento extends Model
 
     protected $fillable = [
         'cupof_id',
-        'agente_id',
+        'persona_id',
         'situacion_revista',
         'fecha_inicio',
         'fecha_fin',
@@ -40,10 +40,10 @@ class CupofMovimiento extends Model
     }
 
     /**
-     * Relationship to the agent.
+     * Relationship to the persona (identity).
      */
-    public function agente(): BelongsTo
+    public function persona(): BelongsTo
     {
-        return $this->belongsTo(Agente::class);
+        return $this->belongsTo(Persona::class);
     }
 }

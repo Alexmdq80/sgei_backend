@@ -32,20 +32,4 @@ class Agente extends Model
     {
         return $this->belongsTo(Persona::class);
     }
-
-    /**
-     * Relationship to movements/assignments.
-     */
-    public function movimientos(): HasMany
-    {
-        return $this->hasMany(CupofMovimiento::class);
-    }
-
-    /**
-     * Relationship to currently active movements.
-     */
-    public function movimientosActivos(): HasMany
-    {
-        return $this->hasMany(CupofMovimiento::class)->where('activo', true);
-    }
 }

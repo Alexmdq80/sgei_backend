@@ -54,8 +54,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         'verification_token',
         'verification_token_created_at',
         'avatar_path',
-        'estado',
-        'motivo_rechazo'
+        'estado'
     ];
 
     /**

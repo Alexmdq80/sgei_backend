@@ -33,6 +33,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'notas.ver', 'notas.cargar', 'notas.cerrar',
             'asistencia.ver', 'asistencia.cargar', 'asistencia.justificar',
             'boletines.generar',
+            'planes.ver', 'planes.crear', 'planes.editar', 'planes.eliminar',
+            'asignaturas.ver', 'asignaturas.gestionar',
             
             // Familia y Vínculos
             'familia.gestionar', 'familia.notificar',

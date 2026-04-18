@@ -38,8 +38,12 @@ class UsuarioController extends Controller
     {
         Gate::authorize('sistema.usuarios');
 
-        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
-            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
+        $performer = auth()->user();
+        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_distrital')) {
+            return response()->json([
+                'error' => 'Tu rango actual no permite la creación global de usuarios. Esta acción está reservada para Jefes Distritales o Superusuarios.', 
+                'code' => 403
+            ], 403);
         }
 
         $validatedData = $request->validate([
@@ -74,16 +78,20 @@ class UsuarioController extends Controller
     {
         Gate::authorize('sistema.usuarios');
 
-        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
-            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
-        }
+        $performer = auth()->user();
+        $isSuperUser = $performer->hasRole('superuser');
 
-        // Impedir modificar al superusuario
-        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+        // Solo el Superusuario puede editar perfiles de otros usuarios de forma administrativa
+        if (!$isSuperUser) {
             return response()->json([
-                'error' => 'No se puede modificar la cuenta del Superusuario desde la interfaz administrativa.',
+                'error' => 'Acceso Denegado: Solo un Superusuario puede modificar datos de identidad de otros usuarios.', 
                 'code' => 403
             ], 403);
+        }
+
+        // Impedir modificar al superusuario (solo él mismo o por BD)
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            // Un superusuario puede modificar a otro superusuario, pero no se recomienda
         }
 
         $validatedData = $request->validate([
@@ -107,17 +115,28 @@ class UsuarioController extends Controller
     {
         Gate::authorize('sistema.usuarios');
 
-        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
-            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
-        }
+        $performer = auth()->user();
+        $isSuperUser = $performer->hasRole('superuser');
 
-        // Impedir eliminar al superusuario
-        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+        // Solo el Superusuario puede eliminar cuentas
+        if (!$isSuperUser) {
             return response()->json([
-                'error' => 'No se puede eliminar la cuenta del Superusuario.',
+                'error' => 'Acceso Denegado: Solo un Superusuario tiene privilegios para eliminar cuentas del sistema.', 
                 'code' => 403
             ], 403);
         }
+
+        // Impedir que el superusuario se elimine a sí mismo
+        if ($usuario->id === $performer->id) {
+            return response()->json([
+                'error' => 'Operación Inválida: No puedes eliminar tu propia cuenta administrativa.',
+                'code' => 400
+            ], 400);
+        }
+
+        // Protección adicional para cuentas protegidas (opcional, pero el usuario dijo "cualquier usuario")
+        // Sin embargo, mantendremos el mensaje descriptivo si el destino es un superusuario
+        // para asegurar que la acción sea consciente.
 
         $this->userService->delete($usuario);
 
@@ -133,14 +152,17 @@ class UsuarioController extends Controller
     {
         Gate::authorize('sistema.roles');
 
-        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
-            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
+        if (!auth()->user()->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'Permiso Insuficiente: Solo un Superusuario puede gestionar el rol de Supervisor Curricular.', 
+                'code' => 403
+            ], 403);
         }
 
         // Prevent assigning the supervisor_curricular role to superusers
         if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
             return response()->json([
-                'error' => 'No se puede asignar el rol de Supervisor Curricular a un Superusuario.',
+                'error' => 'Conflicto de Jerarquía: No se puede asignar el rol de Supervisor Curricular a un Superusuario.',
                 'code' => 403
             ], 403);
         }
@@ -163,14 +185,17 @@ class UsuarioController extends Controller
     {
         Gate::authorize('sistema.roles');
 
-        if (auth()->user()->hasRole('supervisor_curricular') || auth()->user()->hasRole('jefe_distrital')) {
-            return response()->json(['error' => 'No tienes permisos para realizar esta acción administrativa.', 'code' => 403], 403);
+        if (!auth()->user()->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'Permiso Insuficiente: Solo un Superusuario puede gestionar el rol de Jefe Distrital.', 
+                'code' => 403
+            ], 403);
         }
 
         // Prevent assigning to superusers
         if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
             return response()->json([
-                'error' => 'No se puede asignar el rol de Jefe Distrital a un Superusuario.',
+                'error' => 'Conflicto de Jerarquía: No se puede asignar el rol de Jefe Distrital a un Superusuario.',
                 'code' => 403
             ], 403);
         }

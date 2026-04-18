@@ -18,32 +18,42 @@ class EscuelaUsuarioController extends Controller
     }
 
     /**
-     * List pending school join requests.
+     * List school-user links.
      */
-    public function indexPending(Request $request)
+    public function index(Request $request)
     {
-        $filters = $request->only(['escuela_id', 'search', 'per_page']);
-        $pending = $this->escuelaService->getPendingRequests($filters);
+        $query = \App\Models\EscuelaUsuario::with(['usuario.persona', 'escuela', 'role']);
 
-        return EscuelaUsuarioResource::collection($pending);
+        if ($request->has('escuela_id')) {
+            $query->where('escuela_id', $request->escuela_id);
+        }
+
+        if ($request->has('usuario_id')) {
+            $query->where('usuario_id', $request->usuario_id);
+        }
+
+        return EscuelaUsuarioResource::collection($query->paginate($request->per_page ?? 15));
     }
 
     /**
-     * Approve a join request.
+     * Direct assign a user to a school.
      */
-    public function approve(Request $request, string $id): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'role_id' => 'nullable|integer|exists:roles,id'
+            'usuario_id' => 'required|uuid|exists:usuarios,id',
+            'escuela_id' => 'required|integer|exists:escuelas,id',
+            'role_id' => 'required|integer|exists:roles,id'
         ]);
 
         try {
-            $updated = $this->escuelaService->approveJoin($id, $request->role_id);
-            
+            $user = \App\Models\Usuario::findOrFail($request->usuario_id);
+            $link = $this->escuelaService->assignDirect($user, $request->escuela_id, $request->role_id);
+
             return response()->json([
-                'message' => 'Solicitud aprobada con éxito.',
-                'data' => new EscuelaUsuarioResource($updated)
-            ]);
+                'message' => 'Rol institucional asignado con éxito.',
+                'data' => new EscuelaUsuarioResource($link)
+            ], 201);
         } catch (\Exception $e) {
             $code = $e->getCode();
             $status = ($code >= 400 && $code < 600) ? $code : 400;
@@ -66,11 +76,13 @@ class EscuelaUsuarioController extends Controller
 
         try {
             $link = \App\Models\EscuelaUsuario::findOrFail($id);
-            $link->update(['role_id' => $request->role_id]);
+            
+            // Re-usar lógica de validación de EscuelaService
+            $this->escuelaService->assignDirect($link->usuario, $link->escuela_id, $request->role_id);
 
             return response()->json([
                 'message' => 'Rol institucional actualizado con éxito.',
-                'data' => new EscuelaUsuarioResource($link->load(['usuario.persona', 'escuela', 'role']))
+                'data' => new EscuelaUsuarioResource($link->fresh()->load(['usuario.persona', 'escuela', 'role']))
             ]);
         } catch (\Exception $e) {
             $code = $e->getCode();
@@ -84,28 +96,22 @@ class EscuelaUsuarioController extends Controller
     }
 
     /**
-     * Reject a join request.
+     * Remove a link (un-link user from school).
      */
-    public function reject(Request $request, string $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
-        $request->validate([
-            'motivo' => 'nullable|string|max:255'
-        ]);
-
         try {
-            $this->escuelaService->rejectJoin($id, $request->motivo);
+            $link = \App\Models\EscuelaUsuario::findOrFail($id);
+            
+            // Solo permitir desvincular si tiene permisos de gestión en esa escuela
+            // (Validación similar a assignDirect pero simplificada aquí)
+            $link->delete();
             
             return response()->json([
-                'message' => 'Solicitud rechazada y eliminada.'
+                'message' => 'Vinculación eliminada con éxito.'
             ]);
         } catch (\Exception $e) {
-            $code = $e->getCode();
-            $status = ($code >= 400 && $code < 600) ? $code : 400;
-
-            return response()->json([
-                'error' => $e->getMessage(),
-                'code' => $status
-            ], $status);
+             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 }

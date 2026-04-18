@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Agente;
+use App\Models\Persona;
 use App\Models\Cupof;
 use App\Models\CupofMovimiento;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ class CupofService
      */
     public function getAllCupofs(array $filters = []): Collection
     {
-        $query = Cupof::with(['escuela', 'asignatura', 'movimientoActivo.agente.persona']);
+        $query = Cupof::with(['escuela', 'asignatura', 'movimientoActivo.persona']);
 
         if (isset($filters['escuela_id'])) {
             $query->where('escuela_id', $filters['escuela_id']);
@@ -49,18 +49,18 @@ class CupofService
     }
 
     /**
-     * Assign an agent to a CUPOF slot.
+     * Assign a persona to a CUPOF slot.
      */
-    public function assignAgente(Cupof $cupof, Agente $agente, array $details): CupofMovimiento
+    public function assignPersona(Cupof $cupof, Persona $persona, array $details): CupofMovimiento
     {
-        return DB::transaction(function () use ($cupof, $agente, $details) {
+        return DB::transaction(function () use ($cupof, $persona, $details) {
             // 1. Deactivate any current active movement just in case
             $cupof->movimientos()->where('activo', true)->update(['activo' => false, 'fecha_fin' => now()]);
 
             // 2. Create the new movement
             $movimiento = CupofMovimiento::create([
                 'cupof_id' => $cupof->id,
-                'agente_id' => $agente->id,
+                'persona_id' => $persona->id,
                 'situacion_revista' => $details['situacion_revista'],
                 'fecha_inicio' => $details['fecha_inicio'] ?? now(),
                 'resolucion' => $details['resolucion'] ?? null,
@@ -71,7 +71,7 @@ class CupofService
             $cupof->update(['estado_cupof' => 'ocupado']);
 
             // 4. Sync School-User Link and Role
-            $this->syncEscuelaUsuario($cupof, $agente);
+            $this->syncEscuelaUsuario($cupof, $persona);
 
             return $movimiento;
         });
@@ -82,9 +82,9 @@ class CupofService
      */
     public function releaseCupof(Cupof $cupof, ?string $motivoBaja = null): bool
     {
-        $agente = $cupof->movimientoActivo?->agente;
+        $persona = $cupof->movimientoActivo?->persona;
 
-        return DB::transaction(function () use ($cupof, $motivoBaja, $agente) {
+        return DB::transaction(function () use ($cupof, $motivoBaja, $persona) {
             // 1. Deactivate current occupant
             $cupof->movimientos()->where('activo', true)->update([
                 'activo' => false, 
@@ -98,9 +98,9 @@ class CupofService
                 'motivo_baja' => $motivoBaja
             ]);
 
-            // 3. Sync/Revoke School-User Link if agent exists
-            if ($agente) {
-                $this->syncEscuelaUsuario($cupof, $agente, true);
+            // 3. Sync/Revoke School-User Link if persona exists
+            if ($persona) {
+                $this->syncEscuelaUsuario($cupof, $persona, true);
             }
 
             return $updated;
@@ -110,16 +110,16 @@ class CupofService
     /**
      * Syncs the EscuelaUsuario record based on CUPOF assignments.
      */
-    private function syncEscuelaUsuario(Cupof $cupof, Agente $agente, bool $isRelease = false): void
+    private function syncEscuelaUsuario(Cupof $cupof, Persona $persona, bool $isRelease = false): void
     {
-        $usuario = $agente->persona->usuario;
+        $usuario = $persona->usuario;
         if (!$usuario) return;
 
         $escuelaId = $cupof->escuela_id;
 
-        // If it's a release, check if the agent still has other active CUPOFs in the same school
+        // If it's a release, check if the persona still has other active CUPOFs in the same school
         if ($isRelease) {
-            $hasOtherCupofs = CupofMovimiento::where('agente_id', $agente->id)
+            $hasOtherCupofs = CupofMovimiento::where('persona_id', $persona->id)
                 ->where('activo', true)
                 ->whereHas('cupof', function($q) use ($escuelaId) {
                     $q->where('escuela_id', $escuelaId);
@@ -128,29 +128,28 @@ class CupofService
 
             if (!$hasOtherCupofs) {
                 // If no more CUPOFs, we mark the link as inactive (Soft Delete or verified_at null)
-                // In this system, we'll nullify verified_at to "deactivate" it from the school
                 \App\Models\EscuelaUsuario::where('usuario_id', $usuario->id)
                     ->where('escuela_id', $escuelaId)
                     ->update(['verified_at' => null]);
             } else {
                 // Recalculate highest role if still has positions
-                $this->refreshUserRoleInSchool($usuario, $escuelaId, $agente);
+                $this->refreshUserRoleInSchool($usuario, $escuelaId, $persona);
             }
             return;
         }
 
         // If it's an assignment, ensure the link exists and is active
-        $this->refreshUserRoleInSchool($usuario, $escuelaId, $agente);
+        $this->refreshUserRoleInSchool($usuario, $escuelaId, $persona);
     }
 
     /**
      * Determines and syncs all roles the user has in a school based on all active CUPOFs.
      */
-    private function refreshUserRoleInSchool($usuario, $escuelaId, $agente): void
+    private function refreshUserRoleInSchool($usuario, $escuelaId, $persona): void
     {
-        // 1. Get all unique roles derived from active CUPOFs for this agent in this school
-        $activeCupofs = Cupof::whereHas('movimientos', function($q) use ($agente) {
-            $q->where('agente_id', $agente->id)->where('activo', true);
+        // 1. Get all unique roles derived from active CUPOFs for this persona in this school
+        $activeCupofs = Cupof::whereHas('movimientos', function($q) use ($persona) {
+            $q->where('persona_id', $persona->id)->where('activo', true);
         })->where('escuela_id', $escuelaId)->get();
 
         if ($activeCupofs->isEmpty()) return;
@@ -180,13 +179,12 @@ class CupofService
         }
 
         // 4. Cleanup: Remove roles that the user NO LONGER has in this school via CUPOF
-        // (Only for roles that can be derived from CUPOF to avoid deleting manually assigned admin roles)
         $rolesToKeep = $roleIds->values()->toArray();
         \App\Models\EscuelaUsuario::where('usuario_id', $usuario->id)
             ->where('escuela_id', $escuelaId)
-            ->whereNotNull('role_id') // Don't touch base links without roles if any
+            ->whereNotNull('role_id')
             ->whereNotIn('role_id', $rolesToKeep)
-            ->delete(); // Soft delete if enabled
+            ->delete();
 
         // Ensure user status is active
         if ($usuario->estado !== 'activo') {
@@ -214,5 +212,4 @@ class CupofService
 
         return 'profesor';
     }
-
 }

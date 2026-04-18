@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 
 class EscuelaService
 {
+    public const HIERARCHICAL_ROLES = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+
     /**
      * Get schools with search and filters.
      */
@@ -57,175 +59,60 @@ class EscuelaService
     }
 
     /**
-     * Request to join a school.
+     * Direct assign a role to a user in a school (verified).
+     * This method is now intended for administrative overrides or CUPOF syncing.
      */
-    public function requestJoin(Usuario $user, int $escuelaId, ?int $roleId = null): void
+    public function assignDirect(Usuario $targetUser, int $escuelaId, int $roleId): EscuelaUsuario
     {
-        // Si no se provee rol, buscamos el rol 'profesor' como predeterminado (o 'responsable' según lógica de negocio)
-        if (!$roleId) {
-            $roleId = \Spatie\Permission\Models\Role::where('name', 'profesor')->where('guard_name', 'sanctum')->first()?->id;
+        $admin = auth()->user();
+        $isSuperUser = $admin->hasRole('superuser');
+        $isJefeDistrital = $admin->hasRole('jefe_distrital');
+        $role = \Spatie\Permission\Models\Role::findOrFail($roleId);
+        $isTargetHierarchical = in_array($role->name, self::HIERARCHICAL_ROLES);
+
+        // Validaciones de Seguridad (Reglas del Negocio Actualizadas)
+        
+        // 1. Jefe Distrital puede asignar roles jerárquicos globalmente.
+        // 2. Personal Jerárquico puede asignar roles jerárquicos y operativos EN SU ESCUELA.
+        
+        if (!$isSuperUser && !$isJefeDistrital) {
+            // Verificar si el admin tiene rol jerárquico en la escuela destino
+            $isAdminHierarchicalInSchool = EscuelaUsuario::where('usuario_id', $admin->id)
+                ->where('escuela_id', $escuelaId)
+                ->whereHas('role', function($q) {
+                    $q->whereIn('name', self::HIERARCHICAL_ROLES);
+                })
+                ->whereNotNull('verified_at')
+                ->exists();
+
+            if (!$isAdminHierarchicalInSchool) {
+                throw new \Exception("No tienes autoridad (rol jerárquico) en esta institución para realizar asignaciones.", 403);
+            }
         }
 
-        EscuelaUsuario::updateOrCreate(
+        // Si es Jefe Distrital pero el rol NO es jerárquico, él también puede (es un administrador regional)
+        // Pero tu instrucción dice: "el resto de los puestos serán definidos sólo por personal jerárquico de la institución".
+        // Ajustamos: Si NO es jerárquico, SOLO personal de la institución puede.
+        if (!$isSuperUser && $isJefeDistrital && !$isTargetHierarchical) {
+             throw new \Exception("Los puestos operativos solo pueden ser asignados por personal jerárquico de la institución.", 403);
+        }
+
+        $link = EscuelaUsuario::updateOrCreate(
             [
-                'usuario_id' => $user->id,
-                'escuela_id' => $escuelaId
+                'usuario_id' => $targetUser->id,
+                'escuela_id' => $escuelaId,
+                'role_id' => $roleId
             ],
             [
-                'role_id' => $roleId,
-                'verified_at' => null,
+                'verified_at' => now(),
+                'updated_by' => $admin->id
             ]
         );
 
-        $user->update(['estado' => 'espera_aprobacion']);
-    }
-
-    /**
-     * Get pending school join requests.
-     */
-    public function getPendingRequests(array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
-    {
-        $user = auth()->user();
-        $isSuperUser = $user->hasRole('superuser');
-        $isJefeDistrital = $user->hasRole('jefe_distrital');
-        $hierarchicalRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
-
-        $query = EscuelaUsuario::whereNull('verified_at')
-            ->with(['usuario.persona', 'escuela', 'role']);
-
-        if ($isJefeDistrital) {
-            // El Jefe Distrital ve las solicitudes de roles jerárquicos de forma global
-            if (empty($filters['escuela_id'])) {
-                $query->whereHas('role', function($q) use ($hierarchicalRoles) {
-                    $q->whereIn('name', $hierarchicalRoles);
-                });
-            }
-        } elseif ($isSuperUser) {
-            // El Superusuario no gestiona solicitudes de unión (rol técnico)
-            // Forzamos un resultado vacío si no hay filtros específicos de escuela
-            $query->whereRaw('1 = 0');
-        } else {
-            // El personal jerárquico solo ve solicitudes operativas de sus escuelas vinculadas
-            $escuelasIds = $user->escuelaUsuarios()
-                ->whereNotNull('verified_at')
-                ->pluck('escuela_id');
-
-            $query->whereIn('escuela_id', $escuelasIds)
-                ->whereHas('role', function($q) use ($hierarchicalRoles) {
-                    $q->whereNotIn('name', $hierarchicalRoles);
-                });
+        if ($targetUser->estado !== 'activo') {
+            $targetUser->update(['estado' => 'activo']);
         }
 
-        if (!empty($filters['escuela_id'])) {
-            $query->where('escuela_id', $filters['escuela_id']);
-        }
-
-        if (!empty($filters['search'])) {
-            $term = $filters['search'];
-            $query->whereHas('usuario', function ($q) use ($term) {
-                $q->where('nombre', 'like', "%{$term}%")
-                  ->orWhere('email', 'like', "%{$term}%");
-            });
-        }
-
-        return $query->paginate($filters['per_page'] ?? 15);
-    }
-
-    /**
-     * Approve a school join request.
-     */
-    public function approveJoin(string $requestId, ?int $roleId = null): EscuelaUsuario
-    {
-        $request = EscuelaUsuario::findOrFail($requestId);
-        $user = auth()->user();
-        $isSuperUser = $user->hasRole('superuser');
-        $isJefeDistrital = $user->hasRole('jefe_distrital');
-        $hierarchicalRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
-        
-        // Determinar el rol final para validar permisos
-        $targetRoleId = $roleId ?: $request->role_id;
-        $targetRole = \Spatie\Permission\Models\Role::findOrFail($targetRoleId);
-        $isTargetHierarchical = in_array($targetRole->name, $hierarchicalRoles);
-
-        // 1. Solo superuser o jefe distrital puede aprobar roles jerárquicos
-        if ($isTargetHierarchical && !($isSuperUser || $isJefeDistrital)) {
-            throw new \Exception("No tienes permisos para aprobar roles jerárquicos.", 403);
-        }
-
-        // 2. Si no es superuser ni jefe distrital, debe pertenecer a la misma escuela
-        if (!$isSuperUser && !$isJefeDistrital) {
-            $isLinked = $user->escuelaUsuarios()
-                ->where('escuela_id', $request->escuela_id)
-                ->whereNotNull('verified_at')
-                ->exists();
-            
-            if (!$isLinked) {
-                throw new \Exception("No perteneces a esta institución para realizar aprobaciones.", 403);
-            }
-
-            // Opcional: Verificar que tenga permiso de sistema.usuarios
-            if (!$user->hasPermissionTo('sistema.usuarios')) {
-                throw new \Exception("No tienes permisos de gestión de usuarios.", 403);
-            }
-        }
-        
-        $data = [
-            'verified_at' => now(),
-            'updated_by' => $user->id
-        ];
-
-        // Si el administrador asigna un rol diferente al solicitado
-        if ($roleId) {
-            $data['role_id'] = $roleId;
-        }
-
-        $request->update($data);
-
-        // Actualizar el estado del usuario si era "espera_aprobacion"
-        $usuario = $request->usuario;
-        if ($usuario->estado === 'espera_aprobacion') {
-            $usuario->update(['estado' => 'activo']);
-        }
-
-        return $request->load(['usuario.persona', 'escuela', 'role']);
-    }
-
-    /**
-     * Reject a school join request.
-     */
-    public function rejectJoin(string $requestId, ?string $reason = null): void
-    {
-        $request = EscuelaUsuario::findOrFail($requestId);
-        $usuario = $request->usuario;
-
-        // Si se proporciona una razón, guardarla en el usuario (opcional, según lógica de negocio)
-        if ($reason) {
-            $usuario->update(['motivo_rechazo' => $reason]);
-        }
-
-        $request->delete();
-
-        // Si no quedan solicitudes, volver al estado inicial
-        if (EscuelaUsuario::where('usuario_id', $usuario->id)->count() === 0) {
-            $usuario->update(['estado' => 'email_verificado']);
-        }
-    }
-
-    /**
-     * Cancel a school join request.
-     */
-    public function cancelJoin(Usuario $user, int $escuelaId): void
-    {
-        $request = EscuelaUsuario::where('usuario_id', $user->id)
-            ->where('escuela_id', $escuelaId)
-            ->whereNull('verified_at')
-            ->firstOrFail();
-
-        $request->delete();
-
-        // Si no quedan solicitudes, volver al estado inicial
-        if (EscuelaUsuario::where('usuario_id', $user->id)->count() === 0) {
-            $user->update(['estado' => 'email_verificado']);
-        }
+        return $link->load(['usuario.persona', 'escuela', 'role']);
     }
 }

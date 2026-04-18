@@ -24,46 +24,47 @@ beforeEach(function () {
     $this->standardUser = Usuario::factory()->create();
 });
 
-test('unauthorized users cannot access pending requests', function () {
+test('unauthorized users cannot access school-user links', function () {
     // No autenticado
-    $this->getJson('/api/v1/admin/escuelas/pending')
+    $this->getJson('/api/v1/admin/escuela-usuarios')
          ->assertStatus(401);
 
     // Autenticado sin permiso
     $this->actingAs($this->standardUser, 'sanctum')
-         ->getJson('/api/v1/admin/escuelas/pending')
+         ->getJson('/api/v1/admin/escuela-usuarios')
          ->assertStatus(403);
 });
 
-test('admin can list pending requests', function () {
+test('admin can list all institutional links', function () {
     $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    EscuelaUsuario::factory()->count(3)->create(['verified_at' => null, 'role_id' => $roleId]);
-    EscuelaUsuario::factory()->count(2)->create(['verified_at' => now(), 'role_id' => $roleId]);
+    EscuelaUsuario::factory()->count(5)->create(['role_id' => $roleId, 'verified_at' => now()]);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->getJson('/api/v1/admin/escuelas/pending');
+                     ->getJson('/api/v1/admin/escuela-usuarios');
 
     $response->assertStatus(200)
-             ->assertJsonCount(3, 'data');
+             ->assertJsonCount(5, 'data');
 });
 
-test('admin can approve a request', function () {
-    $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    $user = Usuario::factory()->create(['estado' => 'espera_aprobacion']);
-    $request = EscuelaUsuario::factory()->create([
-        'usuario_id' => $user->id,
-        'role_id' => $roleId,
-        'verified_at' => null
-    ]);
+test('superuser can assign any role to any user in any school', function () {
+    $escuela = Escuela::factory()->create();
+    $user = Usuario::factory()->create(['estado' => 'email_verificado']);
+    $role = \Spatie\Permission\Models\Role::where('name', 'profesor')->first();
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson("/api/v1/admin/escuelas/requests/{$request->id}/approve");
+                     ->postJson("/api/v1/admin/escuela-usuarios", [
+                         'usuario_id' => $user->id,
+                         'escuela_id' => $escuela->id,
+                         'role_id' => $role->id
+                     ]);
 
-    $response->assertStatus(200)
-             ->assertJsonPath('message', 'Solicitud aprobada con éxito.');
+    $response->assertStatus(201)
+             ->assertJsonPath('message', 'Rol institucional asignado con éxito.');
 
     $this->assertDatabaseHas('escuela_usuario', [
-        'id' => $request->id,
+        'usuario_id' => $user->id,
+        'escuela_id' => $escuela->id,
+        'role_id' => $role->id,
         'verified_at' => now()->toDateTimeString()
     ]);
 
@@ -73,30 +74,88 @@ test('admin can approve a request', function () {
     ]);
 });
 
-test('admin can reject a request', function () {
-    $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    $user = Usuario::factory()->create(['estado' => 'espera_aprobacion']);
-    $request = EscuelaUsuario::factory()->create([
-        'usuario_id' => $user->id,
-        'role_id' => $roleId,
-        'verified_at' => null
-    ]);
+test('jefe distrital can assign hierarchical roles globally', function () {
+    $jefe = Usuario::factory()->create();
+    $jefe->assignRole('jefe_distrital');
+    $jefe->givePermissionTo('sistema.usuarios');
 
-    $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson("/api/v1/admin/escuelas/requests/{$request->id}/reject", [
-                         'motivo' => 'Documentación incompleta'
+    $escuela = Escuela::factory()->create();
+    $user = Usuario::factory()->create(['estado' => 'email_verificado']);
+    $role = \Spatie\Permission\Models\Role::where('name', 'director')->first();
+
+    $response = $this->actingAs($jefe, 'sanctum')
+                     ->postJson("/api/v1/admin/escuela-usuarios", [
+                         'usuario_id' => $user->id,
+                         'escuela_id' => $escuela->id,
+                         'role_id' => $role->id
                      ]);
 
-    $response->assertStatus(200)
-             ->assertJsonPath('message', 'Solicitud rechazada y eliminada.');
+    $response->assertStatus(201);
+    
+    $this->assertDatabaseHas('escuela_usuario', [
+        'usuario_id' => $user->id,
+        'escuela_id' => $escuela->id,
+        'role_id' => $role->id
+    ]);
+});
 
-    // Verificar que la solicitud se eliminó (SoftDelete)
-    $this->assertSoftDeleted('escuela_usuario', ['id' => $request->id]);
+test('local admin cannot assign hierarchical roles', function () {
+    $director = Usuario::factory()->create();
+    $directorRole = \Spatie\Permission\Models\Role::where('name', 'director')->first();
+    $escuela = Escuela::factory()->create();
+    
+    // Vincular al director a su escuela
+    EscuelaUsuario::create([
+        'usuario_id' => $director->id,
+        'escuela_id' => $escuela->id,
+        'role_id' => $directorRole->id,
+        'verified_at' => now()
+    ]);
+    $director->givePermissionTo('sistema.usuarios');
 
-    // Verificar que el usuario volvió al estado previo y tiene el motivo
-    $this->assertDatabaseHas('usuarios', [
-        'id' => $user->id,
-        'estado' => 'email_verificado',
-        'motivo_rechazo' => 'Documentación incompleta'
+    $user = Usuario::factory()->create(['estado' => 'email_verificado']);
+    $targetRole = \Spatie\Permission\Models\Role::where('name', 'vicedirector')->first(); // Jerárquico
+
+    $response = $this->actingAs($director, 'sanctum')
+                     ->postJson("/api/v1/admin/escuela-usuarios", [
+                         'usuario_id' => $user->id,
+                         'escuela_id' => $escuela->id,
+                         'role_id' => $targetRole->id
+                     ]);
+
+    $response->assertStatus(403)
+             ->assertJsonPath('error', 'No tienes permisos para asignar roles jerárquicos.');
+});
+
+test('local admin can assign non-hierarchical roles to their school', function () {
+    $director = Usuario::factory()->create();
+    $directorRole = \Spatie\Permission\Models\Role::where('name', 'director')->first();
+    $escuela = Escuela::factory()->create();
+    
+    // Vincular al director a su escuela
+    EscuelaUsuario::create([
+        'usuario_id' => $director->id,
+        'escuela_id' => $escuela->id,
+        'role_id' => $directorRole->id,
+        'verified_at' => now()
+    ]);
+    $director->givePermissionTo('sistema.usuarios');
+
+    $user = Usuario::factory()->create(['estado' => 'email_verificado']);
+    $targetRole = \Spatie\Permission\Models\Role::where('name', 'profesor')->first(); // No jerárquico
+
+    $response = $this->actingAs($director, 'sanctum')
+                     ->postJson("/api/v1/admin/escuela-usuarios", [
+                         'usuario_id' => $user->id,
+                         'escuela_id' => $escuela->id,
+                         'role_id' => $targetRole->id
+                     ]);
+
+    $response->assertStatus(201);
+    
+    $this->assertDatabaseHas('escuela_usuario', [
+        'usuario_id' => $user->id,
+        'escuela_id' => $escuela->id,
+        'role_id' => $targetRole->id
     ]);
 });
