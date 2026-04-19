@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Domicilio extends Model
 {
@@ -33,8 +34,58 @@ class Domicilio extends Model
     ];
 
     /**
-     * Relationship to the person.
+     * Mutator for numero (Uppercase).
      */
+    protected function numero(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Mutator for piso (Uppercase).
+     */
+    protected function piso(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Mutator for torre (Uppercase).
+     */
+    protected function torre(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Mutator for departamento (Uppercase).
+     */
+    protected function departamento(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Mutator for otros (Uppercase).
+     */
+    protected function otros(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Relationship to the person.
+...
     public function persona(): BelongsTo
     {
         return $this->belongsTo(Persona::class);

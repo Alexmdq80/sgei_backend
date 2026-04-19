@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Persona extends Model
 {
@@ -60,8 +61,48 @@ class Persona extends Model
     ];
 
     /**
-     * Relationship to the user.
+     * Mutator for apellido (Uppercase).
      */
+    protected function apellido(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Mutator for nombre (Uppercase).
+     */
+    protected function nombre(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Mutator for nombre_alternativo (Uppercase).
+     */
+    protected function nombreAlternativo(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Mutator for tramite (Uppercase).
+     */
+    protected function tramite(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+        );
+    }
+
+    /**
+     * Relationship to the user.
+    ...
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(Usuario::class);

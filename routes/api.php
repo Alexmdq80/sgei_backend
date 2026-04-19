@@ -95,6 +95,7 @@ Route::prefix('v1')->group(function () {
     // Gestión Administrativa
     Route::middleware(['auth:sanctum', 'verified', 'permission:sistema.usuarios'])->prefix('admin')->group(function () {
         Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
+        Route::post('/usuarios/{usuario}/confirm-persona', [App\Http\Controllers\Api\V1\UsuarioController::class, 'confirmPersona']);
         Route::post('/usuarios/{usuario}/toggle-supervisor', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleSupervisorRole']);
         Route::post('/usuarios/{usuario}/toggle-jefe-distrital', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleJefeDistritalRole']);
         

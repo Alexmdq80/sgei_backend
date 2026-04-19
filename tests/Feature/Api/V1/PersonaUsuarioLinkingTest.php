@@ -10,9 +10,10 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
+    $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
 });
 
-test('persona is linked to user when email is verified and email matches', function () {
+test('user status is set to vinculacion_pendiente when email is verified and match found', function () {
     // 1. Create a User
     $user = Usuario::factory()->unverified()->create([
         'documento_tipo_id' => 1,
@@ -33,114 +34,101 @@ test('persona is linked to user when email is verified and email matches', funct
 
     $this->assertNull($persona->fresh()->usuario_id);
 
-    // 3. Verify email (triggers linkToPersona via markEmailAsVerified override in Usuario model)
+    // 3. Verify email (triggers linkToPersona)
     $user->markEmailAsVerified();
 
-    // 4. Check if linked
-    $this->assertEquals($user->id, $persona->fresh()->usuario_id);
-});
-
-test('persona is not linked if email does not match', function () {
-    // 1. Create a User
-    $user = Usuario::factory()->unverified()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
-        'email' => 'juan@example.com'
-    ]);
-
-    // 2. Create a Persona with matching identification but DIFFERENT email in Contacto
-    $persona = Persona::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
-    ]);
-
-    Contacto::create([
-        'persona_id' => $persona->id,
-        'email' => 'pedro@example.com'
-    ]);
-
-    $user->markEmailAsVerified();
-
-    // 4. Check that it is NOT linked
+    // 4. Check if status is pending and NOT linked yet
+    $this->assertEquals('vinculacion_pendiente', $user->fresh()->estado);
     $this->assertNull($persona->fresh()->usuario_id);
 });
 
-test('persona is not linked if no contacto record exists', function () {
-    $user = Usuario::factory()->unverified()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
-        'email' => 'juan@example.com'
-    ]);
-
-    // Persona exists but has no Contacto record
-    $persona = Persona::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
-    ]);
-
-    $user->markEmailAsVerified();
-
-    $this->assertNull($persona->fresh()->usuario_id);
-});
-
-test('user is linked to existing persona when persona is created with matching email', function () {
+test('user is linked automatically when persona is created with matching email and user is verified', function () {
     // 1. Create an existing verified User
     $user = Usuario::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '12345678',
         'email' => 'juan@example.com',
-        'email_verified_at' => now()
+        'email_verified_at' => now(),
+        'estado' => 'email_verificado'
     ]);
 
-    // 2. Create a Persona with matching identification
+    // 2. Create a Persona with matching identification and email (triggers link via ContactoObserver)
+    $response = $this->actingAs(Usuario::factory()->create(['es_administrador' => true])->assignRole('superuser'), 'sanctum')
+                     ->postJson("/api/v1/admin/personas", [
+                        'apellido' => 'Perez',
+                        'nombre' => 'Juan',
+                        'documento_tipo_id' => 1,
+                        'documento_numero' => '12345678',
+                        'email' => 'juan@example.com'
+                     ]);
+
+    $response->assertStatus(201);
+    
+    // Check if status is activo and linked
+    $this->assertEquals('activo', $user->fresh()->estado);
+    $persona = Persona::where('documento_numero', '12345678')->first();
+    $this->assertEquals($user->id, $persona->usuario_id);
+});
+
+test('user status is set to vinculacion_pendiente when persona is created with matching email but user NOT verified', function () {
+    // 1. Create an existing UNVERIFIED User
+    $user = Usuario::factory()->unverified()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '87654321',
+        'email' => 'pedro@example.com',
+        'estado' => 'email_pendiente'
+    ]);
+
+    // 2. Create a Persona with matching identification and email
+    $response = $this->actingAs(Usuario::factory()->create(['es_administrador' => true])->assignRole('superuser'), 'sanctum')
+                     ->postJson("/api/v1/admin/personas", [
+                        'apellido' => 'Gomez',
+                        'nombre' => 'Pedro',
+                        'documento_tipo_id' => 1,
+                        'documento_numero' => '87654321',
+                        'email' => 'pedro@example.com'
+                     ]);
+
+    $response->assertStatus(201);
+    
+    // Check if status is pending and NOT linked
+    $this->assertEquals('vinculacion_pendiente', $user->fresh()->estado);
+    $persona = Persona::where('documento_numero', '87654321')->first();
+    $this->assertNull($persona->usuario_id);
+});
+
+test('admin can confirm vinculation manually', function () {
     $persona = Persona::factory()->create([
         'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
+        'documento_numero' => '12345678'
     ]);
 
-    // 3. Create Contacto with matching email (should trigger link via ContactoObserver)
     Contacto::create([
         'persona_id' => $persona->id,
-        'email' => 'juan@example.com'
+        'email' => 'test@example.com'
     ]);
 
+    $user = Usuario::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678',
+        'email' => 'test@example.com',
+        'email_verified_at' => now(),
+        'estado' => 'vinculacion_pendiente'
+    ]);
+
+    // Use PersonaController's tryLinkUser (manual action)
+    $admin = Usuario::factory()->create(['es_administrador' => true]);
+    $admin->assignRole('superuser');
+
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
+
+    $response->assertOk();
     $this->assertEquals($user->id, $persona->fresh()->usuario_id);
+    $this->assertEquals('activo', $user->fresh()->estado);
 });
 
-test('persona is not linked if identification does not match', function () {
-    $persona = Persona::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '11111111'
-    ]);
-
-    $user = Usuario::factory()->unverified()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '22222222'
-    ]);
-
-    $user->markEmailAsVerified();
-
-    $this->assertNull($persona->fresh()->usuario_id);
-});
-
-test('persona is not linked if email not verified', function () {
-    $persona = Persona::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678'
-    ]);
-
-    $user = Usuario::factory()->unverified()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678'
-    ]);
-
-    // Trigger link attempt
-    app(UserService::class)->linkToPersona($user);
-
-    $this->assertNull($persona->fresh()->usuario_id);
-});
-
-test('admin created verified user links immediately', function () {
+test('supervisor role cannot confirm vinculation manually', function () {
     $persona = Persona::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '12345678'
@@ -148,20 +136,136 @@ test('admin created verified user links immediately', function () {
 
     Contacto::create([
         'persona_id' => $persona->id,
-        'email' => 'admin_verified@example.com'
+        'email' => 'test@example.com'
     ]);
 
-    // Use UserService to create a verified user
-    $userData = [
-        'nombre' => 'Admin User',
-        'email' => 'admin_verified@example.com',
-        'password' => 'password123',
+    // Admin without appropriate role (supervisor_curricular has sistema.usuarios but not in allowedRoles)
+    $admin = Usuario::factory()->create(['es_administrador' => true]);
+    $admin->assignRole('supervisor_curricular');
+
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
+
+    $response->assertStatus(403);
+});
+
+test('cannot confirm vinculation of unverified user manually', function () {
+    $persona = Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678'
+    ]);
+
+    Contacto::create([
+        'persona_id' => $persona->id,
+        'email' => 'test@example.com'
+    ]);
+
+    // Unverified user
+    $user = Usuario::factory()->unverified()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '12345678',
-        'email_verified_at' => now(), // Already verified
-    ];
+        'email' => 'test@example.com',
+        'estado' => 'vinculacion_pendiente'
+    ]);
 
-    $user = app(UserService::class)->create($userData);
+    $admin = Usuario::factory()->create(['es_administrador' => true]);
+    $admin->assignRole('superuser');
 
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
+
+    $response->assertStatus(422);
+});
+
+test('conduccion role cannot confirm vinculation if persona has no relation to their school', function () {
+    $persona = Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678'
+    ]);
+
+    Contacto::create([
+        'persona_id' => $persona->id,
+        'email' => 'test@example.com'
+    ]);
+
+    $user = Usuario::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678',
+        'email' => 'test@example.com',
+        'email_verified_at' => now(),
+        'estado' => 'vinculacion_pendiente'
+    ]);
+
+    // Admin with director role but NOT linked to any school that persona is related to
+    $admin = Usuario::factory()->create();
+    $admin->assignRole('director');
+    
+    // Create a school and link admin to it
+    $school = \App\Models\Escuela::factory()->create();
+    \App\Models\EscuelaUsuario::create([
+        'id' => \Illuminate\Support\Str::uuid(),
+        'escuela_id' => $school->id,
+        'usuario_id' => $admin->id,
+        'role_id' => \Spatie\Permission\Models\Role::where('name', 'director')->first()->id,
+        'verified_at' => now()
+    ]);
+
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
+
+    $response->assertStatus(403);
+    $response->assertJsonPath('error', 'Restricción de Seguridad: El Equipo de Conducción solo puede confirmar vinculaciones de personas relacionadas con su propia institución (por CUPOF, inscripción o vínculo familiar).');
+});
+
+test('conduccion role can confirm vinculation if persona has relation (CUPOF) to their school', function () {
+    $school = \App\Models\Escuela::factory()->create();
+    
+    $persona = Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678'
+    ]);
+
+    Contacto::create([
+        'persona_id' => $persona->id,
+        'email' => 'test@example.com'
+    ]);
+
+    // Create a CUPOF relation for this persona in that school
+    $cupof = \App\Models\Cupof::create([
+        'codigo_cupof' => 'TEST-123',
+        'escuela_id' => $school->id,
+        'cantidad' => 1
+    ]);
+    \App\Models\CupofMovimiento::create([
+        'cupof_id' => $cupof->id,
+        'persona_id' => $persona->id,
+        'activo' => true,
+        'fecha_inicio' => now()
+    ]);
+
+    $user = Usuario::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678',
+        'email' => 'test@example.com',
+        'email_verified_at' => now(),
+        'estado' => 'vinculacion_pendiente'
+    ]);
+
+    // Admin with director role linked to THE SAME school
+    $admin = Usuario::factory()->create();
+    $admin->assignRole('director');
+    
+    \App\Models\EscuelaUsuario::create([
+        'id' => \Illuminate\Support\Str::uuid(),
+        'escuela_id' => $school->id,
+        'usuario_id' => $admin->id,
+        'role_id' => \Spatie\Permission\Models\Role::where('name', 'director')->first()->id,
+        'verified_at' => now()
+    ]);
+
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
+
+    $response->assertOk();
     $this->assertEquals($user->id, $persona->fresh()->usuario_id);
 });

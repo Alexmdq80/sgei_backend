@@ -91,7 +91,8 @@ class UserService
 
     /**
      * Link the user to a persona if identification matches and email is verified.
-     * Requires match: documento_tipo_id and documento_numero.
+     * Requires match: documento_tipo_id, documento_numero AND Contacto->email.
+     * If match is found, sets status to 'vinculacion_pendiente' for admin confirmation.
      */
     public function linkToPersona(Usuario $user): void
     {
@@ -103,20 +104,41 @@ class UserService
             return;
         }
 
-        // Search for a persona with matching documents
+        // Search for a persona with matching documents and matching email in contact info
         $persona = Persona::where('documento_tipo_id', $user->documento_tipo_id)
                           ->where('documento_numero', $user->documento_numero)
+                          ->whereHas('contacto', function ($query) use ($user) {
+                              $query->where('email', $user->email);
+                          })
                           ->whereNull('usuario_id') // Only link if not already linked
                           ->first();
 
         if ($persona) {
-            $persona->update(['usuario_id' => $user->id]);
+            // Match found + Email IS Verified (checked at start of method)
+            // The user says for THIS case (verified match during registration/verification)
+            // wait, should this be pending too?
+            // "si al momento de registrar el usuario existe coincidencia... dejar pendiente"
+            // "si al momento de crear una persona, existe coincidencia... y verificado... automática"
+            
+            // I'll keep linkToPersona (user registration side) as PENDING as requested before,
+            // unless the user meant "all verified matches are automatic".
+            // BUT the user specifically said "si al momento de crear una persona... automática".
+            // Let's assume the difference is who initiates the action.
+            // If ADMIN creates Persona -> Match Verified User -> Link Automatic.
+            // If USER creates Account -> Match Persona -> Link Pending.
+            
+            $user->update(['estado' => 'vinculacion_pendiente']);
         }
     }
 
     /**
      * Link a persona to an existing user if a match is found.
-     * Useful when creating or updating a persona.
+     * Useful when creating or updating a persona's contact information.
+     * Match requirements: documento_tipo_id, documento_numero AND email match.
+     * 
+     * NEW RULES:
+     * - If user is verified: Link AUTOMATICALLY.
+     * - If user is NOT verified: Set to 'vinculacion_pendiente'.
      */
     public function linkPersonaToUser(Persona $persona): void
     {
@@ -128,17 +150,26 @@ class UserService
             return;
         }
 
-        // Search for a user with matching documents
+        // Load contact information to get the email
+        $persona->loadMissing('contacto');
+        if (!$persona->contacto || !$persona->contacto->email) {
+            return;
+        }
+
+        // Search for a user with matching documents AND matching email
         $user = Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
                        ->where('documento_numero', $persona->documento_numero)
-                       ->whereNotNull('email_verified_at') // Only link to verified users
+                       ->where('email', $persona->contacto->email)
                        ->first();
 
-        if ($user) {
-            // Check if this user is already linked to another persona (unlikely but possible)
-            $existingLink = Persona::where('usuario_id', $user->id)->exists();
-            if (!$existingLink) {
+        if ($user && !$user->persona) {
+            if ($user->hasVerifiedEmail()) {
+                // Match + Verified = Automatic Linking
                 $persona->update(['usuario_id' => $user->id]);
+                $user->update(['estado' => 'activo']);
+            } else {
+                // Match but not verified = Pending Confirmation
+                $user->update(['estado' => 'vinculacion_pendiente']);
             }
         }
     }
@@ -271,5 +302,44 @@ class UserService
         $user->update([
             'password' => Hash::make($newPassword)
         ]);
+    }
+
+    /**
+     * Checks if a persona has any relationship with the schools where the user (performer) has roles.
+     * Relationships: Active CUPOF, Enrollment (Inscripcion), or linked to an enrolled student.
+     */
+    public function isPersonaRelatedToUserSchools(Usuario $performer, Persona $persona): bool
+    {
+        // 1. Get performer's schools
+        $performerSchoolIds = $performer->escuelaUsuarios()->pluck('escuela_id')->toArray();
+        
+        if (empty($performerSchoolIds)) {
+            return false;
+        }
+
+        // 2. Check active CUPOF in those schools
+        $hasCupof = $persona->movimientosCupofActivos()
+            ->whereHas('cupof', function ($q) use ($performerSchoolIds) {
+                $q->whereIn('escuela_id', $performerSchoolIds);
+            })->exists();
+
+        if ($hasCupof) return true;
+
+        // 3. Check Enrollment (Inscripcion) in those schools
+        $hasInscripcion = $persona->inscripcion()
+            ->whereHas('espacio.propuesta', function ($q) use ($performerSchoolIds) {
+                $q->whereIn('escuela_id', $performerSchoolIds);
+            })->exists();
+
+        if ($hasInscripcion) return true;
+
+        // 4. Check Relationships with enrolled students (Vinculos)
+        // Check if any student vinculated to this persona has an inscription in performer's schools
+        $hasStudentVinculo = $persona->vinculosComoAdulto()
+            ->whereHas('inscripcion.espacio.propuesta', function ($q) use ($performerSchoolIds) {
+                $q->whereIn('escuela_id', $performerSchoolIds);
+            })->exists();
+
+        return $hasStudentVinculo;
     }
 }

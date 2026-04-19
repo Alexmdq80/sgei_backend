@@ -111,6 +111,66 @@ class UsuarioController extends Controller
         ]);
     }
 
+    public function confirmPersona(Usuario $usuario): JsonResponse
+    {
+        Gate::authorize('sistema.usuarios');
+
+        $performer = auth()->user();
+        $isSuperUser = $performer->hasRole('superuser');
+        $isJefeDistrital = $performer->hasRole('jefe_distrital');
+        $isConduccion = $performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']);
+        
+        if (!$isSuperUser && !$isJefeDistrital && !$isConduccion) {
+            return response()->json([
+                'error' => 'Acceso Denegado: No tienes los privilegios necesarios para confirmar vinculaciones de identidad. Esta acción está reservada para el Equipo de Conducción, Jefes Distritales o Superusuarios.',
+                'code' => 403
+            ], 403);
+        }
+
+        if (!$usuario->hasVerifiedEmail()) {
+            return response()->json([
+                'error' => 'Operación Inválida: El usuario debe haber verificado su correo electrónico antes de que se pueda confirmar su vinculación con el padrón.',
+                'code' => 422
+            ], 422);
+        }
+
+        if ($usuario->persona) {
+            return response()->json(['error' => 'El usuario ya está vinculado a un registro del padrón.'], 422);
+        }
+
+        // Buscar la persona que coincida (DNI + Email)
+        $persona = \App\Models\Persona::where('documento_tipo_id', $usuario->documento_tipo_id)
+            ->where('documento_numero', $usuario->documento_numero)
+            ->whereHas('contacto', function ($query) use ($usuario) {
+                $query->where('email', $usuario->email);
+            })
+            ->whereNull('usuario_id')
+            ->first();
+
+        if (!$persona) {
+            return response()->json(['error' => 'No se encontró ninguna persona en el padrón con datos coincidentes (DNI y Email) para confirmar.'], 404);
+        }
+
+        // REGLA ESPECÍFICA PARA EQUIPO DE CONDUCCIÓN
+        // Solo pueden vincular si la persona tiene relación con SUS colegios
+        if ($isConduccion && !$isSuperUser && !$isJefeDistrital) {
+            if (!$this->userService->isPersonaRelatedToUserSchools($performer, $persona)) {
+                return response()->json([
+                    'error' => 'Restricción de Seguridad: El Equipo de Conducción solo puede confirmar vinculaciones de personas relacionadas con su propia institución (por CUPOF, inscripción o vínculo familiar).',
+                    'code' => 403
+                ], 403);
+            }
+        }
+
+        $persona->update(['usuario_id' => $usuario->id]);
+        $usuario->update(['estado' => 'activo']);
+
+        return response()->json([
+            'message' => 'Vinculación con el padrón confirmada con éxito.',
+            'user' => new UsuarioResource($usuario->fresh(['persona']))
+        ]);
+    }
+
     public function destroy(Usuario $usuario): JsonResponse
     {
         Gate::authorize('sistema.usuarios');
