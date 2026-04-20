@@ -40,7 +40,7 @@ class Contacto extends Model
 
     /**
      * Relationship to the person.
-...
+     */
     public function persona(): BelongsTo
     {
         return $this->belongsTo(Persona::class);

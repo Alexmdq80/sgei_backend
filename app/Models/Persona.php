@@ -102,7 +102,7 @@ class Persona extends Model
 
     /**
      * Relationship to the user.
-    ...
+     */
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(Usuario::class);

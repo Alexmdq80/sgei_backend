@@ -68,9 +68,10 @@ class PersonaController extends Controller
             'nombre' => 'required|string|max:255',
             'documento_tipo_id' => 'required|integer|exists:documento_tipos,id',
             'documento_numero' => 'required|string|max:20|unique:personas,documento_numero',
-            'nacimiento_fecha' => 'nullable|date',
-            'cuil' => 'nullable|string|max:13',
-            'email' => 'nullable|email|max:255'
+            'email' => 'nullable|email|max:255|unique:contactos,email'
+        ], [
+            'documento_numero.unique' => 'Este número de documento ya se encuentra registrado en el padrón de personas.',
+            'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.'
         ]);
 
         $personaData = \Illuminate\Support\Arr::except($validated, ['email']);
@@ -109,28 +110,32 @@ class PersonaController extends Controller
             'nombre' => 'required|string|max:255',
             'documento_tipo_id' => 'required|integer|exists:documento_tipos,id',
             'documento_numero' => 'required|string|max:20|unique:personas,documento_numero,' . $persona->id,
-            'nacimiento_fecha' => 'nullable|date',
-            'cuil' => 'nullable|string|max:13',
-            'email' => 'nullable|email|max:255'
+            'email' => 'nullable|email|max:255|unique:contactos,email,' . ($persona->contacto?->id ?? 'NULL')
+        ], [
+            'documento_numero.unique' => 'Este número de documento ya se encuentra registrado en el padrón de personas.',
+            'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.'
         ]);
 
-        $personaData = \Illuminate\Support\Arr::except($validated, ['email']);
-
-        if (!empty($personaData['cuil'])) {
-            $parts = explode('-', str_replace([' ', '.'], '', $personaData['cuil']));
-            if (count($parts) === 3) {
-                $personaData['CUIL_prefijo'] = $parts[0];
-                $personaData['CUIL_sufijo'] = $parts[2];
+        // REGLA DE SEGURIDAD: No permitir cambio de email si hay usuario vinculado
+        if ($persona->usuario_id && isset($validated['email'])) {
+            $currentEmail = $persona->contacto?->email;
+            if ($validated['email'] !== $currentEmail) {
+                return response()->json([
+                    'error' => 'Seguridad: No se puede modificar el correo electrónico de una persona que ya tiene un usuario vinculado. Debe desvincular el usuario primero para realizar este cambio.',
+                    'code' => 403
+                ], 403);
             }
         }
 
+        $personaData = \Illuminate\Support\Arr::except($validated, ['email']);
         $persona->update($personaData);
 
-        // Actualizar email de contacto
-        if (isset($validated['email'])) {
+        // Actualizar o Limpiar email de contacto
+        if (array_key_exists('email', $validated)) {
+            $newEmail = !empty($validated['email']) ? $validated['email'] : null;
             $persona->contacto()->updateOrCreate(
                 ['persona_id' => $persona->id],
-                ['email' => $validated['email']]
+                ['email' => $newEmail]
             );
         }
 

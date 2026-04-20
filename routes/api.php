@@ -101,7 +101,7 @@ Route::prefix('v1')->group(function () {
         
         // Gestión de Vinculaciones Escolares
         Route::apiResource('escuela-usuarios', App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class);
-        Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class)->only(['index', 'show', 'store']);
+        Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class)->only(['index', 'show', 'store', 'update']);
         Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);
         Route::post('personas/{persona}/unlink-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'unlinkUser']);
 
