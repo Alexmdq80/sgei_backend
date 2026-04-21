@@ -41,6 +41,7 @@ class CupofService
             'codigo_cupof' => $data['codigo_cupof'],
             'escuela_id' => $data['escuela_id'],
             'asignatura_id' => $data['asignatura_id'] ?? null,
+            'nombre_cargo' => $data['nombre_cargo'] ?? null,
             'escalafon' => $data['escalafon'],
             'tipo_puesto' => $data['tipo_puesto'],
             'cantidad' => $data['cantidad'] ?? 1,

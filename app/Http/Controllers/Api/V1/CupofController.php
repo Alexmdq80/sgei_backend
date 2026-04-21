@@ -33,6 +33,7 @@ class CupofController extends Controller
             'codigo_cupof' => 'required|string|unique:cupofs,codigo_cupof',
             'escuela_id' => 'required|exists:escuelas,id',
             'asignatura_id' => 'nullable|exists:asignaturas,id',
+            'nombre_cargo' => 'nullable|string|max:255',
             'escalafon' => 'required|in:docente,auxiliar,administrativo',
             'tipo_puesto' => 'required|in:cargo,horas_catedra,modulos',
             'cantidad' => 'integer|min:1'

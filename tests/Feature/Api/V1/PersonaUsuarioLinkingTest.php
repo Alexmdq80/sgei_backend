@@ -42,7 +42,7 @@ test('user status is set to vinculacion_pendiente when email is verified and mat
     $this->assertNull($persona->fresh()->usuario_id);
 });
 
-test('user is linked automatically when persona is created with matching email and user is verified', function () {
+test('user status is set to vinculacion_pendiente when persona is created with matching email and user is verified', function () {
     // 1. Create an existing verified User
     $user = Usuario::factory()->create([
         'documento_tipo_id' => 1,
@@ -64,10 +64,10 @@ test('user is linked automatically when persona is created with matching email a
 
     $response->assertStatus(201);
     
-    // Check if status is activo and linked
-    $this->assertEquals('activo', $user->fresh()->estado);
+    // NEW RULE: Should be pending confirmation even if verified
+    $this->assertEquals('vinculacion_pendiente', $user->fresh()->estado);
     $persona = Persona::where('documento_numero', '12345678')->first();
-    $this->assertEquals($user->id, $persona->usuario_id);
+    $this->assertNull($persona->usuario_id, 'Should NOT link automatically anymore');
 });
 
 test('user status is set to vinculacion_pendiente when persona is created with matching email but user NOT verified', function () {

@@ -133,12 +133,12 @@ class UserService
 
     /**
      * Link a persona to an existing user if a match is found.
-     * Useful when creating or updating a persona's contact information.
+     * Useful when creating or updating a persona's contact information or DNI.
      * Match requirements: documento_tipo_id, documento_numero AND email match.
      * 
      * NEW RULES:
-     * - If user is verified: Link AUTOMATICALLY.
-     * - If user is NOT verified: Set to 'vinculacion_pendiente'.
+     * - Any match found results in 'vinculacion_pendiente' status for the user.
+     * - Automatic linking is disabled to enforce admin confirmation.
      */
     public function linkPersonaToUser(Persona $persona): void
     {
@@ -163,14 +163,8 @@ class UserService
                        ->first();
 
         if ($user && !$user->persona) {
-            if ($user->hasVerifiedEmail()) {
-                // Match + Verified = Automatic Linking
-                $persona->update(['usuario_id' => $user->id]);
-                $user->update(['estado' => 'activo']);
-            } else {
-                // Match but not verified = Pending Confirmation
-                $user->update(['estado' => 'vinculacion_pendiente']);
-            }
+            // Match found: set to pending confirmation regardless of verification status
+            $user->update(['estado' => 'vinculacion_pendiente']);
         }
     }
 
@@ -194,43 +188,90 @@ class UserService
     /**
      * Update the user's basic profile information.
      */
-    public function updateProfile(Usuario $user, array $data): Usuario
+    public function updateProfile(Usuario $user, array $data): \App\Models\Usuario
     {
-        // Handle password update if provided
-        if (!empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        } else {
-            unset($data['password']); // Don't try to update password if empty
-        }
-
-        // Check for email change
-        if (isset($data['email']) && $data['email'] !== $user->email) {
-            $performer = \Illuminate\Support\Facades\Auth::user();
-            $isAdmin = $performer?->es_administrador || $performer?->hasRole('superuser');
-
-            if (!$isAdmin && !$user->canChangeEmail()) {
-                throw ValidationException::withMessages([
-                    'email' => ['Has alcanzado el límite máximo de cambios de correo electrónico (3).'],
-                ]);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $data) {
+            // Handle password update if provided
+            if (!empty($data['password'])) {
+                $data['password'] = Hash::make($data['password']);
+            } else {
+                unset($data['password']); // Don't try to update password if empty
             }
 
-            // Prepare verification reset
-            $data['email_verified_at'] = null;
-            $data['verification_token'] = Str::random(60);
-            $data['verification_token_created_at'] = now();
-            $data['email_set_at'] = now();
-            $data['email_correction_attempts'] = $user->email_correction_attempts + 1;
-            $data['estado'] = 'email_pendiente';
-            
-            // Notify the user about the new verification
-            $user->update($data);
-            $user->notify(new VerifyEmailNotification($user->verification_token));
-        } else {
-            $user->update($data);
-        }
+            // Check for critical identity changes (Email or DNI)
+            $emailChanged = isset($data['email']) && $data['email'] !== $user->email;
+            $dniChanged = (isset($data['documento_tipo_id']) && $data['documento_tipo_id'] != $user->documento_tipo_id) ||
+                         (isset($data['documento_numero']) && $data['documento_numero'] != $user->documento_numero);
 
-        $this->linkToPersona($user);
-        return $user;
+            if ($emailChanged || $dniChanged) {
+                $performer = \Illuminate\Support\Facades\Auth::user();
+                $isAdmin = $performer?->es_administrador || $performer?->hasRole('superuser');
+
+                // Special limit check for email changes (only for non-admins)
+                if ($emailChanged && !$isAdmin && !$user->canChangeEmail()) {
+                    throw ValidationException::withMessages([
+                        'email' => ['Has alcanzado el límite máximo de cambios de correo electrónico (3).'],
+                    ]);
+                }
+
+                // 1. Unlink from current persona if linked
+                if ($user->persona) {
+                    $user->persona->update(['usuario_id' => null]);
+                }
+
+                // 2. Data for matching
+                $newDniTipo = $data['documento_tipo_id'] ?? $user->documento_tipo_id;
+                $newDniNum = $data['documento_numero'] ?? $user->documento_numero;
+                $newEmail = $data['email'] ?? $user->email;
+
+                // 3. Check for coincidence with the NEW identity data
+                $matchingPersona = Persona::where('documento_tipo_id', $newDniTipo)
+                    ->where('documento_numero', $newDniNum)
+                    ->whereHas('contacto', function ($query) use ($newEmail) {
+                        $query->where('email', $newEmail);
+                    })
+                    ->whereNull('usuario_id')
+                    ->first();
+
+                // 4. Update core identity fields and status
+                if ($emailChanged) {
+                    $data['email_verified_at'] = null;
+                    $data['verification_token'] = Str::random(60);
+                    $data['verification_token_created_at'] = now();
+                    $data['email_set_at'] = now();
+                    $data['email_correction_attempts'] = $user->email_correction_attempts + 1;
+                    
+                    // If matches a persona, it stays pending confirmation. Otherwise, pending verification.
+                    $data['estado'] = $matchingPersona ? 'vinculacion_pendiente' : 'email_pendiente';
+                } else if ($dniChanged) {
+                    // DNI changed but email didn't. 
+                    // If matches, pending admin confirmation. If not, stays as is (active or verified).
+                    if ($matchingPersona) {
+                        $data['estado'] = 'vinculacion_pendiente';
+                    } else if ($user->estado === 'activo') {
+                        // Was active (linked), now unlinked and no new match found.
+                        $data['estado'] = 'email_verificado'; 
+                    }
+                }
+                
+                $user->update($data);
+                
+                // If email changed, notify for re-verification
+                if ($emailChanged) {
+                    $user->notify(new VerifyEmailNotification($user->verification_token));
+                }
+            } else {
+                $user->update($data);
+            }
+
+            // Refresh the model to reflect changes
+            $user->refresh();
+
+            // Try to link (only works if email is verified)
+            $this->linkToPersona($user);
+
+            return $user;
+        });
     }
 
     /**

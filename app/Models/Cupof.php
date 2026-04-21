@@ -19,6 +19,7 @@ class Cupof extends Model
         'codigo_cupof',
         'escuela_id',
         'asignatura_id',
+        'nombre_cargo',
         'escalafon',
         'tipo_puesto',
         'cantidad',

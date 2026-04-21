@@ -23,9 +23,32 @@ class PersonaController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Persona::with(['documentoTipo', 'usuario', 'nacionalidad']);
+        $query = Persona::with(['documentoTipo', 'usuario', 'nacionalidad', 'genero']);
 
-        // Búsqueda por nombre, apellido o documento
+        $performer = auth()->user();
+        $isSuperUser = $performer->hasRole('superuser');
+
+        // 1. Filtro: Solo Agentes (personas con movimientos de CUPOF)
+        if ($request->boolean('only_agents')) {
+            $query->whereHas('movimientosCupof', function($q) use ($performer, $isSuperUser, $request) {
+                // Si no es superusuario, solo ve agentes de sus escuelas
+                if (!$isSuperUser) {
+                    $schoolIds = $performer->escuelaUsuarios()->pluck('escuela_id')->toArray();
+                    $q->whereHas('cupof', function($sq) use ($schoolIds) {
+                        $sq->whereIn('escuela_id', $schoolIds);
+                    });
+                }
+                
+                // Filtro adicional por escuela específica si se solicita
+                if ($request->filled('escuela_id')) {
+                    $q->whereHas('cupof', function($sq) use ($request) {
+                        $sq->where('escuela_id', $request->escuela_id);
+                    });
+                }
+            });
+        }
+
+        // 2. Búsqueda por nombre, apellido o documento
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -116,14 +139,30 @@ class PersonaController extends Controller
             'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.'
         ]);
 
-        // REGLA DE SEGURIDAD: No permitir cambio de email si hay usuario vinculado
-        if ($persona->usuario_id && isset($validated['email'])) {
-            $currentEmail = $persona->contacto?->email;
-            if ($validated['email'] !== $currentEmail) {
+        // REGLA DE SEGURIDAD: Controlar cambios de identidad (DNI o Email)
+        $emailChanged = isset($validated['email']) && $validated['email'] !== ($persona->contacto?->email ?? null);
+        $dniChanged = $validated['documento_tipo_id'] != $persona->documento_tipo_id || 
+                     $validated['documento_numero'] != $persona->documento_numero;
+
+        if ($persona->usuario_id) {
+            // No permitir cambio de email si está vinculado (regla previa mantenida)
+            if ($emailChanged) {
                 return response()->json([
                     'error' => 'Seguridad: No se puede modificar el correo electrónico de una persona que ya tiene un usuario vinculado. Debe desvincular el usuario primero para realizar este cambio.',
                     'code' => 403
                 ], 403);
+            }
+
+            // Si cambia el DNI, desvincular automáticamente al usuario
+            if ($dniChanged) {
+                $linkedUser = $persona->usuario;
+                $persona->update(['usuario_id' => null]);
+                
+                // Actualizar estado del usuario desvinculado según su verificación
+                if ($linkedUser) {
+                    $newState = $linkedUser->hasVerifiedEmail() ? 'email_verificado' : 'email_pendiente';
+                    $linkedUser->update(['estado' => $newState]);
+                }
             }
         }
 
@@ -137,6 +176,12 @@ class PersonaController extends Controller
                 ['persona_id' => $persona->id],
                 ['email' => $newEmail]
             );
+        }
+
+        // Si cambió el DNI, intentar buscar un nuevo usuario coincidente
+        if ($dniChanged) {
+            $persona->refresh();
+            $this->userService->linkPersonaToUser($persona);
         }
 
         return response()->json([
