@@ -36,6 +36,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/escuelas', [EscuelaController::class, 'index']);
     Route::get('/niveles', [EscuelaController::class, 'niveles']);
     Route::get('/sectores', [EscuelaController::class, 'sectores']);
+    Route::get('/cargos', [App\Http\Controllers\Api\V1\CargoController::class, 'index']);
 
     // Geografía (Catálogos)
     Route::get('/provincias', [GeografiaController::class, 'provincias']);
@@ -106,6 +107,7 @@ Route::prefix('v1')->group(function () {
         Route::post('personas/{persona}/unlink-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'unlinkUser']);
 
         // Gestión de CUPOF y Agentes
+        Route::apiResource('cargos', App\Http\Controllers\Api\V1\CargoController::class)->except(['index']);
         Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);
         Route::apiResource('cupofs', App\Http\Controllers\Api\V1\CupofController::class);
         Route::post('cupofs/{cupof}/assign', [App\Http\Controllers\Api\V1\CupofController::class, 'assign']);
