@@ -86,10 +86,25 @@ Route::prefix('v1')->group(function () {
         // Gestión de Asignaturas
         Route::get('anio-plan/{id}/asignaturas', [App\Http\Controllers\Api\V1\AsignaturaController::class, 'indexByAnioPlan']);
         Route::apiResource('asignaturas', App\Http\Controllers\Api\V1\AsignaturaController::class)->except(['index']);
+
+        // Gestión de Propuestas Institucionales
+        Route::apiResource('propuestas', App\Http\Controllers\Api\V1\PropuestaController::class);
         
         // Catálogos relacionados (si se necesitan)
         Route::get('/planes-ciclos', function() {
             return response()->json(\App\Models\PlanCiclo::all());
+        });
+        Route::get('/turnos', function() {
+            return response()->json(\App\Models\Turno::all());
+        });
+        Route::get('/jornadas', function() {
+            return response()->json(\App\Models\Jornada::all());
+        });
+        Route::get('/lectivos', function() {
+            return response()->json(\App\Models\Lectivo::all());
+        });
+        Route::get('/anio-planes', function() {
+            return response()->json(\App\Models\AnioPlan::with(['plan', 'anio'])->get());
         });
     });
 
