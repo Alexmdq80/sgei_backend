@@ -198,14 +198,18 @@ class CupofService
      */
     private function mapCupofToRole(Cupof $cupof): string
     {
-        $tipo = strtolower($cupof->tipo_puesto);
+        // Prioritize the specific cargo name if it exists
+        $cargo = mb_strtolower($cupof->nombre_cargo ?? '', 'UTF-8');
+        $tipo = mb_strtolower($cupof->tipo_puesto ?? '', 'UTF-8');
         
-        // Check hierarchical titles in tipo_puesto
-        if (str_contains($tipo, 'director')) return 'director';
-        if (str_contains($tipo, 'vice')) return 'vicedirector';
-        if (str_contains($tipo, 'secretario')) return 'secretario';
-        if (str_contains($tipo, 'prosecretario')) return 'prosecretario';
-        if (str_contains($tipo, 'preceptor')) return 'preceptor';
+        $searchString = $cargo . ' ' . $tipo;
+        
+        // Check hierarchical titles
+        if (str_contains($searchString, 'director')) return 'director';
+        if (str_contains($searchString, 'vice')) return 'vicedirector';
+        if (str_contains($searchString, 'secretario')) return 'secretario';
+        if (str_contains($searchString, 'prosecretario')) return 'prosecretario';
+        if (str_contains($searchString, 'preceptor')) return 'preceptor';
 
         // Fallback to escalafon
         if ($cupof->escalafon === 'docente') return 'profesor';

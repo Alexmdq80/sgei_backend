@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Usuario;
 use App\Models\Persona;
+use App\Models\Escuela;
+use App\Models\EscuelaUsuario;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
@@ -327,6 +329,23 @@ class UserService
         }
 
         $user->update(['avatar_path' => null]);
+    }
+
+    /**
+     * Get schools where the user has a verified "leadership team" role (equipo de conducción).
+     * Leadership roles: director, vicedirector, secretario, prosecretario.
+     */
+    public function getAuthorizedSchoolsForProposals(Usuario $user): \Illuminate\Database\Eloquent\Collection
+    {
+        $leadershipRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+
+        return Escuela::whereHas('escuelaUsuarios', function ($query) use ($user, $leadershipRoles) {
+            $query->where('usuario_id', $user->id)
+                  ->whereNotNull('verified_at')
+                  ->whereHas('role', function ($q) use ($leadershipRoles) {
+                      $q->whereIn('name', $leadershipRoles);
+                  });
+        })->get();
     }
 
     /**

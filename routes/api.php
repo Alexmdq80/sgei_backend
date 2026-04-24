@@ -88,9 +88,10 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('asignaturas', App\Http\Controllers\Api\V1\AsignaturaController::class)->except(['index']);
 
         // Gestión de Propuestas Institucionales
+        Route::get('propuestas/escuelas-autorizadas', [App\Http\Controllers\Api\V1\PropuestaController::class, 'getAuthorizedSchools']);
         Route::apiResource('propuestas', App\Http\Controllers\Api\V1\PropuestaController::class);
         
-        // Catálogos relacionados (si se necesitan)
+        // Catálogos relacionados
         Route::get('/planes-ciclos', function() {
             return response()->json(\App\Models\PlanCiclo::all());
         });
@@ -100,9 +101,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/jornadas', function() {
             return response()->json(\App\Models\Jornada::all());
         });
-        Route::get('/lectivos', function() {
-            return response()->json(\App\Models\Lectivo::all());
-        });
+        Route::get('/lectivos', [App\Http\Controllers\Api\V1\LectivoController::class, 'index']);
         Route::get('/anio-planes', function() {
             return response()->json(\App\Models\AnioPlan::with(['plan', 'anio'])->get());
         });
@@ -127,5 +126,8 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('cupofs', App\Http\Controllers\Api\V1\CupofController::class);
         Route::post('cupofs/{cupof}/assign', [App\Http\Controllers\Api\V1\CupofController::class, 'assign']);
         Route::post('cupofs/{cupof}/release', [App\Http\Controllers\Api\V1\CupofController::class, 'release']);
+
+        // Gestión de Ciclos Lectivos (Panel Maestro)
+        Route::apiResource('lectivos', App\Http\Controllers\Api\V1\LectivoController::class)->except(['index']);
     });
 });
