@@ -18,8 +18,9 @@ class Condicion extends Model
      */
     protected $fillable = [
         "nombre",
-        "orden",
-        "vigente"
+        "vigente",
+        "created_by",
+        "updated_by"
     ];
 
     /**

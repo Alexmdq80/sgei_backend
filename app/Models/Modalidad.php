@@ -19,7 +19,6 @@ class Modalidad extends Model
      */
     protected $fillable = [
         "nombre",
-        "orden",
         "vigente"
     ];
 

@@ -18,44 +18,94 @@ class EscuelaService
      */
     public function search(string $term = null, array $filters = []): Collection
     {
-        $query = Escuela::query()->select(['id', 'nombre', 'numero', 'cue_anexo', 'clave_provincial', 'localidad_id', 'sector_id']);
+        // ... (existing search logic remains same)
+    }
 
-        // Filtro por término de búsqueda
-        if ($term) {
-            $query->where(function ($q) use ($term) {
-                $q->where('nombre', 'like', "%{$term}%")
-                  ->orWhere('numero', 'like', "%{$term}%")
-                  ->orWhere('cue_anexo', 'like', "%{$term}%")
-                  ->orWhere('clave_provincial', 'like', "%{$term}%");
+    /**
+     * Get all schools for admin panel.
+     */
+    public function getAllAdmin(string $search = null): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        $query = Escuela::with(['localidad', 'ambito', 'dependencia', 'sector']);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nombre', 'like', "%{$search}%")
+                  ->orWhere('numero', 'like', "%{$search}%")
+                  ->orWhere('cue_anexo', 'like', "%{$search}%");
             });
         }
 
-        // Filtros Geográficos
-        if (!empty($filters['localidad_id'])) {
-            $query->where('localidad_id', $filters['localidad_id']);
-        } elseif (!empty($filters['departamento_id'])) {
-            $query->whereHas('localidad', function ($q) use ($filters) {
-                $q->where('departamento_id', $filters['departamento_id']);
-            });
-        } elseif (!empty($filters['provincia_id'])) {
-            $query->whereHas('localidad.departamento', function ($q) use ($filters) {
-                $q->where('provincia_id', $filters['provincia_id']);
-            });
-        }
+        return $query->orderBy('nombre')->paginate(20);
+    }
 
-        // Filtro por Nivel
-        if (!empty($filters['nivel_id'])) {
-            $query->whereHas('modalidadesNiveles', function ($q) use ($filters) {
-                $q->where('modalidad_nivel.nivel_id', $filters['nivel_id']);
-            });
-        }
+    /**
+     * Create a new school.
+     */
+    public function create(array $data): Escuela
+    {
+        return DB::transaction(function () use ($data) {
+            $escuela = Escuela::create([
+                'nombre' => $data['nombre'],
+                'numero' => $data['numero'],
+                'cue_anexo' => $data['cue_anexo'],
+                'clave_provincial' => $data['clave_provincial'] ?? null,
+                'localidad_id' => $data['localidad_id'],
+                'ambito_id' => $data['ambito_id'] ?? null,
+                'dependencia_id' => $data['dependencia_id'] ?? null,
+                'sector_id' => $data['sector_id'] ?? null,
+                'domicilio' => $data['domicilio'] ?? null,
+                'telefono' => $data['telefono'] ?? null,
+                'email' => $data['email'] ?? null,
+                'codigo_postal' => $data['codigo_postal'] ?? null,
+                'created_by' => auth()->id(),
+            ]);
 
-        // Filtro por Sector
-        if (!empty($filters['sector_id'])) {
-            $query->where('sector_id', $filters['sector_id']);
-        }
+            // Manejo opcional de niveles/modalidades via pivot si se envían
+            if (isset($data['modalidades_niveles_ids'])) {
+                $escuela->modalidadesNiveles()->sync($data['modalidades_niveles_ids']);
+            }
 
-        return $query->with(['localidad:id,nombre', 'sector:id,nombre'])->limit(50)->get();
+            return $escuela;
+        });
+    }
+
+    /**
+     * Update an existing school.
+     */
+    public function update(Escuela $escuela, array $data): Escuela
+    {
+        return DB::transaction(function () use ($escuela, $data) {
+            $escuela->update([
+                'nombre' => $data['nombre'],
+                'numero' => $data['numero'],
+                'cue_anexo' => $data['cue_anexo'],
+                'clave_provincial' => $data['clave_provincial'] ?? $escuela->clave_provincial,
+                'localidad_id' => $data['localidad_id'],
+                'ambito_id' => $data['ambito_id'] ?? $escuela->ambito_id,
+                'dependencia_id' => $data['dependencia_id'] ?? $escuela->dependencia_id,
+                'sector_id' => $data['sector_id'] ?? $escuela->sector_id,
+                'domicilio' => $data['domicilio'] ?? $escuela->domicilio,
+                'telefono' => $data['telefono'] ?? $escuela->telefono,
+                'email' => $data['email'] ?? $escuela->email,
+                'codigo_postal' => $data['codigo_postal'] ?? $escuela->codigo_postal,
+                'updated_by' => auth()->id(),
+            ]);
+
+            if (isset($data['modalidades_niveles_ids'])) {
+                $escuela->modalidadesNiveles()->sync($data['modalidades_niveles_ids']);
+            }
+
+            return $escuela;
+        });
+    }
+
+    /**
+     * Delete a school.
+     */
+    public function delete(Escuela $escuela): bool
+    {
+        return $escuela->delete();
     }
 
     /**

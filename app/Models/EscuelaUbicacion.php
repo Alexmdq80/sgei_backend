@@ -18,7 +18,6 @@ class EscuelaUbicacion extends Model
      */
     protected $fillable = [
         "nombre",
-        "orden",
         "vigente"
     ];
 

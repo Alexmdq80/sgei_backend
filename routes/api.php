@@ -124,10 +124,22 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('cargos', App\Http\Controllers\Api\V1\CargoController::class)->except(['index']);
         Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);
         Route::apiResource('cupofs', App\Http\Controllers\Api\V1\CupofController::class);
+        Route::apiResource('escuelas', App\Http\Controllers\Api\V1\Admin\EscuelaController::class);
         Route::post('cupofs/{cupof}/assign', [App\Http\Controllers\Api\V1\CupofController::class, 'assign']);
         Route::post('cupofs/{cupof}/release', [App\Http\Controllers\Api\V1\CupofController::class, 'release']);
 
         // Gestión de Ciclos Lectivos (Panel Maestro)
         Route::apiResource('lectivos', App\Http\Controllers\Api\V1\LectivoController::class)->except(['index']);
+        Route::apiResource('anios', App\Http\Controllers\Api\V1\AnioController::class);
+        Route::apiResource('ambitos', App\Http\Controllers\Api\V1\AmbitoController::class);
+        Route::apiResource('cierre-causas', App\Http\Controllers\Api\V1\CierreCausaController::class);
+        Route::apiResource('condiciones', App\Http\Controllers\Api\V1\CondicionController::class);
+        Route::apiResource('dependencias', App\Http\Controllers\Api\V1\DependenciaController::class);
+        Route::apiResource('escuela-tipos', App\Http\Controllers\Api\V1\EscuelaTipoController::class);
+        Route::apiResource('niveles', App\Http\Controllers\Api\V1\NivelController::class);
+        Route::apiResource('modalidades', App\Http\Controllers\Api\V1\ModalidadController::class);
+        Route::apiResource('escuela-ubicaciones', App\Http\Controllers\Api\V1\EscuelaUbicacionController::class);
+        Route::apiResource('modalidad-niveles', App\Http\Controllers\Api\V1\ModalidadNivelController::class);
+        Route::apiResource('ofertas', App\Http\Controllers\Api\V1\OfertaController::class);
     });
 });
