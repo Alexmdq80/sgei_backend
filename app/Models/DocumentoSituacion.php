@@ -18,7 +18,6 @@ class DocumentoSituacion extends Model
      */
     protected $fillable = [
         "nombre",
-        "orden",
         "vigente"
     ];
 

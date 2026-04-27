@@ -18,7 +18,6 @@ class DocumentoTipo extends Model
      */
     protected $fillable = [
         "nombre",
-        "orden",
         "vigente"
     ];
 

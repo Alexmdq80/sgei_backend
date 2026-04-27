@@ -141,5 +141,10 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('escuela-ubicaciones', App\Http\Controllers\Api\V1\EscuelaUbicacionController::class);
         Route::apiResource('modalidad-niveles', App\Http\Controllers\Api\V1\ModalidadNivelController::class);
         Route::apiResource('ofertas', App\Http\Controllers\Api\V1\OfertaController::class);
+        Route::apiResource('documento-situacions', App\Http\Controllers\Api\V1\DocumentoSituacionController::class);
+        Route::apiResource('documento-tipos', App\Http\Controllers\Api\V1\DocumentoTipoController::class);
+        Route::apiResource('generos', App\Http\Controllers\Api\V1\GeneroController::class);
+        Route::apiResource('sexos', App\Http\Controllers\Api\V1\SexoController::class);
+        Route::apiResource('continentes', App\Http\Controllers\Api\V1\ContinenteController::class);
     });
 });

@@ -18,7 +18,7 @@ class Continente extends Model
      */
     protected $fillable = [
         "nombre",
-        "orden"
+        "vigente"
     ];
 
     /**
