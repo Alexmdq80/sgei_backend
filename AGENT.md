@@ -38,12 +38,22 @@
 ## Flujo de Trabajo (Gentleman AI Stack)
 
 - **Memoria:** Tras finalizar una tarea o decidir un cambio arquitectónico, ejecutar `mem_save` en Engram.
-- **Testing:** Sólo usar `php artisan test`. No ejecutar directamente `./vendor/bin/pest` Priorizar el uso de Pest PHP para los tests en `/backend/tests`.
+- **Testing:** Ejecutar exclusivamente php artisan test. Antes de cada suite de pruebas, ejecutar obligatoriamente php artisan config:clear para prevenir colisiones con la base de datos de desarrollo. Priorizar Pest PHP y asegurar que el entorno reportado sea testing.
 - **Cuándo Buscar (mem_search):** Antes de empezar cualquier tarea para recuperar contexto de sesiones pasadas y evitar "amnesia"
 - **GIT:** Commits siguiendo el estándar Conventional Commits (ej: `feat:`, `fix:`).
 - **Cierre:** de Sesión: Antes de terminar, el agente debe ejecutar siempre mem_session_summary para que la próxima vez sepa exactamente dónde quedó
 - **Recuperación tras Compacción:** Si la conversación es larga y el modelo "compacta" el contexto, el agente debe llamar inmediatamente a mem_context para recuperar los puntos clave
 - **Uso de read_file**: el agente siempre debe usar la herramienta read_file antes de proponer cambios para garantizar que su propuesta se basa en el código actual y no en alucinaciones
+
+## Protocolo de Testing y Seguridad de Datos
+
+- **Garantía de Entorno:** Antes de ejecutar php artisan test, el agente DEBE verificar que no exista un caché de configuración activo ejecutando php artisan config:clear.
+
+- **Aislamiento de DB:** Está estrictamente PROHIBIDO ejecutar tests si el entorno detectado no es testing. El agente debe asegurarse de que se esté utilizando la base de datos en memoria (sqlite / :memory:) definida en phpunit.xml para proteger la integridad de los datos de desarrollo en MySQL.
+
+- **Validación de Conexión:** Si el agente detecta que los tests intentan conectar con el puerto de MySQL o una base de datos física sin una instrucción explícita del usuario, debe abortar la ejecución inmediatamente.
+
+- **Ejecución de Seeders:** Al testear lógica que dependa de datos maestros (como el NacionsTableSeeder), el agente debe verificar en el código del test que se esté invocando $this->seed() o el trait RefreshDatabase para asegurar la existencia de los registros en la base de datos volátil de SQLite.
 
 ## Prohibiciones
 

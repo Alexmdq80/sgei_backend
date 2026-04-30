@@ -32,6 +32,7 @@ class LocalidadController extends Controller
     {
         $validated = $request->validate([
             'departamento_id' => 'required|exists:departamentos,id',
+            'localidad_censal_id' => 'nullable|exists:localidad_censals,id',
             'nombre' => 'required|string|max:255',
             'id_georef' => 'nullable|integer'
         ]);
@@ -55,6 +56,7 @@ class LocalidadController extends Controller
     {
         $validated = $request->validate([
             'departamento_id' => 'required|exists:departamentos,id',
+            'localidad_censal_id' => 'nullable|exists:localidad_censals,id',
             'nombre' => 'required|string|max:255',
             'id_georef' => 'nullable|integer'
         ]);
