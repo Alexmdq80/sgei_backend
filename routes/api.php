@@ -150,5 +150,11 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('provincias', App\Http\Controllers\Api\V1\ProvinciaController::class);
         Route::apiResource('departamentos', App\Http\Controllers\Api\V1\DepartamentoController::class);
         Route::apiResource('localidades', App\Http\Controllers\Api\V1\LocalidadController::class);
+        Route::apiResource('localidad-censals', App\Http\Controllers\Api\V1\LocalidadCensalController::class);
+
+        // Catálogos Georef
+        Route::apiResource('georef-fuentes', App\Http\Controllers\Api\V1\GeorefFuenteController::class);
+        Route::apiResource('georef-categorias', App\Http\Controllers\Api\V1\GeorefCategoriaController::class);
+        Route::apiResource('georef-funcions', App\Http\Controllers\Api\V1\GeorefFuncionController::class);
     });
 });

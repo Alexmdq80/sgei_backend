@@ -3,16 +3,28 @@
 namespace App\Services;
 
 use App\Models\Departamento;
-use Illuminate\Database\Eloquent\Collection;
 
 class DepartamentoService
 {
     /**
-     * Get all departments with their province and nation, ordered by name.
+     * Get paginated departments with their province and nation.
      */
-    public function getAll(): Collection
+    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return Departamento::with(['provincia.nacion'])->orderBy('nombre')->get();
+        $query = Departamento::with(['provincia.nacion'])
+            ->orderBy('nombre');
+
+        if ($search) {
+            $query->where('nombre', 'like', "%{$search}%")
+                ->orWhereHas('provincia', function ($q) use ($search) {
+                    $q->where('nombre', 'like', "%{$search}%")
+                        ->orWhereHas('nacion', function ($q2) use ($search) {
+                            $q2->where('nombre', 'like', "%{$search}%");
+                        });
+                });
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**

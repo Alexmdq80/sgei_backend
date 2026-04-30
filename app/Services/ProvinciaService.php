@@ -3,16 +3,26 @@
 namespace App\Services;
 
 use App\Models\Provincia;
-use Illuminate\Database\Eloquent\Collection;
 
 class ProvinciaService
 {
     /**
-     * Get all provinces with their nation, ordered by name.
+     * Get paginated provinces with their nation.
      */
-    public function getAll(): Collection
+    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return Provincia::with('nacion')->orderBy('nombre')->get();
+        $query = Provincia::with('nacion')
+            ->orderBy('nombre');
+
+        if ($search) {
+            $query->where('nombre', 'like', "%{$search}%")
+                ->orWhere('iso_id', 'like', "%{$search}%")
+                ->orWhereHas('nacion', function ($q) use ($search) {
+                    $q->where('nombre', 'like', "%{$search}%");
+                });
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**

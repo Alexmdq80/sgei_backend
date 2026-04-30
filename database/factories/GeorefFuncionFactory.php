@@ -2,16 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\DocumentoTipo;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\DocumentoTipo>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\GeorefFuncion>
  */
-class DocumentoTipoFactory extends Factory
+class GeorefFuncionFactory extends Factory
 {
-    protected $model = DocumentoTipo::class;
-
     /**
      * Define the model's default state.
      *
@@ -20,7 +17,8 @@ class DocumentoTipoFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => $this->faker->randomElement(['DNI', 'Pasaporte', 'CUIL', 'CUIT', 'LE', 'LC']),
+            'nombre' => mb_strtoupper($this->faker->unique()->word()),
+            'orden' => $this->faker->numberBetween(1, 100),
             'vigente' => true,
         ];
     }

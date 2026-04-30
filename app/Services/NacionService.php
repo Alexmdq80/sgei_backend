@@ -3,16 +3,26 @@
 namespace App\Services;
 
 use App\Models\Nacion;
-use Illuminate\Database\Eloquent\Collection;
 
 class NacionService
 {
     /**
-     * Get all nations with their continent, ordered by name.
+     * Get paginated nations with their continent.
      */
-    public function getAll(): Collection
+    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return Nacion::with('continente')->orderBy('nombre')->get();
+        $query = Nacion::with('continente')
+            ->orderBy('nombre');
+
+        if ($search) {
+            $query->where('nombre', 'like', "%{$search}%")
+                ->orWhere('nacionalidad', 'like', "%{$search}%")
+                ->orWhereHas('continente', function ($q) use ($search) {
+                    $q->where('nombre', 'like', "%{$search}%");
+                });
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**

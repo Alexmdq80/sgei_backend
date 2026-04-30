@@ -3,16 +3,28 @@
 namespace App\Services;
 
 use App\Models\Localidad;
-use Illuminate\Database\Eloquent\Collection;
 
 class LocalidadService
 {
     /**
-     * Get all localities with their department, province, and nation, ordered by name.
+     * Get paginated localities with their department, province, and nation.
      */
-    public function getAll(): Collection
+    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return Localidad::with(['departamento.provincia.nacion'])->orderBy('nombre')->get();
+        $query = Localidad::with(['departamento.provincia.nacion'])
+            ->orderBy('nombre');
+
+        if ($search) {
+            $query->where('nombre', 'like', "%{$search}%")
+                ->orWhereHas('departamento', function ($q) use ($search) {
+                    $q->where('nombre', 'like', "%{$search}%")
+                        ->orWhereHas('provincia', function ($q2) use ($search) {
+                            $q2->where('nombre', 'like', "%{$search}%");
+                        });
+                });
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**

@@ -13,12 +13,12 @@ class DocumentoTipoSeeder extends Seeder
     public function run(): void
     {
         $tipos = [
-            ['id' => 1, 'nombre' => 'DNI', 'orden' => 1, 'vigente' => true],
-            ['id' => 2, 'nombre' => 'CDI', 'orden' => 2, 'vigente' => true],
-            ['id' => 3, 'nombre' => 'LC', 'orden' => 3, 'vigente' => true],
-            ['id' => 4, 'nombre' => 'PASAPORTE', 'orden' => 4, 'vigente' => true],
-            ['id' => 5, 'nombre' => 'OTRO', 'orden' => 5, 'vigente' => true],
-            ['id' => 6, 'nombre' => 'INDOCUMENTADO', 'orden' => 6, 'vigente' => true],
+            ['id' => 1, 'nombre' => 'DNI', 'vigente' => true],
+            ['id' => 2, 'nombre' => 'CDI', 'vigente' => true],
+            ['id' => 3, 'nombre' => 'LC', 'vigente' => true],
+            ['id' => 4, 'nombre' => 'PASAPORTE', 'vigente' => true],
+            ['id' => 5, 'nombre' => 'OTRO', 'vigente' => true],
+            ['id' => 6, 'nombre' => 'INDOCUMENTADO', 'vigente' => true],
         ];
 
         foreach ($tipos as $tipo) {

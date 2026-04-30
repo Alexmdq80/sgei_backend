@@ -34,6 +34,16 @@ class MigrateLegacyData extends Command
     {
         $this->info('--- INICIANDO MIGRACIÓN DE DATOS LEGADOS ---');
 
+        // Verificación de Roles (Crítico para escuela_usuario)
+        $spatieRoles = \Spatie\Permission\Models\Role::all();
+        if ($spatieRoles->count() <= 2) { // 'superuser' y 'supervisor_curricular' suelen ser los únicos por defecto
+            $this->warn('⚠️ La tabla de roles parece estar incompleta. Se recomienda ejecutar:');
+            $this->warn('   php artisan db:seed --class=RolesAndPermissionsSeeder');
+            if (!$this->confirm('¿Desea continuar de todos modos?', false)) {
+                return;
+            }
+        }
+
         // Desactivar restricciones de claves foráneas
         Schema::disableForeignKeyConstraints();
 
@@ -96,6 +106,12 @@ class MigrateLegacyData extends Command
             'inscripcion_pases',
             'inscripcion_bajas',
             'inscripcion_finalizados',
+            // Tablas nuevas que podrían tener datos en legacy (si se añadieron allí)
+            'cargos',
+            'agentes',
+            'cupofs',
+            'cupof_movimientos',
+            'asignaturas',
         ];
 
         foreach ($tablesToMigrate as $tableName) {
@@ -105,7 +121,10 @@ class MigrateLegacyData extends Command
         // Reactivar restricciones de claves foráneas
         Schema::enableForeignKeyConstraints();
 
-        $this->info('--- MIGRACIÓN COMPLETADA EXITOSAMENTE ---');
+        $this->info('--- MIGRACIÓN DE LEGACY COMPLETADA ---');
+        $this->info('Recuerde ejecutar los seeders adicionales si es necesario:');
+        $this->line(' - php artisan db:seed --class=AsignaturaSeeder');
+        $this->line(' - php artisan db:seed --class=CargoSeeder');
     }
 
     /**
@@ -140,11 +159,8 @@ class MigrateLegacyData extends Command
         $legacyTableName = $tableMappings[$tableName] ?? $tableName;
 
         try {
-            // ... (resto del try-catch inicial hasta el map de dataToInsert)
-            
-            // Re-obtener los datos y columnas para que la lógica de mapeo use los nuevos nombres
             if (!Schema::connection('legacy')->hasTable($legacyTableName)) {
-                $this->warn("La tabla '{$legacyTableName}' no existe en la base de datos legacy.");
+                $this->warn("   - Saltando: La tabla '{$legacyTableName}' no existe en la base de datos legacy.");
                 return;
             }
 
@@ -152,7 +168,7 @@ class MigrateLegacyData extends Command
             $legacyData = DB::connection('legacy')->table($legacyTableName)->get();
 
             if ($legacyData->isEmpty()) {
-                $this->line("La tabla '{$legacyTableName}' está vacía.");
+                $this->line("   - Tabla '{$legacyTableName}' vacía.");
                 return;
             }
 
@@ -166,7 +182,6 @@ class MigrateLegacyData extends Command
 
                 foreach ($legacyRoles as $lr) {
                     $nameMatch = strtolower($lr->nombre);
-                    // Mapeos especiales
                     if ($nameMatch === 'administrador') $nameMatch = 'director';
                     if ($nameMatch === 'personal') $nameMatch = 'profesor';
 
@@ -186,61 +201,47 @@ class MigrateLegacyData extends Command
                     $legacyColumnName = $columnMappings[$tableName][$column] ?? $column;
 
                     if (array_key_exists($legacyColumnName, $legacyArray)) {
-                        $value = $legacyArray[$legacyColumnName];
+                        $filteredArray[$column] = $legacyArray[$legacyColumnName];
 
-                        // Lógica Especial: Mapeo de Roles de Legacy a Spatie
+                        // Lógica Especial: Mapeo de Roles
                         if ($tableName === 'escuela_usuario' && $column === 'role_id') {
-                            $value = $this->roleMap[$value] ?? null;
-                            if (!$value) return null; // Saltar si no hay rol equivalente
+                            $filteredArray[$column] = $this->roleMap[$filteredArray[$column]] ?? null;
+                            if (!$filteredArray[$column]) return null;
                         }
 
-                        // Manejo de booleanos obligatorios que vienen nulos
+                        // Manejo de booleanos
                         $booleanColumns = ['asistente_externo_si', 'proyecto_inclusion_si', 'concurre_especial_si'];
-                        if (in_array($column, $booleanColumns) && is_null($value)) {
-                            $value = 0;
+                        if (in_array($column, $booleanColumns) && is_null($filteredArray[$column])) {
+                            $filteredArray[$column] = 0;
                         }
-
-                        $filteredArray[$column] = $value;
                     }
                 }
 
-                // Caso especial para inscripcion_pases: si no tiene escuela_id, asignar la escuela "DESCONOCIDO"
+                // Fallback de Escuela en inscripcion_pases
                 if ($tableName === 'inscripcion_pases' && empty($filteredArray['escuela_id'])) {
                     if (is_null($this->unknownEscuelaId)) {
-                        $this->unknownEscuelaId = DB::table('escuelas')
-                            ->where('nombre', 'DESCONOCIDO / SIN DATOS')
-                            ->value('id') ?? DB::table('escuelas')->insertGetId([
-                                'nombre' => 'DESCONOCIDO / SIN DATOS',
-                                'created_at' => now(),
-                                'updated_at' => now()
-                            ]);
+                        $this->unknownEscuelaId = DB::table('escuelas')->where('nombre', 'DESCONOCIDO / SIN DATOS')->value('id') 
+                            ?? DB::table('escuelas')->insertGetId(['nombre' => 'DESCONOCIDO / SIN DATOS', 'created_at' => now(), 'updated_at' => now()]);
                     }
                     $filteredArray['escuela_id'] = $this->unknownEscuelaId;
                 }
 
                 return $filteredArray;
-            })->filter()->toArray(); // filter() elimina los nulos
+            })->filter()->toArray();
 
-            // Insertar en bloques para evitar problemas de memoria
             foreach (array_chunk($dataToInsert, 500) as $chunk) {
                 DB::table($tableName)->insert($chunk);
             }
 
-            // Al terminar de migrar 'escuelas', creamos la escuela DESCONOCIDO y guardamos su ID
             if ($tableName === 'escuelas') {
-                $this->unknownEscuelaId = DB::table('escuelas')->insertGetId([
-                    'nombre' => 'DESCONOCIDO / SIN DATOS',
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-                $this->info("   - Se creó la escuela 'DESCONOCIDO / SIN DATOS' (ID: {$this->unknownEscuelaId}).");
+                $this->unknownEscuelaId = DB::table('escuelas')->insertGetId(['nombre' => 'DESCONOCIDO / SIN DATOS', 'created_at' => now(), 'updated_at' => now()]);
             }
 
             $count = count($dataToInsert);
-            $this->info("✓ Se migraron {$count} registros en '{$tableName}' (desde '{$legacyTableName}').");
+            $this->info("✓ Se migraron {$count} registros en '{$tableName}'.");
 
         } catch (\Exception $e) {
-            $this->error("Error al migrar la tabla '{$tableName}': " . $e->getMessage());
+            $this->error("Error en '{$tableName}': " . $e->getMessage());
         }
     }
 }

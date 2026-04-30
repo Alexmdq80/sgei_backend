@@ -16,7 +16,6 @@ class NivelFactory extends Factory
     {
         return [
             'nombre' => $this->faker->unique()->randomElement(['Primario', 'Secundario', 'Inicial', 'Superior']),
-            'orden' => $this->faker->numberBetween(1, 10),
             'vigente' => true,
         ];
     }

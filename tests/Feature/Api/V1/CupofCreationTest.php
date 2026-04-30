@@ -6,7 +6,7 @@ use App\Models\Cupof;
 use Laravel\Sanctum\Sanctum;
 use Tests\ProvidesRoles;
 
-uses(Tests\TestCase::class, ProvidesRoles::class);
+uses(ProvidesRoles::class);
 
 test('admin can create a cupof', function () {
     $this->seedRoles();

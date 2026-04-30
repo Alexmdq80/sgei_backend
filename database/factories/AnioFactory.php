@@ -12,8 +12,7 @@ class AnioFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => $this->faker->unique()->word() . ' Año',
-            'orden' => $this->faker->numberBetween(1, 10),
+            'nombre' => $this->faker->word() . ' Año',
             'vigente' => true,
         ];
     }

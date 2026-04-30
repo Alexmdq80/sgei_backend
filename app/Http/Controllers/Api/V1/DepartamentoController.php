@@ -17,9 +17,12 @@ class DepartamentoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json($this->departamentoService->getAll());
+        $search = $request->query('search');
+        $perPage = $request->query('per_page', 15);
+        
+        return response()->json($this->departamentoService->getAll($search, (int)$perPage));
     }
 
     /**
