@@ -52,6 +52,6 @@ class DocumentoSituacionService
      */
     public function delete(DocumentoSituacion $documentoSituacion): bool
     {
-        return $documentoSituacion->delete();
+        return (bool) $documentoSituacion->delete();
     }
 }

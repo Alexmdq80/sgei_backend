@@ -66,6 +66,6 @@ class NacionService
      */
     public function delete(Nacion $nacion): bool
     {
-        return $nacion->delete();
+        return (bool) $nacion->delete();
     }
 }

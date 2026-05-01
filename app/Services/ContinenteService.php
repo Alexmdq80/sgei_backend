@@ -52,6 +52,6 @@ class ContinenteService
      */
     public function delete(Continente $continente): bool
     {
-        return $continente->delete();
+        return (bool) $continente->delete();
     }
 }

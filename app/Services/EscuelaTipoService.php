@@ -51,6 +51,6 @@ class EscuelaTipoService
      */
     public function delete(EscuelaTipo $escuelaTipo): bool
     {
-        return $escuelaTipo->delete();
+        return (bool) $escuelaTipo->delete();
     }
 }

@@ -51,6 +51,6 @@ class DependenciaService
      */
     public function delete(Dependencia $dependencia): bool
     {
-        return $dependencia->delete();
+        return (bool) $dependencia->delete();
     }
 }

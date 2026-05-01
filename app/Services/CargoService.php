@@ -47,6 +47,6 @@ class CargoService
      */
     public function delete(Cargo $cargo): bool
     {
-        return $cargo->delete();
+        return (bool) $cargo->delete();
     }
 }

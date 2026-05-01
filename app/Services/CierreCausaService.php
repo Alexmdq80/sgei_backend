@@ -50,6 +50,6 @@ class CierreCausaService
      */
     public function delete(CierreCausa $cierreCausa): bool
     {
-        return $cierreCausa->delete();
+        return (bool) $cierreCausa->delete();
     }
 }

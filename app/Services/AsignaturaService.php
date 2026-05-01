@@ -48,7 +48,7 @@ class AsignaturaService
     {
         return DB::transaction(function () use ($id) {
             $asignatura = Asignatura::findOrFail($id);
-            return $asignatura->delete();
+            return (bool) $asignatura->delete();
         });
     }
 }

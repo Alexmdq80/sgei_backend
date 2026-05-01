@@ -57,6 +57,6 @@ class ModalidadNivelService
      */
     public function delete(ModalidadNivel $modalidadNivel): bool
     {
-        return $modalidadNivel->delete();
+        return (bool) $modalidadNivel->delete();
     }
 }

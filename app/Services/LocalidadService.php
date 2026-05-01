@@ -68,6 +68,6 @@ class LocalidadService
      */
     public function delete(Localidad $localidad): bool
     {
-        return $localidad->delete();
+        return (bool) $localidad->delete();
     }
 }

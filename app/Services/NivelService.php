@@ -51,6 +51,6 @@ class NivelService
      */
     public function delete(Nivel $nivel): bool
     {
-        return $nivel->delete();
+        return (bool) $nivel->delete();
     }
 }

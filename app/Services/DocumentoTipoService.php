@@ -52,6 +52,6 @@ class DocumentoTipoService
      */
     public function delete(DocumentoTipo $documentoTipo): bool
     {
-        return $documentoTipo->delete();
+        return (bool) $documentoTipo->delete();
     }
 }

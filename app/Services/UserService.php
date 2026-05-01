@@ -293,7 +293,7 @@ class UserService
      */
     public function delete(Usuario $user): bool
     {
-        return $user->delete();
+        return (bool) $user->delete();
     }
 
     /**

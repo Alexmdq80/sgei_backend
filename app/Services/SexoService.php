@@ -56,6 +56,6 @@ class SexoService
      */
     public function delete(Sexo $sexo): bool
     {
-        return $sexo->delete();
+        return (bool) $sexo->delete();
     }
 }

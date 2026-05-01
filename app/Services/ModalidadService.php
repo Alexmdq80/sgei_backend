@@ -51,6 +51,6 @@ class ModalidadService
      */
     public function delete(Modalidad $modalidad): bool
     {
-        return $modalidad->delete();
+        return (bool) $modalidad->delete();
     }
 }

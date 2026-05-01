@@ -51,6 +51,6 @@ class CondicionService
      */
     public function delete(Condicion $condicion): bool
     {
-        return $condicion->delete();
+        return (bool) $condicion->delete();
     }
 }

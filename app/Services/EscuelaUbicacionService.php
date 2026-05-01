@@ -51,6 +51,6 @@ class EscuelaUbicacionService
      */
     public function delete(EscuelaUbicacion $escuelaUbicacion): bool
     {
-        return $escuelaUbicacion->delete();
+        return (bool) $escuelaUbicacion->delete();
     }
 }

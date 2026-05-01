@@ -61,6 +61,6 @@ class GeorefFuenteService
      */
     public function delete(GeorefFuente $fuente): bool
     {
-        return $fuente->delete();
+        return (bool) $fuente->delete();
     }
 }

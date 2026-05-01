@@ -70,6 +70,6 @@ class LocalidadCensalService
      */
     public function delete(LocalidadCensal $localidadCensal): bool
     {
-        return $localidadCensal->delete();
+        return (bool) $localidadCensal->delete();
     }
 }

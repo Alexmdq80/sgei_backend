@@ -65,6 +65,6 @@ class AnioService
      */
     public function delete(Anio $anio): bool
     {
-        return $anio->delete();
+        return (bool) $anio->delete();
     }
 }

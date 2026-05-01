@@ -61,6 +61,6 @@ class GeorefCategoriaService
      */
     public function delete(GeorefCategoria $categoria): bool
     {
-        return $categoria->delete();
+        return (bool) $categoria->delete();
     }
 }

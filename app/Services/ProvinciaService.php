@@ -66,6 +66,6 @@ class ProvinciaService
      */
     public function delete(Provincia $provincia): bool
     {
-        return $provincia->delete();
+        return (bool) $provincia->delete();
     }
 }

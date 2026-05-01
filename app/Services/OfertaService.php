@@ -51,6 +51,6 @@ class OfertaService
      */
     public function delete(Oferta $oferta): bool
     {
-        return $oferta->delete();
+        return (bool) $oferta->delete();
     }
 }

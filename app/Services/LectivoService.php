@@ -48,6 +48,6 @@ class LectivoService
      */
     public function delete(Lectivo $lectivo): bool
     {
-        return $lectivo->delete();
+        return (bool) $lectivo->delete();
     }
 }

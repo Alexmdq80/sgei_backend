@@ -66,6 +66,6 @@ class DepartamentoService
      */
     public function delete(Departamento $departamento): bool
     {
-        return $departamento->delete();
+        return (bool) $departamento->delete();
     }
 }

@@ -18,7 +18,23 @@ class EscuelaService
      */
     public function search(string $term = null, array $filters = []): Collection
     {
-        // ... (existing search logic remains same)
+        $query = Escuela::query()->with(['localidad', 'ambito', 'dependencia', 'sector']);
+
+        if ($term) {
+            $query->where(function ($q) use ($term) {
+                $q->where('nombre', 'like', "%{$term}%")
+                  ->orWhere('numero', 'like', "%{$term}%")
+                  ->orWhere('cue_anexo', 'like', "%{$term}%");
+            });
+        }
+
+        foreach ($filters as $field => $value) {
+            if ($value) {
+                $query->where($field, $value);
+            }
+        }
+
+        return $query->get();
     }
 
     /**
@@ -105,7 +121,7 @@ class EscuelaService
      */
     public function delete(Escuela $escuela): bool
     {
-        return $escuela->delete();
+        return (bool) $escuela->delete();
     }
 
     /**

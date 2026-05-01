@@ -51,6 +51,6 @@ class AmbitoService
      */
     public function delete(Ambito $ambito): bool
     {
-        return $ambito->delete();
+        return (bool) $ambito->delete();
     }
 }

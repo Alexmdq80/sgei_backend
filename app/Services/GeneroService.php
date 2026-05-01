@@ -54,6 +54,6 @@ class GeneroService
      */
     public function delete(Genero $genero): bool
     {
-        return $genero->delete();
+        return (bool) $genero->delete();
     }
 }

@@ -141,6 +141,6 @@ class PropuestaService
             }
         }
 
-        return $propuesta->delete();
+        return (bool) $propuesta->delete();
     }
 }

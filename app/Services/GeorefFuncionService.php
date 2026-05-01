@@ -61,6 +61,6 @@ class GeorefFuncionService
      */
     public function delete(GeorefFuncion $funcion): bool
     {
-        return $funcion->delete();
+        return (bool) $funcion->delete();
     }
 }
