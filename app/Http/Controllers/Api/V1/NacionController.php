@@ -31,7 +31,7 @@ class NacionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'id_georef' => 'nullable|integer',
+            'id_georef' => 'nullable',
             'continente_id' => 'required|exists:continentes,id',
             'nombre' => 'required|string|max:255|unique:nacions,nombre',
             'nacionalidad' => 'required|string|max:255'

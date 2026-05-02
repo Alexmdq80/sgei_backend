@@ -33,8 +33,11 @@ class ProvinciaController extends Controller
         $validated = $request->validate([
             'nacion_id' => 'required|exists:nacions,id',
             'nombre' => 'required|string|max:255|unique:provincias,nombre',
-            'id_georef' => 'nullable|integer',
+            'id_georef' => 'nullable|unique:provincias,id_georef',
             'iso_id' => 'nullable|string|max:10'
+        ], [
+            'id_georef.unique' => 'El ID Georef ingresado ya está asignado a otra provincia.',
+            'nombre.unique' => 'Ya existe una provincia con este nombre.'
         ]);
 
         $item = $this->provinciaService->create($validated);
@@ -57,8 +60,11 @@ class ProvinciaController extends Controller
         $validated = $request->validate([
             'nacion_id' => 'required|exists:nacions,id',
             'nombre' => 'required|string|max:255|unique:provincias,nombre,' . $provincia->id,
-            'id_georef' => 'nullable|integer',
+            'id_georef' => 'nullable|integer|unique:provincias,id_georef,' . $provincia->id,
             'iso_id' => 'nullable|string|max:10'
+        ], [
+            'id_georef.unique' => 'El ID Georef ingresado ya está asignado a otra provincia.',
+            'nombre.unique' => 'Ya existe una provincia con este nombre.'
         ]);
 
         $updated = $this->provinciaService->update($provincia, $validated);

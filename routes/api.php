@@ -149,6 +149,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('naciones', App\Http\Controllers\Api\V1\NacionController::class);
         Route::apiResource('provincias', App\Http\Controllers\Api\V1\ProvinciaController::class);
         Route::apiResource('departamentos', App\Http\Controllers\Api\V1\DepartamentoController::class);
+        Route::apiResource('municipios', App\Http\Controllers\Api\V1\MunicipioController::class);
         Route::apiResource('localidades', App\Http\Controllers\Api\V1\LocalidadController::class);
         Route::apiResource('localidad-censals', App\Http\Controllers\Api\V1\LocalidadCensalController::class);
 
