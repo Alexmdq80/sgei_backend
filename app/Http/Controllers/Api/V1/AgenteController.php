@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agente;
-use App\Models\Persona;
+use App\Http\Requests\Api\V1\AgenteRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -32,15 +32,9 @@ class AgenteController extends Controller
     /**
      * Create an agent from a persona.
      */
-    public function store(Request $request): JsonResponse
+    public function store(AgenteRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'persona_id' => 'required|exists:personas,id|unique:agentes,persona_id',
-            'legajo' => 'nullable|string|unique:agentes,legajo',
-            'fecha_ingreso_sistema' => 'nullable|date',
-        ]);
-
-        $agente = Agente::create($validated);
+        $agente = Agente::create($request->validated());
         return response()->json($agente->load('persona'), 201);
     }
 }

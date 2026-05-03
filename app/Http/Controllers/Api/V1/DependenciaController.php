@@ -5,18 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Dependencia;
 use App\Services\DependenciaService;
+use App\Http\Requests\Api\V1\DependenciaRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class DependenciaController extends Controller
 {
-    protected DependenciaService $dependenciaService;
-
-    public function __construct(DependenciaService $dependenciaService)
-    {
-        $this->dependenciaService = $dependenciaService;
-    }
+    public function __construct(
+        protected DependenciaService $dependenciaService
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -29,18 +25,9 @@ class DependenciaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(DependenciaRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:dependencias,nombre',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $dependencia = $this->dependenciaService->create($request->all());
+        $dependencia = $this->dependenciaService->create($request->validated());
         return response()->json($dependencia, 201);
     }
 
@@ -55,18 +42,9 @@ class DependenciaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Dependencia $dependencia): JsonResponse
+    public function update(DependenciaRequest $request, Dependencia $dependencia): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:dependencias,nombre,' . $dependencia->id,
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $dependencia = $this->dependenciaService->update($dependencia, $request->all());
+        $dependencia = $this->dependenciaService->update($dependencia, $request->validated());
         return response()->json($dependencia);
     }
 

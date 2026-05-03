@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\LocalidadCensal;
 use App\Services\LocalidadCensalService;
+use App\Http\Requests\Api\V1\LocalidadCensalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -28,19 +29,9 @@ class LocalidadCensalController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(LocalidadCensalRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'id_georef' => 'nullable|string|max:255',
-            'georef_fuente_id' => 'nullable|exists:georef_fuentes,id',
-            'georef_categoria_id' => 'nullable|exists:georef_categorias,id',
-            'georef_funcion_id' => 'nullable|exists:georef_funcions,id',
-            'centroide_lat' => 'nullable|numeric',
-            'centroide_lon' => 'nullable|numeric'
-        ]);
-
-        $item = $this->localidadCensalService->create($validated);
+        $item = $this->localidadCensalService->create($request->validated());
         return response()->json($item, 201);
     }
 
@@ -55,19 +46,9 @@ class LocalidadCensalController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, LocalidadCensal $localidadCensal): JsonResponse
+    public function update(LocalidadCensalRequest $request, LocalidadCensal $localidadCensal): JsonResponse
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'id_georef' => 'nullable|string|max:255',
-            'georef_fuente_id' => 'nullable|exists:georef_fuentes,id',
-            'georef_categoria_id' => 'nullable|exists:georef_categorias,id',
-            'georef_funcion_id' => 'nullable|exists:georef_funcions,id',
-            'centroide_lat' => 'nullable|numeric',
-            'centroide_lon' => 'nullable|numeric'
-        ]);
-
-        $updated = $this->localidadCensalService->update($localidadCensal, $validated);
+        $updated = $this->localidadCensalService->update($localidadCensal, $request->validated());
         return response()->json($updated);
     }
 

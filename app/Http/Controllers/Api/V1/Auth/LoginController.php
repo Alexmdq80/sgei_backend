@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\AuthService;
+use App\Http\Requests\Api\V1\Auth\LoginRequest;
+use App\Http\Requests\Api\V1\Auth\RefreshTokenRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -12,8 +14,6 @@ class LoginController extends Controller
 {
     /**
      * Create a new controller instance.
-     *
-     * @param AuthService $authService
      */
     public function __construct(
         protected AuthService $authService
@@ -21,22 +21,9 @@ class LoginController extends Controller
 
     /**
      * Authenticate a user and return a token.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required_without_all:documento_tipo_id,documento_numero|email',
-            'documento_tipo_id' => 'required_without:email|integer|exists:documento_tipos,id',
-            'documento_numero' => 'required_without:email|numeric|digits_between:7,15',
-            'password' => 'required|string',
-        ], [
-            'documento_numero.numeric' => 'El número de documento debe contener solo números.',
-            'documento_numero.digits_between' => 'El número de documento debe tener entre 7 y 15 dígitos.',
-        ]);
-
         $credentials = $request->only(['password']);
 
         if ($request->has('email')) {
@@ -71,10 +58,8 @@ class LoginController extends Controller
     /**
      * Refresh the access token.
      */
-    public function refresh(Request $request): JsonResponse
+    public function refresh(RefreshTokenRequest $request): JsonResponse
     {
-        $request->validate(['refresh_token' => 'required|string']);
-
         try {
             $data = $this->authService->refreshToken($request->refresh_token);
 
@@ -89,16 +74,9 @@ class LoginController extends Controller
 
     /**
      * Log out the user and revoke the token.
-     * 
-     * @param Request $request
-     * @return JsonResponse
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->validate([
-            'refresh_token' => 'sometimes|string'
-        ]);
-
         $this->authService->logout($request->user(), $request);
 
         return response()->json([

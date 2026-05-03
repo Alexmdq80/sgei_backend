@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CargoRequest extends FormRequest
 {
@@ -33,18 +34,18 @@ class CargoRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
-            'nombre' => 'required|string|max:255|unique:cargos,nombre',
-            'requiere_cursos' => 'boolean',
-            'activo' => 'boolean',
+        $cargo = $this->route('cargo');
+        $id = is_object($cargo) ? $cargo->id : $cargo;
+
+        return [
+            'nombre' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('cargos', 'nombre')->ignore($id)
+            ],
+            'requiere_cursos' => ['boolean'],
+            'activo' => ['boolean'],
         ];
-
-        if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
-            $cargo = $this->route('cargo');
-            $id = is_object($cargo) ? $cargo->id : $cargo;
-            $rules['nombre'] = 'required|string|max:255|unique:cargos,nombre,' . $id;
-        }
-
-        return $rules;
     }
 }

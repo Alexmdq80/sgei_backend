@@ -15,18 +15,18 @@ class CupofService
      */
     public function getAllCupofs(array $filters = []): Collection
     {
-        $query = Cupof::with(['escuela', 'asignatura', 'movimientoActivo.persona']);
+        $query = Cupof::with(['escuela', 'asignatura', 'escalafon', 'puestoTipo', 'movimientoActivo.persona']);
 
-        if (isset($filters['escuela_id'])) {
+        if (isset($filters['escuela_id']) && !empty($filters['escuela_id'])) {
             $query->where('escuela_id', $filters['escuela_id']);
         }
 
-        if (isset($filters['estado_cupof'])) {
+        if (isset($filters['estado_cupof']) && !empty($filters['estado_cupof'])) {
             $query->where('estado_cupof', $filters['estado_cupof']);
         }
 
-        if (isset($filters['escalafon'])) {
-            $query->where('escalafon', $filters['escalafon']);
+        if (isset($filters['escalafon_id']) && !empty($filters['escalafon_id'])) {
+            $query->where('escalafon_id', $filters['escalafon_id']);
         }
 
         return $query->get();
@@ -42,8 +42,8 @@ class CupofService
             'escuela_id' => $data['escuela_id'],
             'asignatura_id' => $data['asignatura_id'] ?? null,
             'nombre_cargo' => $data['nombre_cargo'] ?? null,
-            'escalafon' => $data['escalafon'],
-            'tipo_puesto' => $data['tipo_puesto'],
+            'escalafon_id' => $data['escalafon_id'],
+            'puesto_tipo_id' => $data['puesto_tipo_id'],
             'cantidad' => $data['cantidad'] ?? 1,
             'estado_cupof' => 'disponible',
         ]);
@@ -149,7 +149,7 @@ class CupofService
     private function refreshUserRoleInSchool($usuario, $escuelaId, $persona): void
     {
         // 1. Get all unique roles derived from active CUPOFs for this persona in this school
-        $activeCupofs = Cupof::whereHas('movimientos', function($q) use ($persona) {
+        $activeCupofs = Cupof::with(['escalafon', 'puestoTipo'])->whereHas('movimientos', function($q) use ($persona) {
             $q->where('persona_id', $persona->id)->where('activo', true);
         })->where('escuela_id', $escuelaId)->get();
 
@@ -200,9 +200,10 @@ class CupofService
     {
         // Prioritize the specific cargo name if it exists
         $cargo = mb_strtolower($cupof->nombre_cargo ?? '', 'UTF-8');
-        $tipo = mb_strtolower($cupof->tipo_puesto ?? '', 'UTF-8');
+        $tipoPuesto = mb_strtolower($cupof->puestoTipo?->nombre ?? '', 'UTF-8');
+        $escalafon = mb_strtolower($cupof->escalafon?->nombre ?? '', 'UTF-8');
         
-        $searchString = $cargo . ' ' . $tipo;
+        $searchString = $cargo . ' ' . $tipoPuesto . ' ' . $escalafon;
         
         // Check hierarchical titles
         if (str_contains($searchString, 'director')) return 'director';
@@ -212,8 +213,8 @@ class CupofService
         if (str_contains($searchString, 'preceptor')) return 'preceptor';
 
         // Fallback to escalafon
-        if ($cupof->escalafon === 'docente') return 'profesor';
-        if ($cupof->escalafon === 'auxiliar') return 'auxiliar';
+        if (str_contains($escalafon, 'docente')) return 'profesor';
+        if (str_contains($escalafon, 'auxiliar')) return 'auxiliar';
 
         return 'profesor';
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class AsignaturaRequest extends FormRequest
 {
@@ -16,18 +17,16 @@ class AsignaturaRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'nombre' => 'required|string|max:255',
-            'nombre_completo' => 'nullable|string|max:500',
-            'anio_plan_id' => 'required|exists:anio_plan,id',
-            'horas_semanales' => 'required|integer|min:0|max:40',
-            'codigo' => 'nullable|string|max:50',
-            'orden' => 'integer|min:0'
+            'nombre' => ['required', 'string', 'max:255'],
+            'nombre_completo' => ['nullable', 'string', 'max:500'],
+            'anio_plan_id' => ['required', Rule::exists('anio_plan', 'id')],
+            'horas_semanales' => ['required', 'integer', 'min:0', 'max:40'],
+            'codigo' => ['nullable', 'string', 'max:50'],
+            'orden' => ['integer', 'min:0']
         ];
     }
 }

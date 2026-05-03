@@ -19,9 +19,9 @@ class Cupof extends Model
         'codigo_cupof',
         'escuela_id',
         'asignatura_id',
+        'escalafon_id',
+        'puesto_tipo_id',
         'nombre_cargo',
-        'escalafon',
-        'tipo_puesto',
         'cantidad',
         'estado_cupof',
         'motivo_baja'
@@ -41,6 +41,22 @@ class Cupof extends Model
     public function asignatura(): BelongsTo
     {
         return $this->belongsTo(Asignatura::class);
+    }
+
+    /**
+     * Relationship to the shift type.
+     */
+    public function escalafon(): BelongsTo
+    {
+        return $this->belongsTo(Escalafon::class);
+    }
+
+    /**
+     * Relationship to the position type.
+     */
+    public function puestoTipo(): BelongsTo
+    {
+        return $this->belongsTo(PuestoTipo::class);
     }
 
     /**

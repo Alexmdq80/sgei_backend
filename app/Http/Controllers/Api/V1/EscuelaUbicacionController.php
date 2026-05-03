@@ -5,18 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\EscuelaUbicacion;
 use App\Services\EscuelaUbicacionService;
+use App\Http\Requests\Api\V1\EscuelaUbicacionRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class EscuelaUbicacionController extends Controller
 {
-    protected EscuelaUbicacionService $escuelaUbicacionService;
-
-    public function __construct(EscuelaUbicacionService $escuelaUbicacionService)
-    {
-        $this->escuelaUbicacionService = $escuelaUbicacionService;
-    }
+    public function __construct(
+        protected EscuelaUbicacionService $escuelaUbicacionService
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -29,18 +25,9 @@ class EscuelaUbicacionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(EscuelaUbicacionRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:escuela_ubicacions,nombre',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $escuelaUbicacion = $this->escuelaUbicacionService->create($request->all());
+        $escuelaUbicacion = $this->escuelaUbicacionService->create($request->validated());
         return response()->json($escuelaUbicacion, 201);
     }
 
@@ -55,18 +42,9 @@ class EscuelaUbicacionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, EscuelaUbicacion $escuelaUbicacion): JsonResponse
+    public function update(EscuelaUbicacionRequest $request, EscuelaUbicacion $escuelaUbicacion): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:escuela_ubicacions,nombre,' . $escuelaUbicacion->id,
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $escuelaUbicacion = $this->escuelaUbicacionService->update($escuelaUbicacion, $request->all());
+        $escuelaUbicacion = $this->escuelaUbicacionService->update($escuelaUbicacion, $request->validated());
         return response()->json($escuelaUbicacion);
     }
 

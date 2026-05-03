@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\ModalidadNivel;
 use App\Services\ModalidadNivelService;
+use App\Http\Requests\Api\V1\ModalidadNivelRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ModalidadNivelController extends Controller
 {
@@ -29,30 +28,9 @@ class ModalidadNivelController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(ModalidadNivelRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nivel_id' => 'required|exists:nivels,id',
-            'modalidad_id' => 'required|exists:modalidads,id',
-            'escuela_tipo_id' => 'nullable|exists:escuela_tipos,id',
-        ]);
-
-        // Evitar duplicados
-        $validator->after(function ($validator) use ($request) {
-            $exists = ModalidadNivel::where('nivel_id', $request->nivel_id)
-                ->where('modalidad_id', $request->modalidad_id)
-                ->where('escuela_tipo_id', $request->escuela_tipo_id)
-                ->exists();
-            if ($exists) {
-                $validator->errors()->add('nivel_id', 'Esta combinación ya existe.');
-            }
-        });
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $combination = $this->modalidadNivelService->create($request->all());
+        $combination = $this->modalidadNivelService->create($request->validated());
         return response()->json($combination, 201);
     }
 
@@ -67,19 +45,9 @@ class ModalidadNivelController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ModalidadNivel $modalidadNivel): JsonResponse
+    public function update(ModalidadNivelRequest $request, ModalidadNivel $modalidadNivel): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nivel_id' => 'required|exists:nivels,id',
-            'modalidad_id' => 'required|exists:modalidads,id',
-            'escuela_tipo_id' => 'nullable|exists:escuela_tipos,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $combination = $this->modalidadNivelService->update($modalidadNivel, $request->all());
+        $combination = $this->modalidadNivelService->update($modalidadNivel, $request->validated());
         return response()->json($combination);
     }
 

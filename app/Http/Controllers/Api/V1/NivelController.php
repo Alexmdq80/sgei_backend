@@ -5,18 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Nivel;
 use App\Services\NivelService;
+use App\Http\Requests\Api\V1\NivelRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class NivelController extends Controller
 {
-    protected NivelService $nivelService;
-
-    public function __construct(NivelService $nivelService)
-    {
-        $this->nivelService = $nivelService;
-    }
+    public function __construct(
+        protected NivelService $nivelService
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -29,18 +25,9 @@ class NivelController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(NivelRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:nivels,nombre',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $nivel = $this->nivelService->create($request->all());
+        $nivel = $this->nivelService->create($request->validated());
         return response()->json($nivel, 201);
     }
 
@@ -55,18 +42,9 @@ class NivelController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Nivel $nivel): JsonResponse
+    public function update(NivelRequest $request, Nivel $nivel): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:nivels,nombre,' . $nivel->id,
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $nivel = $this->nivelService->update($nivel, $request->all());
+        $nivel = $this->nivelService->update($nivel, $request->validated());
         return response()->json($nivel);
     }
 

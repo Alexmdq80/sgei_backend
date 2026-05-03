@@ -134,10 +134,16 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('ambitos', App\Http\Controllers\Api\V1\AmbitoController::class);
         Route::apiResource('cierre-causas', App\Http\Controllers\Api\V1\CierreCausaController::class);
         Route::apiResource('condiciones', App\Http\Controllers\Api\V1\CondicionController::class);
+        Route::apiResource('vinculo-tipos', App\Http\Controllers\Api\V1\VinculoTipoController::class);
+        Route::apiResource('vinculos', App\Http\Controllers\Api\V1\VinculoController::class);
         Route::apiResource('dependencias', App\Http\Controllers\Api\V1\DependenciaController::class);
         Route::apiResource('escuela-tipos', App\Http\Controllers\Api\V1\EscuelaTipoController::class);
         Route::apiResource('niveles', App\Http\Controllers\Api\V1\NivelController::class);
         Route::apiResource('modalidades', App\Http\Controllers\Api\V1\ModalidadController::class);
+        Route::apiResource('jornadas', App\Http\Controllers\Api\V1\JornadaController::class);
+        Route::apiResource('turnos', App\Http\Controllers\Api\V1\TurnoController::class);
+        Route::apiResource('escalafones', App\Http\Controllers\Api\V1\EscalafonController::class);
+        Route::apiResource('puesto-tipos', App\Http\Controllers\Api\V1\PuestoTipoController::class);
         Route::apiResource('escuela-ubicaciones', App\Http\Controllers\Api\V1\EscuelaUbicacionController::class);
         Route::apiResource('modalidad-niveles', App\Http\Controllers\Api\V1\ModalidadNivelController::class);
         Route::apiResource('ofertas', App\Http\Controllers\Api\V1\OfertaController::class);
@@ -152,6 +158,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('municipios', App\Http\Controllers\Api\V1\MunicipioController::class);
         Route::apiResource('localidades', App\Http\Controllers\Api\V1\LocalidadController::class);
         Route::apiResource('localidad-censals', App\Http\Controllers\Api\V1\LocalidadCensalController::class);
+        Route::apiResource('calles', App\Http\Controllers\Api\V1\CalleController::class);
 
         // Catálogos Georef
         Route::apiResource('georef-fuentes', App\Http\Controllers\Api\V1\GeorefFuenteController::class);

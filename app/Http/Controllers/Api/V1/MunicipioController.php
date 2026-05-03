@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Municipio;
 use App\Services\MunicipioService;
+use App\Http\Requests\Api\V1\MunicipioRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -28,17 +29,9 @@ class MunicipioController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(MunicipioRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'provincia_id' => 'required|exists:provincias,id',
-            'nombre' => 'required|string|max:255',
-            'id_georef' => 'nullable|unique:municipios,id_georef'
-        ], [
-            'id_georef.unique' => 'El ID Georef ya está asignado a otro municipio.'
-        ]);
-
-        $item = $this->municipioService->create($validated);
+        $item = $this->municipioService->create($request->validated());
         return response()->json($item, 201);
     }
 
@@ -53,17 +46,9 @@ class MunicipioController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Municipio $municipio): JsonResponse
+    public function update(MunicipioRequest $request, Municipio $municipio): JsonResponse
     {
-        $validated = $request->validate([
-            'provincia_id' => 'required|exists:provincias,id',
-            'nombre' => 'required|string|max:255',
-            'id_georef' => 'nullable|integer|unique:municipios,id_georef,' . $municipio->id
-        ], [
-            'id_georef.unique' => 'El ID Georef ya está asignado a otro municipio.'
-        ]);
-
-        $updated = $this->municipioService->update($municipio, $validated);
+        $updated = $this->municipioService->update($municipio, $request->validated());
         return response()->json($updated);
     }
 

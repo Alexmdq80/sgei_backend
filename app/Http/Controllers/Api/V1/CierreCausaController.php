@@ -5,18 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\CierreCausa;
 use App\Services\CierreCausaService;
+use App\Http\Requests\Api\V1\CierreCausaRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class CierreCausaController extends Controller
 {
-    protected CierreCausaService $cierreCausaService;
-
-    public function __construct(CierreCausaService $cierreCausaService)
-    {
-        $this->cierreCausaService = $cierreCausaService;
-    }
+    public function __construct(
+        protected CierreCausaService $cierreCausaService
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -29,18 +25,9 @@ class CierreCausaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(CierreCausaRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:150|unique:cierre_causas,nombre',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $cierreCausa = $this->cierreCausaService->create($request->all());
+        $cierreCausa = $this->cierreCausaService->create($request->validated());
         return response()->json($cierreCausa, 201);
     }
 
@@ -55,18 +42,9 @@ class CierreCausaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, CierreCausa $cierreCausa): JsonResponse
+    public function update(CierreCausaRequest $request, CierreCausa $cierreCausa): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:150|unique:cierre_causas,nombre,' . $cierreCausa->id,
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $cierreCausa = $this->cierreCausaService->update($cierreCausa, $request->all());
+        $cierreCausa = $this->cierreCausaService->update($cierreCausa, $request->validated());
         return response()->json($cierreCausa);
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Localidad;
 use App\Services\LocalidadService;
+use App\Http\Requests\Api\V1\LocalidadRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -28,16 +29,9 @@ class LocalidadController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(LocalidadRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'departamento_id' => 'required|exists:departamentos,id',
-            'localidad_censal_id' => 'nullable|exists:localidad_censals,id',
-            'nombre' => 'required|string|max:255',
-            'id_georef' => 'nullable|integer'
-        ]);
-
-        $item = $this->localidadService->create($validated);
+        $item = $this->localidadService->create($request->validated());
         return response()->json($item, 201);
     }
 
@@ -52,16 +46,9 @@ class LocalidadController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Localidad $localidad): JsonResponse
+    public function update(LocalidadRequest $request, Localidad $localidad): JsonResponse
     {
-        $validated = $request->validate([
-            'departamento_id' => 'required|exists:departamentos,id',
-            'localidad_censal_id' => 'nullable|exists:localidad_censals,id',
-            'nombre' => 'required|string|max:255',
-            'id_georef' => 'nullable|integer'
-        ]);
-
-        $updated = $this->localidadService->update($localidad, $validated);
+        $updated = $this->localidadService->update($localidad, $request->validated());
         return response()->json($updated);
     }
 

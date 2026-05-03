@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Lectivo;
 use App\Services\LectivoService;
+use App\Http\Requests\Api\V1\LectivoRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -26,17 +27,9 @@ class LectivoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(LectivoRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'anio' => 'required|integer|min:2000|max:2100',
-            'orden' => 'nullable|integer',
-            'vigente' => 'boolean',
-            'cerrado' => 'boolean',
-        ]);
-
-        $lectivo = $this->lectivoService->create($validated);
+        $lectivo = $this->lectivoService->create($request->validated());
         return response()->json($lectivo, 201);
     }
 
@@ -51,17 +44,9 @@ class LectivoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Lectivo $lectivo): JsonResponse
+    public function update(LectivoRequest $request, Lectivo $lectivo): JsonResponse
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'anio' => 'required|integer|min:2000|max:2100',
-            'orden' => 'nullable|integer',
-            'vigente' => 'boolean',
-            'cerrado' => 'boolean',
-        ]);
-
-        $updated = $this->lectivoService->update($lectivo, $validated);
+        $updated = $this->lectivoService->update($lectivo, $request->validated());
         return response()->json($updated);
     }
 

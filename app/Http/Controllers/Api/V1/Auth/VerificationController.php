@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Usuario;
 use App\Services\UserService;
+use App\Http\Requests\Api\V1\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -21,13 +22,8 @@ class VerificationController extends Controller
     /**
      * Verify the user's email address.
      */
-    public function verify(Request $request): JsonResponse
+    public function verify(EmailVerificationRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email|exists:usuarios,email',
-            'token' => 'required|string',
-        ]);
-
         $user = Usuario::where('email', $request->email)->first();
 
         // Si el usuario ya está verificado, devolvemos éxito directamente

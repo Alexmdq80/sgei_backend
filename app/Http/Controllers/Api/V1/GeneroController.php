@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Genero;
 use App\Services\GeneroService;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\V1\GeneroRequest;
 use Illuminate\Http\JsonResponse;
 
 class GeneroController extends Controller
@@ -25,15 +25,9 @@ class GeneroController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(GeneroRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:generos,nombre',
-            'orden' => 'nullable|integer|min:0|max:255',
-            'vigente' => 'boolean'
-        ]);
-
-        $item = $this->generoService->create($validated);
+        $item = $this->generoService->create($request->validated());
         return response()->json($item, 201);
     }
 
@@ -48,15 +42,9 @@ class GeneroController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Genero $genero): JsonResponse
+    public function update(GeneroRequest $request, Genero $genero): JsonResponse
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:generos,nombre,' . $genero->id,
-            'orden' => 'nullable|integer|min:0|max:255',
-            'vigente' => 'boolean'
-        ]);
-
-        $updated = $this->generoService->update($genero, $validated);
+        $updated = $this->generoService->update($genero, $request->validated());
         return response()->json($updated);
     }
 

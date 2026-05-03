@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Provincia;
 use App\Models\Departamento;
 use App\Models\Localidad;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\V1\GeografiaRequest;
 use Illuminate\Http\JsonResponse;
 
 class GeografiaController extends Controller
@@ -23,10 +23,8 @@ class GeografiaController extends Controller
     /**
      * List departments by province.
      */
-    public function departamentos(Request $request): JsonResponse
+    public function departamentos(GeografiaRequest $request): JsonResponse
     {
-        $request->validate(['provincia_id' => 'required|integer|exists:provincias,id']);
-        
         $departamentos = Departamento::where('provincia_id', $request->provincia_id)
             ->orderBy('nombre')
             ->get(['id', 'nombre']);
@@ -37,10 +35,8 @@ class GeografiaController extends Controller
     /**
      * List localities by department.
      */
-    public function localidades(Request $request): JsonResponse
+    public function localidades(GeografiaRequest $request): JsonResponse
     {
-        $request->validate(['departamento_id' => 'required|integer|exists:departamentos,id']);
-        
         $localidades = Localidad::where('departamento_id', $request->departamento_id)
             ->orderBy('nombre')
             ->get(['id', 'nombre']);

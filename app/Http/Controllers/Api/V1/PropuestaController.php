@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Propuesta;
 use App\Services\PropuestaService;
+use App\Http\Requests\Api\V1\PropuestaRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -35,18 +36,9 @@ class PropuestaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(PropuestaRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'escuela_id' => 'required|exists:escuelas,id',
-            'anio_plan_id' => 'required|exists:anio_plan,id',
-            'turno_inicio_id' => 'nullable|exists:turnos,id',
-            'turno_fin_id' => 'nullable|exists:turnos,id',
-            'jornada_id' => 'nullable|exists:jornadas,id',
-            'lectivo_id' => 'required|exists:lectivos,id',
-        ]);
-
-        $propuesta = $this->propuestaService->createPropuesta($request->user(), $validated);
+        $propuesta = $this->propuestaService->createPropuesta($request->user(), $request->validated());
         return response()->json($propuesta, 201);
     }
 
@@ -62,18 +54,9 @@ class PropuestaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Propuesta $propuesta): JsonResponse
+    public function update(PropuestaRequest $request, Propuesta $propuesta): JsonResponse
     {
-        $validated = $request->validate([
-            'escuela_id' => 'required|exists:escuelas,id',
-            'anio_plan_id' => 'required|exists:anio_plan,id',
-            'turno_inicio_id' => 'nullable|exists:turnos,id',
-            'turno_fin_id' => 'nullable|exists:turnos,id',
-            'jornada_id' => 'nullable|exists:jornadas,id',
-            'lectivo_id' => 'required|exists:lectivos,id',
-        ]);
-
-        $updated = $this->propuestaService->updatePropuesta($request->user(), $propuesta, $validated);
+        $updated = $this->propuestaService->updatePropuesta($request->user(), $propuesta, $request->validated());
         return response()->json($updated);
     }
 

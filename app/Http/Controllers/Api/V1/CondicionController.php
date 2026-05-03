@@ -5,18 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Condicion;
 use App\Services\CondicionService;
+use App\Http\Requests\Api\V1\CondicionRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class CondicionController extends Controller
 {
-    protected CondicionService $condicionService;
-
-    public function __construct(CondicionService $condicionService)
-    {
-        $this->condicionService = $condicionService;
-    }
+    public function __construct(
+        protected CondicionService $condicionService
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -29,18 +25,9 @@ class CondicionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(CondicionRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:condicions,nombre',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $condicion = $this->condicionService->create($request->all());
+        $condicion = $this->condicionService->create($request->validated());
         return response()->json($condicion, 201);
     }
 
@@ -55,18 +42,9 @@ class CondicionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Condicion $condicion): JsonResponse
+    public function update(CondicionRequest $request, Condicion $condicion): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:condicions,nombre,' . $condicion->id,
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $condicion = $this->condicionService->update($condicion, $request->all());
+        $condicion = $this->condicionService->update($condicion, $request->validated());
         return response()->json($condicion);
     }
 

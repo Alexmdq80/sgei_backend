@@ -8,8 +8,8 @@ use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\UsuarioResource;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Gate;
+use App\Http\Requests\Api\V1\UsuarioRequest;
 
 class UsuarioController extends Controller
 {
@@ -34,7 +34,7 @@ class UsuarioController extends Controller
     /**
      * Store a newly created user in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(UsuarioRequest $request): JsonResponse
     {
         Gate::authorize('sistema.usuarios');
 
@@ -46,16 +46,7 @@ class UsuarioController extends Controller
             ], 403);
         }
 
-        $validatedData = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'documento_tipo_id' => 'nullable|integer|exists:documento_tipos,id',
-            'documento_numero' => 'nullable|string|max:20',
-            'es_administrador' => 'nullable|boolean',
-            'email' => 'required|email|max:255|unique:usuarios,email',
-            'password' => ['nullable', 'string', Password::defaults()],
-        ]);
-
-        $user = $this->userService->create($validatedData);
+        $user = $this->userService->create($request->validated());
 
         return response()->json([
             'message' => 'Usuario creado con éxito.',
@@ -74,7 +65,7 @@ class UsuarioController extends Controller
     /**
      * Update the specified user in storage.
      */
-    public function update(Request $request, Usuario $usuario): JsonResponse
+    public function update(UsuarioRequest $request, Usuario $usuario): JsonResponse
     {
         Gate::authorize('sistema.usuarios');
 
@@ -89,21 +80,7 @@ class UsuarioController extends Controller
             ], 403);
         }
 
-        // Impedir modificar al superusuario (solo él mismo o por BD)
-        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
-            // Un superusuario puede modificar a otro superusuario, pero no se recomienda
-        }
-
-        $validatedData = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'documento_tipo_id' => 'nullable|integer|exists:documento_tipos,id',
-            'documento_numero' => 'nullable|string|max:20',
-            'es_administrador' => 'nullable|boolean',
-            'email' => 'required|email|max:255|unique:usuarios,email,' . $usuario->id,
-            'password' => ['nullable', 'string', Password::defaults()],
-        ]);
-
-        $user = $this->userService->updateProfile($usuario, $validatedData);
+        $user = $this->userService->updateProfile($usuario, $request->validated());
 
         return response()->json([
             'message' => 'Usuario actualizado con éxito.',
@@ -193,10 +170,6 @@ class UsuarioController extends Controller
                 'code' => 400
             ], 400);
         }
-
-        // Protección adicional para cuentas protegidas (opcional, pero el usuario dijo "cualquier usuario")
-        // Sin embargo, mantendremos el mensaje descriptivo si el destino es un superusuario
-        // para asegurar que la acción sea consciente.
 
         $this->userService->delete($usuario);
 

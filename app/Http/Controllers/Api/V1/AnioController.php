@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Anio;
 use App\Services\AnioService;
+use App\Http\Requests\Api\V1\AnioRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class AnioController extends Controller
 {
@@ -29,21 +28,9 @@ class AnioController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(AnioRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100',
-            'nombre_completo' => 'nullable|string|max:255',
-            'anio_absoluto' => 'nullable|integer',
-            'anio_relativo' => 'nullable|integer',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $anio = $this->anioService->create($request->all());
+        $anio = $this->anioService->create($request->validated());
         return response()->json($anio, 201);
     }
 
@@ -58,21 +45,9 @@ class AnioController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Anio $anio): JsonResponse
+    public function update(AnioRequest $request, Anio $anio): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100',
-            'nombre_completo' => 'nullable|string|max:255',
-            'anio_absoluto' => 'nullable|integer',
-            'anio_relativo' => 'nullable|integer',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $anio = $this->anioService->update($anio, $request->all());
+        $anio = $this->anioService->update($anio, $request->validated());
         return response()->json($anio);
     }
 

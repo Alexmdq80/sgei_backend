@@ -5,18 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Oferta;
 use App\Services\OfertaService;
+use App\Http\Requests\Api\V1\OfertaRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class OfertaController extends Controller
 {
-    protected OfertaService $ofertaService;
-
-    public function __construct(OfertaService $ofertaService)
-    {
-        $this->ofertaService = $ofertaService;
-    }
+    public function __construct(
+        protected OfertaService $ofertaService
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -29,18 +25,9 @@ class OfertaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(OfertaRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:200|unique:ofertas,nombre',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $oferta = $this->ofertaService->create($request->all());
+        $oferta = $this->ofertaService->create($request->validated());
         return response()->json($oferta, 201);
     }
 
@@ -55,18 +42,9 @@ class OfertaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Oferta $oferta): JsonResponse
+    public function update(OfertaRequest $request, Oferta $oferta): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:200|unique:ofertas,nombre,' . $oferta->id,
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $oferta = $this->ofertaService->update($oferta, $request->all());
+        $oferta = $this->ofertaService->update($oferta, $request->validated());
         return response()->json($oferta);
     }
 

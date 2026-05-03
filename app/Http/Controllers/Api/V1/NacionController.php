@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Nacion;
 use App\Services\NacionService;
+use App\Http\Requests\Api\V1\NacionRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -28,16 +29,9 @@ class NacionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(NacionRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'id_georef' => 'nullable',
-            'continente_id' => 'required|exists:continentes,id',
-            'nombre' => 'required|string|max:255|unique:nacions,nombre',
-            'nacionalidad' => 'required|string|max:255'
-        ]);
-
-        $item = $this->nacionService->create($validated);
+        $item = $this->nacionService->create($request->validated());
         return response()->json($item, 201);
     }
 
@@ -52,16 +46,9 @@ class NacionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Nacion $nacion): JsonResponse
+    public function update(NacionRequest $request, Nacion $nacion): JsonResponse
     {
-        $validated = $request->validate([
-            'id_georef' => 'nullable|integer',
-            'continente_id' => 'required|exists:continentes,id',
-            'nombre' => 'required|string|max:255|unique:nacions,nombre,' . $nacion->id,
-            'nacionalidad' => 'required|string|max:255'
-        ]);
-
-        $updated = $this->nacionService->update($nacion, $validated);
+        $updated = $this->nacionService->update($nacion, $request->validated());
         return response()->json($updated);
     }
 

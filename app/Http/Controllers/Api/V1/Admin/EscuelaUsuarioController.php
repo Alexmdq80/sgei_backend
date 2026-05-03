@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\EscuelaService;
 use App\Http\Resources\EscuelaUsuarioResource;
+use App\Http\Requests\Api\V1\Admin\EscuelaUsuarioRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -38,14 +39,8 @@ class EscuelaUsuarioController extends Controller
     /**
      * Direct assign a user to a school.
      */
-    public function store(Request $request): JsonResponse
+    public function store(EscuelaUsuarioRequest $request): JsonResponse
     {
-        $request->validate([
-            'usuario_id' => 'required|uuid|exists:usuarios,id',
-            'escuela_id' => 'required|integer|exists:escuelas,id',
-            'role_id' => 'required|integer|exists:roles,id'
-        ]);
-
         try {
             $user = \App\Models\Usuario::findOrFail($request->usuario_id);
             $link = $this->escuelaService->assignDirect($user, $request->escuela_id, $request->role_id);
@@ -68,12 +63,8 @@ class EscuelaUsuarioController extends Controller
     /**
      * Update an existing school-user link (change role).
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(EscuelaUsuarioRequest $request, string $id): JsonResponse
     {
-        $request->validate([
-            'role_id' => 'required|integer|exists:roles,id'
-        ]);
-
         try {
             $link = \App\Models\EscuelaUsuario::findOrFail($id);
             

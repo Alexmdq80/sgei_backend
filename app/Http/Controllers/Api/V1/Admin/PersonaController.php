@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use App\Http\Resources\PersonaResource;
 use App\Services\UserService;
+use App\Http\Requests\Api\V1\Admin\PersonaRequest;
 
 class PersonaController extends Controller
 {
@@ -83,20 +84,9 @@ class PersonaController extends Controller
     /**
      * Store a newly created person in storage.
      */
-    public function store(Request $request): \Illuminate\Http\JsonResponse
+    public function store(PersonaRequest $request): \Illuminate\Http\JsonResponse
     {
-        // ... (validación y creación existente)
-        $validated = $request->validate([
-            'apellido' => 'required|string|max:255',
-            'nombre' => 'required|string|max:255',
-            'documento_tipo_id' => 'required|integer|exists:documento_tipos,id',
-            'documento_numero' => 'required|string|max:20|unique:personas,documento_numero',
-            'email' => 'nullable|email|max:255|unique:contactos,email'
-        ], [
-            'documento_numero.unique' => 'Este número de documento ya se encuentra registrado en el padrón de personas.',
-            'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.'
-        ]);
-
+        $validated = $request->validated();
         $personaData = \Illuminate\Support\Arr::except($validated, ['email']);
 
         if (!empty($personaData['cuil'])) {
@@ -114,7 +104,6 @@ class PersonaController extends Controller
             $persona->contacto()->create([
                 'email' => $validated['email']
             ]);
-            // El ContactoObserver disparará linkPersonaToUser automáticamente
         }
 
         return response()->json([
@@ -126,18 +115,9 @@ class PersonaController extends Controller
     /**
      * Update the specified person in storage.
      */
-    public function update(Request $request, Persona $persona): \Illuminate\Http\JsonResponse
+    public function update(PersonaRequest $request, Persona $persona): \Illuminate\Http\JsonResponse
     {
-        $validated = $request->validate([
-            'apellido' => 'required|string|max:255',
-            'nombre' => 'required|string|max:255',
-            'documento_tipo_id' => 'required|integer|exists:documento_tipos,id',
-            'documento_numero' => 'required|string|max:20|unique:personas,documento_numero,' . $persona->id,
-            'email' => 'nullable|email|max:255|unique:contactos,email,' . ($persona->contacto?->id ?? 'NULL')
-        ], [
-            'documento_numero.unique' => 'Este número de documento ya se encuentra registrado en el padrón de personas.',
-            'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.'
-        ]);
+        $validated = $request->validated();
 
         // REGLA DE SEGURIDAD: Controlar cambios de identidad (DNI o Email)
         $emailChanged = isset($validated['email']) && $validated['email'] !== ($persona->contacto?->email ?? null);

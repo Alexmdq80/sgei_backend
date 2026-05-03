@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\DocumentoTipo;
 use App\Services\DocumentoTipoService;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\V1\DocumentoTipoRequest;
 use Illuminate\Http\JsonResponse;
 
 class DocumentoTipoController extends Controller
@@ -19,22 +19,15 @@ class DocumentoTipoController extends Controller
      */
     public function index(): JsonResponse
     {
-        // Para administración devolvemos todo. 
-        // Si es la ruta pública, podríamos filtrar por vigente, pero el Service getAll devuelve todo ordenado.
         return response()->json($this->documentoTipoService->getAll());
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(DocumentoTipoRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:documento_tipos,nombre',
-            'vigente' => 'boolean'
-        ]);
-
-        $item = $this->documentoTipoService->create($validated);
+        $item = $this->documentoTipoService->create($request->validated());
         return response()->json($item, 201);
     }
 
@@ -49,14 +42,9 @@ class DocumentoTipoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, DocumentoTipo $documentoTipo): JsonResponse
+    public function update(DocumentoTipoRequest $request, DocumentoTipo $documentoTipo): JsonResponse
     {
-        $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:documento_tipos,nombre,' . $documentoTipo->id,
-            'vigente' => 'boolean'
-        ]);
-
-        $updated = $this->documentoTipoService->update($documentoTipo, $validated);
+        $updated = $this->documentoTipoService->update($documentoTipo, $request->validated());
         return response()->json($updated);
     }
 

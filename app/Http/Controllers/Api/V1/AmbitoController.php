@@ -5,18 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Ambito;
 use App\Services\AmbitoService;
+use App\Http\Requests\Api\V1\AmbitoRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class AmbitoController extends Controller
 {
-    protected AmbitoService $ambitoService;
-
-    public function __construct(AmbitoService $ambitoService)
-    {
-        $this->ambitoService = $ambitoService;
-    }
+    public function __construct(
+        protected AmbitoService $ambitoService
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -29,18 +25,9 @@ class AmbitoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(AmbitoRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:ambitos,nombre',
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $ambito = $this->ambitoService->create($request->all());
+        $ambito = $this->ambitoService->create($request->validated());
         return response()->json($ambito, 201);
     }
 
@@ -55,18 +42,9 @@ class AmbitoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Ambito $ambito): JsonResponse
+    public function update(AmbitoRequest $request, Ambito $ambito): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:100|unique:ambitos,nombre,' . $ambito->id,
-            'vigente' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first(), 'code' => 400], 400);
-        }
-
-        $ambito = $this->ambitoService->update($ambito, $request->all());
+        $ambito = $this->ambitoService->update($ambito, $request->validated());
         return response()->json($ambito);
     }
 
