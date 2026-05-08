@@ -11,6 +11,7 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
     $this->user = Usuario::factory()->create([
         'email' => 'original@example.com',
+        'email_verified_at' => now(),
         'email_correction_attempts' => 0,
     ]);
     $this->actingAs($this->user, 'sanctum');
@@ -31,6 +32,10 @@ test('user can change email up to limit', function () {
         expect($this->user->email)->toBe($newEmail);
         expect($this->user->email_correction_attempts)->toBe($i);
         expect($this->user->email_verified_at)->toBeNull();
+        
+        // Re-verificar para que el middleware no bloquee la siguiente iteración
+        $this->user->email_verified_at = now();
+        $this->user->save();
         
         Notification::assertSentTo($this->user, VerifyEmailNotification::class);
     }

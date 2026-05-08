@@ -22,7 +22,6 @@ class UsuarioRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:255'],
             'documento_tipo_id' => ['nullable', 'integer', Rule::exists('documento_tipos', 'id')],
             'documento_numero' => ['nullable', 'string', 'max:20'],
-            'es_administrador' => ['nullable', 'boolean'],
             'email' => [
                 'required', 
                 'email', 

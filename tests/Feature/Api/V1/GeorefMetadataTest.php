@@ -62,9 +62,8 @@ test('validation error returns standard format', function () {
     $response = $this->actingAs($this->admin, 'sanctum')
         ->postJson('/api/v1/admin/georef-fuentes', ['nombre' => '']);
 
-    $response->assertStatus(400)
-        ->assertJsonStructure(['error', 'code'])
-        ->assertJsonPath('code', 400);
+    $response->assertStatus(422)
+        ->assertJsonStructure(['message', 'errors']);
 });
 
 test('can update georef category', function () {

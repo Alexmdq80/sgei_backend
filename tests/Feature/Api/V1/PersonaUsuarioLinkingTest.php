@@ -218,6 +218,10 @@ test('conduccion role cannot confirm vinculation if persona has no relation to t
 });
 
 test('conduccion role can confirm vinculation if persona has relation (CUPOF) to their school', function () {
+    // Asegurar datos maestros
+    \App\Models\Escalafon::firstOrCreate(['id' => 1], ['nombre' => 'DOCENTE', 'vigente' => true]);
+    \App\Models\PuestoTipo::firstOrCreate(['id' => 1], ['nombre' => 'CARGO', 'vigente' => true]);
+
     $school = \App\Models\Escuela::factory()->create();
     
     $persona = Persona::factory()->create([
@@ -234,6 +238,8 @@ test('conduccion role can confirm vinculation if persona has relation (CUPOF) to
     $cupof = \App\Models\Cupof::create([
         'codigo_cupof' => 'TEST-123',
         'escuela_id' => $school->id,
+        'escalafon_id' => 1, // Default Docente for tests
+        'puesto_tipo_id' => 1, // Default Cargo for tests
         'cantidad' => 1
     ]);
     \App\Models\CupofMovimiento::create([

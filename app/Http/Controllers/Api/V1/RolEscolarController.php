@@ -14,9 +14,12 @@ class RolEscolarController extends Controller
      */
     public function index(): JsonResponse
     {
-        // Solo devolvemos roles que tengan sentido institucional, 
-        // excluyendo superuser o roles técnicos si fuera necesario.
-        $roles = Role::where('guard_name', 'sanctum')->get();
+        // Solo devolvemos roles que tengan sentido institucional.
+        // Excluimos explícitamente roles globales/administrativos de sistema.
+        $roles = Role::where('guard_name', 'sanctum')
+            ->whereNotIn('name', ['superuser', 'jefe_distrital', 'supervisor_curricular'])
+            ->get();
+            
         return response()->json(RoleResource::collection($roles));
     }
 }

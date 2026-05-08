@@ -163,4 +163,12 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(RefreshToken::class);
     }
+
+    /**
+     * Relationship to the district associated with the user (Jefe Distrital).
+     */
+    public function distritoUsuario(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(DistritoUsuario::class, 'usuario_id');
+    }
 }

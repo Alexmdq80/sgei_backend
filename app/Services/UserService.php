@@ -21,6 +21,9 @@ class UserService
      */
     public function getAll(array $filters = []): LengthAwarePaginator
     {
+        $user = auth()->user();
+        $isJefeDistrital = $user?->hasRole('jefe_distrital');
+
         $query = Usuario::query()->with([
             'persona', 
             'documentoTipo', 
@@ -28,6 +31,13 @@ class UserService
             'escuelaUsuarios.role',
             'roles'
         ]);
+
+        if ($isJefeDistrital) {
+            $hierarchicalRoles = \App\Services\EscuelaService::HIERARCHICAL_ROLES;
+            $query->whereHas('escuelaUsuarios.role', function ($q) use ($hierarchicalRoles) {
+                $q->whereIn('name', $hierarchicalRoles);
+            });
+        }
 
         if (!empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {

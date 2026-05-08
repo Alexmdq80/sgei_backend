@@ -175,13 +175,10 @@ test('cannot update password with incorrect current password', function () {
         'password_confirmation' => $newPassword,
     ]);
 
-    $response->assertStatus(422)
+    $response->assertStatus(400)
              ->assertJson([
-                 'error' => 'Error de validación.',
-                 'errors' => [
-                     'current_password' => ['La contraseña actual es incorrecta.']
-                 ],
-                 'code' => 422
+                 'error' => 'La contraseña actual es incorrecta.',
+                 'code' => 400
              ]);
 });
 

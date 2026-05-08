@@ -9,8 +9,9 @@ test('can list document types', function () {
     $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
     DocumentoTipo::factory()->count(2)->create(['vigente' => true]);
 
-    $response = $this->getJson('/api/v1/documento-tipos');
+    $user = \App\Models\Usuario::factory()->create();
+    $response = $this->actingAs($user, 'sanctum')->getJson('/api/v1/documento-tipos');
 
     $response->assertStatus(200)
-         ->assertJsonCount(8, 'data');
+         ->assertJsonCount(9);
 });

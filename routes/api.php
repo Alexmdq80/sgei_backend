@@ -31,12 +31,10 @@ Route::prefix('v1')->group(function () {
     });
 
     // Catálogos Públicos
-    Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
     Route::get('/rol-escolares', [App\Http\Controllers\Api\V1\RolEscolarController::class, 'index']);
     Route::get('/escuelas', [EscuelaController::class, 'index']);
     Route::get('/niveles', [EscuelaController::class, 'niveles']);
     Route::get('/sectores', [EscuelaController::class, 'sectores']);
-    Route::get('/cargos', [App\Http\Controllers\Api\V1\CargoController::class, 'index']);
 
     // Geografía (Catálogos)
     Route::get('/provincias', [GeografiaController::class, 'provincias']);
@@ -65,6 +63,10 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [LoginController::class, 'logout']);
             Route::get('/me', [ProfileController::class, 'me']);
 
+            // Solicitudes para unirse a Escuelas (Autoservicio)
+            Route::post('/escuelas/join', [App\Http\Controllers\Api\V1\Auth\EscuelaJoinController::class, 'join']);
+            Route::post('/escuelas/cancel-join', [App\Http\Controllers\Api\V1\Auth\EscuelaJoinController::class, 'cancelJoin']);
+
             // Reenvío de Verificación (Permitido sin verificar email obviamente)
             Route::post('/verify/resend', [VerificationController::class, 'resend'])->middleware('throttle:resend-verification');
 
@@ -77,6 +79,12 @@ Route::prefix('v1')->group(function () {
                 Route::put('/password', [ProfileController::class, 'updatePassword']);
             });
         });
+    });
+
+    // Catálogos Protegidos (Fuera del prefijo auth para mantener compatibilidad de URL)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
+        Route::get('/cargos', [App\Http\Controllers\Api\V1\CargoController::class, 'index']);
     });
 
     // Gestión Académica (Planes de Estudio)
@@ -111,14 +119,15 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'verified', 'permission:sistema.usuarios'])->prefix('admin')->group(function () {
         Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
         Route::post('/usuarios/{usuario}/confirm-persona', [App\Http\Controllers\Api\V1\UsuarioController::class, 'confirmPersona']);
-        Route::post('/usuarios/{usuario}/toggle-supervisor', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleSupervisorRole']);
-        Route::post('/usuarios/{usuario}/toggle-jefe-distrital', [App\Http\Controllers\Api\V1\UsuarioController::class, 'toggleJefeDistritalRole']);
-        
+
         // Gestión de Vinculaciones Escolares
         Route::apiResource('escuela-usuarios', App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class);
-        Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class)->only(['index', 'show', 'store', 'update']);
+        Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class);
         Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);
         Route::post('personas/{persona}/unlink-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'unlinkUser']);
+        Route::post('personas/{persona}/jefe-distrital', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeDistrital']);
+        Route::post('personas/{persona}/supervisor', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignSupervisor']);
+        Route::delete('personas/{persona}/roles/{role}', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'removeRole']);
 
         // Gestión de CUPOF y Agentes
         Route::apiResource('cargos', App\Http\Controllers\Api\V1\CargoController::class)->except(['index']);
@@ -161,6 +170,8 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('calles', App\Http\Controllers\Api\V1\CalleController::class);
 
         // Catálogos Georef
+        Route::get('comunidad-educativa', [App\Http\Controllers\Api\V1\Admin\ComunidadEducativaController::class, 'index']);
+        Route::apiResource('distritos-usuarios', App\Http\Controllers\Api\V1\Admin\DistritoUsuarioController::class)->only(['index', 'store', 'destroy']);
         Route::apiResource('georef-fuentes', App\Http\Controllers\Api\V1\GeorefFuenteController::class);
         Route::apiResource('georef-categorias', App\Http\Controllers\Api\V1\GeorefCategoriaController::class);
         Route::apiResource('georef-funcions', App\Http\Controllers\Api\V1\GeorefFuncionController::class);

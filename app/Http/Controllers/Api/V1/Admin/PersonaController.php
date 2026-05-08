@@ -8,15 +8,18 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use App\Http\Resources\PersonaResource;
 use App\Services\UserService;
+use App\Services\PersonaService;
 use App\Http\Requests\Api\V1\Admin\PersonaRequest;
 
 class PersonaController extends Controller
 {
     protected UserService $userService;
+    protected PersonaService $personaService;
 
-    public function __construct(UserService $userService)
+    public function __construct(UserService $userService, PersonaService $personaService)
     {
         $this->userService = $userService;
+        $this->personaService = $personaService;
     }
 
     /**
@@ -24,38 +27,29 @@ class PersonaController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Persona::with(['documentoTipo', 'usuario', 'nacionalidad', 'genero']);
+        $this->authorize('viewAny', Persona::class);
+        
+        $query = Persona::with(['documentoTipo', 'usuario.roles', 'nacionalidad', 'genero']);
 
-        $performer = auth()->user();
-        $isSuperUser = $performer->hasRole('superuser');
-
-        // 1. Filtro: Solo Agentes (personas con movimientos de CUPOF)
-        if ($request->boolean('only_agents')) {
-            $query->whereHas('movimientosCupof', function($q) use ($performer, $isSuperUser, $request) {
-                // Si no es superusuario, solo ve agentes de sus escuelas
-                if (!$isSuperUser) {
-                    $schoolIds = $performer->escuelaUsuarios()->pluck('escuela_id')->toArray();
-                    $q->whereHas('cupof', function($sq) use ($schoolIds) {
-                        $sq->whereIn('escuela_id', $schoolIds);
-                    });
-                }
-                
-                // Filtro adicional por escuela específica si se solicita
-                if ($request->filled('escuela_id')) {
-                    $q->whereHas('cupof', function($sq) use ($request) {
-                        $sq->where('escuela_id', $request->escuela_id);
-                    });
-                }
-            });
-        }
-
-        // 2. Búsqueda por nombre, apellido o documento
+        // 1. Búsqueda por nombre, apellido o documento
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
                   ->orWhere('apellido', 'like', "%{$search}%")
                   ->orWhere('documento_numero', 'like', "%{$search}%");
+            });
+        }
+
+        // 2. Filtro: Solo Agentes (personas con movimientos de CUPOF)
+        if ($request->boolean('only_agents')) {
+            $query->whereHas('movimientosCupof', function($q) use ($request) {
+                // Filtro por escuela específica si se solicita
+                if ($request->filled('escuela_id')) {
+                    $q->whereHas('cupof', function($sq) use ($request) {
+                        $sq->where('escuela_id', $request->escuela_id);
+                    });
+                }
             });
         }
 
@@ -69,6 +63,8 @@ class PersonaController extends Controller
      */
     public function show(Persona $persona): PersonaResource
     {
+        $this->authorize('view', $persona);
+
         return new PersonaResource($persona->load([
             'documentoTipo', 
             'usuario', 
@@ -86,6 +82,8 @@ class PersonaController extends Controller
      */
     public function store(PersonaRequest $request): \Illuminate\Http\JsonResponse
     {
+        $this->authorize('create', Persona::class);
+
         $validated = $request->validated();
         $personaData = \Illuminate\Support\Arr::except($validated, ['email']);
 
@@ -117,6 +115,8 @@ class PersonaController extends Controller
      */
     public function update(PersonaRequest $request, Persona $persona): \Illuminate\Http\JsonResponse
     {
+        $this->authorize('update', $persona);
+
         $validated = $request->validated();
 
         // REGLA DE SEGURIDAD: Controlar cambios de identidad (DNI o Email)
@@ -167,6 +167,17 @@ class PersonaController extends Controller
         return response()->json([
             'message' => 'Registro de persona actualizado con éxito.',
             'data' => new PersonaResource($persona->fresh(['contacto', 'usuario']))
+        ]);
+    }
+
+    public function destroy(Persona $persona): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('delete', $persona);
+
+        $persona->delete();
+
+        return response()->json([
+            'message' => 'Registro de persona eliminado con éxito.'
         ]);
     }
 
@@ -244,5 +255,70 @@ class PersonaController extends Controller
         return response()->json([
             'message' => 'Usuario desvinculado con éxito.'
         ]);
+    }
+
+    /**
+     * Assigns the Jefe Distrital role to a persona.
+     */
+    public function assignJefeDistrital(Request $request, Persona $persona): \Illuminate\Http\JsonResponse
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario puede asignar el rol de Jefe Distrital.'], 403);
+        }
+
+        $request->validate([
+            'departamento_id' => 'required|exists:departamentos,id'
+        ]);
+
+        try {
+            $user = $this->personaService->assignJefeDistrital($persona, $request->departamento_id);
+            return response()->json([
+                'message' => 'Cargo de Jefe Distrital asignado con éxito.',
+                'user_email' => $user->email
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Assigns the Supervisor Curricular role to a persona.
+     */
+    public function assignSupervisor(Persona $persona): \Illuminate\Http\JsonResponse
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario puede asignar el rol de Supervisor Curricular.'], 403);
+        }
+
+        try {
+            $user = $this->personaService->assignSupervisor($persona);
+            return response()->json([
+                'message' => 'Cargo de Supervisor Curricular asignado con éxito.',
+                'user_email' => $user->email
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Removes an administrative role from a persona.
+     */
+    public function removeRole(Request $request, Persona $persona, string $role): \Illuminate\Http\JsonResponse
+    {
+        if (!auth()->user()->hasRole('superuser')) {
+            return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario puede remover roles administrativos.'], 403);
+        }
+
+        if (!in_array($role, ['jefe_distrital', 'supervisor_curricular'])) {
+            return response()->json(['error' => 'Rol no válido para esta operación administrativa.'], 422);
+        }
+
+        try {
+            $this->personaService->removeAdministrativeRole($persona, $role);
+            return response()->json(['message' => 'Rol administrativo revocado con éxito.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 }

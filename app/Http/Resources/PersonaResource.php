@@ -35,6 +35,7 @@ class PersonaResource extends JsonResource
             ] : null,
             'usuario_id' => $this->usuario_id,
             'usuario_email' => $this->usuario?->email,
+            'usuario' => new UsuarioResource($this->whenLoaded('usuario')),
             'nacionalidad' => $this->nacionalidad?->nombre,
             'nacimiento_pais' => $this->nacimientoPais?->nombre,
             'nacimiento_provincia' => $this->nacimientoProvincia?->nombre,

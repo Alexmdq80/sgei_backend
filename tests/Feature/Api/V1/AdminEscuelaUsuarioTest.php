@@ -74,6 +74,27 @@ test('superuser can assign any role to any user in any school', function () {
     ]);
 });
 
+test('superuser cannot assign superuser role to any user via institutional links', function () {
+    $escuela = Escuela::factory()->create();
+    $user = Usuario::factory()->create(['estado' => 'email_verificado']);
+    $superuserRole = \Spatie\Permission\Models\Role::where('name', 'superuser')->first();
+
+    $response = $this->actingAs($this->admin, 'sanctum')
+                     ->postJson("/api/v1/admin/escuela-usuarios", [
+                         'usuario_id' => $user->id,
+                         'escuela_id' => $escuela->id,
+                         'role_id' => $superuserRole->id
+                     ]);
+
+    $response->assertStatus(403)
+             ->assertJsonPath('error', 'El rol de Superusuario no puede ser asignado institucionalmente.');
+
+    $this->assertDatabaseMissing('escuela_usuario', [
+        'usuario_id' => $user->id,
+        'role_id' => $superuserRole->id
+    ]);
+});
+
 test('jefe distrital can assign hierarchical roles globally', function () {
     $jefe = Usuario::factory()->create();
     $jefe->assignRole('jefe_distrital');
@@ -124,7 +145,7 @@ test('local admin cannot assign hierarchical roles', function () {
                      ]);
 
     $response->assertStatus(403)
-             ->assertJsonPath('error', 'No tienes permisos para asignar roles jerárquicos.');
+             ->assertJsonPath('error', 'No tienes permisos para asignar roles jerárquicos. Esta acción está reservada para el Jefe Distrital o Superusuario.');
 });
 
 test('local admin can assign non-hierarchical roles to their school', function () {

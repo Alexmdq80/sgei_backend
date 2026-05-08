@@ -15,7 +15,37 @@ class CupofService
      */
     public function getAllCupofs(array $filters = []): Collection
     {
+        $user = auth()->user();
+        if (!$user) return collect();
+
+        $isSuperUser = $user->hasRole('superuser');
+        $isJefeDistrital = $user->hasRole('jefe_distrital');
         $query = Cupof::with(['escuela', 'asignatura', 'escalafon', 'puestoTipo', 'movimientoActivo.persona']);
+
+        // Bypass for Superusers: see everything
+        if ($isSuperUser) {
+            // No filter applied here, proceeds to global filters
+        }
+        // 1. Restriction for Jefe Distrital: Only see hierarchical positions
+        elseif ($isJefeDistrital) {
+            $hierarchicalKeywords = \App\Services\EscuelaService::HIERARCHICAL_ROLES;
+            $query->where(function ($q) use ($hierarchicalKeywords) {
+                foreach ($hierarchicalKeywords as $keyword) {
+                    $q->orWhere('nombre_cargo', 'like', "%{$keyword}%");
+                }
+            });
+        } 
+        // 2. Restriction for Conduction Team: Only see their own school(s)
+        else {
+            $schoolIds = $user->escuelaUsuarios()
+                ->whereHas('role', function($q) {
+                    $q->whereIn('name', \App\Services\EscuelaService::HIERARCHICAL_ROLES);
+                })
+                ->whereNotNull('verified_at')
+                ->pluck('escuela_id');
+            
+            $query->whereIn('escuela_id', $schoolIds);
+        }
 
         if (isset($filters['escuela_id']) && !empty($filters['escuela_id'])) {
             $query->where('escuela_id', $filters['escuela_id']);
@@ -37,6 +67,8 @@ class CupofService
      */
     public function createCupof(array $data): Cupof
     {
+        $this->validateHierarchicalAccess($data['nombre_cargo'] ?? '');
+
         return Cupof::create([
             'codigo_cupof' => $data['codigo_cupof'],
             'escuela_id' => $data['escuela_id'],
@@ -54,6 +86,8 @@ class CupofService
      */
     public function assignPersona(Cupof $cupof, Persona $persona, array $details): CupofMovimiento
     {
+        $this->validateHierarchicalAccess($cupof->nombre_cargo ?? '');
+
         return DB::transaction(function () use ($cupof, $persona, $details) {
             // 1. Deactivate any current active movement just in case
             $cupof->movimientos()->where('activo', true)->update(['activo' => false, 'fecha_fin' => now()]);
@@ -83,6 +117,8 @@ class CupofService
      */
     public function releaseCupof(Cupof $cupof, ?string $motivoBaja = null): bool
     {
+        $this->validateHierarchicalAccess($cupof->nombre_cargo ?? '');
+
         $persona = $cupof->movimientoActivo?->persona;
 
         return DB::transaction(function () use ($cupof, $motivoBaja, $persona) {
@@ -106,6 +142,39 @@ class CupofService
 
             return $updated;
         });
+    }
+
+    /**
+     * Validates if the current user has permissions to manage the given cargo name.
+     */
+    private function validateHierarchicalAccess(string $nombreCargo): void
+    {
+        $user = auth()->user();
+        if (!$user) throw new \Exception("Usuario no autenticado", 401);
+
+        // Bypass for Superusers: Total access
+        if ($user->hasRole('superuser')) return;
+
+        $isJefeDistrital = $user->hasRole('jefe_distrital');
+        
+        $isHierarchical = false;
+        $nombreCargo = mb_strtolower($nombreCargo, 'UTF-8');
+        foreach (\App\Services\EscuelaService::HIERARCHICAL_ROLES as $role) {
+            if (str_contains($nombreCargo, $role)) {
+                $isHierarchical = true;
+                break;
+            }
+        }
+
+        if ($isJefeDistrital) {
+            if (!$isHierarchical) {
+                throw new \Exception("Como Jefe Distrital, solo tienes permitido gestionar cargos del Equipo de Conducción.", 403);
+            }
+        } else {
+            // Equipo de Conducción (Director, Vice, etc.)
+            // Now allowed to manage all positions in their school (including hierarchical)
+            // No restriction here, just verify they are indeed conduction (this is double-checked by the Policy)
+        }
     }
 
     /**

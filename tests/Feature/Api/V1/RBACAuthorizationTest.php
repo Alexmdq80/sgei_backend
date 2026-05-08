@@ -39,8 +39,8 @@ beforeEach(function () {
 
 // ... (rest of the tests)
 
-test('admin user can create user', function () {
-    $this->actingAs($this->adminUser, 'sanctum');
+test('superuser can create user', function () {
+    $this->actingAs($this->superUser, 'sanctum');
     $userData = [
         'nombre' => 'Creator',
         'documento_tipo_id' => $this->docTipo->id,
@@ -52,9 +52,9 @@ test('admin user can create user', function () {
     $response->assertStatus(201);
 });
 
-test('admin user can update user', function () {
+test('superuser can update user', function () {
     $userToUpdate = Usuario::factory()->create(['documento_tipo_id' => $this->docTipo->id]);
-    $this->actingAs($this->adminUser, 'sanctum');
+    $this->actingAs($this->superUser, 'sanctum');
     $updatedData = [
         'nombre' => 'Updated Admin',
         'documento_tipo_id' => $this->docTipo->id,
@@ -65,9 +65,9 @@ test('admin user can update user', function () {
     $response->assertOk();
 });
 
-test('admin user can delete user', function () {
+test('superuser can delete user', function () {
     $userToDelete = Usuario::factory()->create();
-    $this->actingAs($this->adminUser, 'sanctum');
+    $this->actingAs($this->superUser, 'sanctum');
     $response = $this->deleteJson('/api/v1/admin/usuarios/' . $userToDelete->id);
     $response->assertOk();
     $this->assertSoftDeleted('usuarios', ['id' => $userToDelete->id]);
