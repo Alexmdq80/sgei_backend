@@ -171,4 +171,20 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasOne(DistritoUsuario::class, 'usuario_id');
     }
+
+    /**
+     * Relationship to the province associated with the user (Jefe Provincial).
+     */
+    public function provinciaUsuario(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ProvinciaUsuario::class, 'usuario_id');
+    }
+
+    /**
+     * Relationship to the region associated with the user (Jefe Regional).
+     */
+    public function regionUsuario(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(RegionUsuario::class, 'usuario_id');
+    }
 }

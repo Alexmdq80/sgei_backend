@@ -24,8 +24,8 @@ class CupofPolicy
             return false;
         }
 
-        // 2. Jefe Distrital can view (filtered by hierarchical cargos in Service)
-        if ($user->hasRole('jefe_distrital')) {
+        // 2. Administrative hierarchy can view (filtered by hierarchical cargos in Service)
+        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return true;
         }
 
@@ -39,6 +39,11 @@ class CupofPolicy
     public function create(Usuario $user): bool
     {
         if ($user->hasRole('superuser')) return true;
+
+        // Hierarchical admins can also create CUPOF slots (only hierarchical ones as validated in Service)
+        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+            return true;
+        }
 
         // Only conduction team in their school can create new CUPOF slots
         return $this->isConduccion($user);
@@ -60,8 +65,8 @@ class CupofPolicy
             }
         }
 
-        // Jefe Distrital: Only hierarchical positions
-        if ($user->hasRole('jefe_distrital')) {
+        // Hierarchical admins: Only hierarchical positions
+        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return $isHierarchical;
         }
 

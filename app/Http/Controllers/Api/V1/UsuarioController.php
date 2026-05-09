@@ -11,6 +11,10 @@ use App\Http\Resources\UsuarioResource;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Api\V1\UsuarioRequest;
 
+use App\Notifications\AccountInvitationNotification;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+
 class UsuarioController extends Controller
 {
     protected UserService $userService;
@@ -18,6 +22,37 @@ class UsuarioController extends Controller
     public function __construct(UserService $userService)
     {
         $this->userService = $userService;
+    }
+
+    /**
+     * Manually resend the activation invitation to a user.
+     */
+    public function resendActivation(Usuario $usuario): JsonResponse
+    {
+        Gate::authorize('sistema.usuarios');
+
+        $performer = auth()->user();
+        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_distrital')) {
+            return response()->json([
+                'error' => 'Acceso Denegado: No tienes privilegios para reenviar invitaciones.', 
+                'code' => 403
+            ], 403);
+        }
+
+        DB::transaction(function () use ($usuario) {
+            $usuario->verification_token = Str::random(60);
+            $usuario->verification_token_created_at = now();
+            // Si el usuario estaba activo, lo volvemos a poner en espera para forzar el flujo
+            $usuario->estado = 'esperando_activacion';
+            $usuario->email_verified_at = null; 
+            $usuario->save();
+
+            $usuario->notify(new AccountInvitationNotification($usuario->verification_token));
+        });
+
+        return response()->json([
+            'message' => 'Invitación de activación reenviada con éxito al correo del usuario.'
+        ]);
     }
 
     /**

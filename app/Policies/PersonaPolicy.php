@@ -19,8 +19,8 @@ class PersonaPolicy
             return true;
         }
 
-        // 2. Jefe Distrital: Acceso Total al Padrón
-        if ($usuario->hasRole('jefe_distrital')) {
+        // 2. Roles Jerárquicos Administrativos: Acceso Total al Padrón
+        if ($usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return true;
         }
 

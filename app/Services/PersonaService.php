@@ -8,7 +8,7 @@ use App\Models\DistritoUsuario;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use App\Notifications\VerifyEmailNotification;
+use App\Notifications\AccountInvitationNotification;
 
 class PersonaService
 {
@@ -38,21 +38,64 @@ class PersonaService
                     'documento_tipo_id' => $persona->documento_tipo_id,
                     'documento_numero' => $persona->documento_numero,
                     'email' => $persona->contacto->email,
-                    'password' => Hash::make('Sgei!' . date('Y') . '_Auto'),
+                    // Usamos una contraseña aleatoria segura, el usuario la cambiará en la activación
+                    'password' => Hash::make(Str::random(32)),
                     'verification_token' => Str::random(60),
                     'verification_token_created_at' => now(),
-                    'estado' => 'email_pendiente'
+                    'estado' => 'esperando_activacion'
                 ]);
 
-                // Notify for verification
-                $user->notify(new VerifyEmailNotification($user->verification_token));
+                // Notify for activation/invitation
+                $user->notify(new AccountInvitationNotification($user->verification_token));
             }
 
             // Link persona to user
             $persona->update(['usuario_id' => $user->id]);
-            $user->update(['estado' => 'activo']);
-
+            // Importante: No ponemos 'activo' todavía, el estado final lo pondrá el flujo de activación
+            
             return $user->fresh();
+        });
+    }
+
+    /**
+     * Assigns the Jefe Provincial role and its geographical context.
+     */
+    public function assignJefeProvincial(Persona $persona, int $provinciaId): Usuario
+    {
+        return DB::transaction(function () use ($persona, $provinciaId) {
+            $user = $this->ensureUserExists($persona);
+
+            if (!$user->hasRole('jefe_provincial')) {
+                $user->assignRole('jefe_provincial');
+            }
+
+            \App\Models\ProvinciaUsuario::updateOrCreate(
+                ['usuario_id' => $user->id],
+                ['provincia_id' => $provinciaId]
+            );
+
+            return $user;
+        });
+    }
+
+    /**
+     * Assigns the Jefe Regional role and its geographical context.
+     */
+    public function assignJefeRegional(Persona $persona, int $regionId): Usuario
+    {
+        return DB::transaction(function () use ($persona, $regionId) {
+            $user = $this->ensureUserExists($persona);
+
+            if (!$user->hasRole('jefe_regional')) {
+                $user->assignRole('jefe_regional');
+            }
+
+            \App\Models\RegionUsuario::updateOrCreate(
+                ['usuario_id' => $user->id],
+                ['region_id' => $regionId]
+            );
+
+            return $user;
         });
     }
 
@@ -106,9 +149,44 @@ class PersonaService
                 $user->removeRole($roleName);
             }
 
-            if ($roleName === 'jefe_distrital') {
-                DistritoUsuario::where('usuario_id', $user->id)->delete();
+            switch ($roleName) {
+                case 'jefe_provincial':
+                    \App\Models\ProvinciaUsuario::where('usuario_id', $user->id)->delete();
+                    break;
+                case 'jefe_regional':
+                    \App\Models\RegionUsuario::where('usuario_id', $user->id)->delete();
+                    break;
+                case 'jefe_distrital':
+                    DistritoUsuario::where('usuario_id', $user->id)->delete();
+                    break;
             }
         });
+    }
+
+    /**
+     * Manually resends the activation email for a Persona.
+     */
+    public function resendActivation(Persona $persona): Usuario
+    {
+        $user = $persona->usuario;
+        if (!$user) {
+            throw new \Exception("La persona no tiene una cuenta de usuario vinculada.");
+        }
+
+        if ($user->hasVerifiedEmail() || $user->estado === 'activo') {
+            throw new \Exception("La cuenta de esta persona ya se encuentra activa.");
+        }
+
+        DB::transaction(function () use ($user) {
+            $user->update([
+                'verification_token' => Str::random(60),
+                'verification_token_created_at' => now(),
+                'estado' => 'esperando_activacion'
+            ]);
+
+            $user->notify(new AccountInvitationNotification($user->verification_token));
+        });
+
+        return $user->fresh();
     }
 }

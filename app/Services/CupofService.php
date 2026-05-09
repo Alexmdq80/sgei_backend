@@ -19,15 +19,15 @@ class CupofService
         if (!$user) return collect();
 
         $isSuperUser = $user->hasRole('superuser');
-        $isJefeDistrital = $user->hasRole('jefe_distrital');
+        $isHierarchicalAdmin = $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
         $query = Cupof::with(['escuela', 'asignatura', 'escalafon', 'puestoTipo', 'movimientoActivo.persona']);
 
         // Bypass for Superusers: see everything
         if ($isSuperUser) {
             // No filter applied here, proceeds to global filters
         }
-        // 1. Restriction for Jefe Distrital: Only see hierarchical positions
-        elseif ($isJefeDistrital) {
+        // 1. Restriction for Hierarchical Admins: Only see hierarchical positions
+        elseif ($isHierarchicalAdmin) {
             $hierarchicalKeywords = \App\Services\EscuelaService::HIERARCHICAL_ROLES;
             $query->where(function ($q) use ($hierarchicalKeywords) {
                 foreach ($hierarchicalKeywords as $keyword) {
@@ -155,7 +155,7 @@ class CupofService
         // Bypass for Superusers: Total access
         if ($user->hasRole('superuser')) return;
 
-        $isJefeDistrital = $user->hasRole('jefe_distrital');
+        $isHierarchicalAdmin = $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
         
         $isHierarchical = false;
         $nombreCargo = mb_strtolower($nombreCargo, 'UTF-8');
@@ -166,9 +166,9 @@ class CupofService
             }
         }
 
-        if ($isJefeDistrital) {
+        if ($isHierarchicalAdmin) {
             if (!$isHierarchical) {
-                throw new \Exception("Como Jefe Distrital, solo tienes permitido gestionar cargos del Equipo de Conducción.", 403);
+                throw new \Exception("Como cargo jerárquico administrativo, solo tienes permitido gestionar cargos del Equipo de Conducción.", 403);
             }
         } else {
             // Equipo de Conducción (Director, Vice, etc.)

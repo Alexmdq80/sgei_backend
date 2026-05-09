@@ -20,7 +20,7 @@ class UsuarioPolicy
      */
     public function viewAny(Usuario $user): bool
     {
-        return $user->hasRole('superuser');
+        return $user->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital']);
     }
 
     /**
@@ -28,7 +28,11 @@ class UsuarioPolicy
      */
     public function view(Usuario $user, Usuario $model): bool
     {
-        return $user->hasRole('superuser') || $user->id === $model->id;
+        if ($user->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+            return true;
+        }
+
+        return $user->id === $model->id;
     }
 
     /**

@@ -43,4 +43,13 @@ class GeografiaController extends Controller
             
         return response()->json($localidades);
     }
+
+    /**
+     * List all educational regions.
+     */
+    public function regiones(): JsonResponse
+    {
+        $regiones = \App\Models\Region::orderBy('numero')->get(['id', 'numero']);
+        return response()->json($regiones);
+    }
 }

@@ -32,12 +32,14 @@ Route::prefix('v1')->group(function () {
 
     // Catálogos Públicos
     Route::get('/rol-escolares', [App\Http\Controllers\Api\V1\RolEscolarController::class, 'index']);
+    Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
     Route::get('/escuelas', [EscuelaController::class, 'index']);
     Route::get('/niveles', [EscuelaController::class, 'niveles']);
     Route::get('/sectores', [EscuelaController::class, 'sectores']);
 
     // Geografía (Catálogos)
     Route::get('/provincias', [GeografiaController::class, 'provincias']);
+    Route::get('/regiones', [GeografiaController::class, 'regiones']);
     Route::get('/departamentos', [GeografiaController::class, 'departamentos']);
     Route::get('/localidades', [GeografiaController::class, 'localidades']);
 
@@ -57,6 +59,8 @@ Route::prefix('v1')->group(function () {
         
         // Verificación de Email (Pública)
         Route::get('/verify', [VerificationController::class, 'verify']);
+        Route::post('/complete-setup', [VerificationController::class, 'completeSetup']);
+        Route::post('/resend-activation', [VerificationController::class, 'resendActivation'])->middleware('throttle:resend-verification');
 
         // Rutas protegidas por Sanctum
         Route::middleware('auth:sanctum')->group(function () {
@@ -83,7 +87,6 @@ Route::prefix('v1')->group(function () {
 
     // Catálogos Protegidos (Fuera del prefijo auth para mantener compatibilidad de URL)
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
         Route::get('/cargos', [App\Http\Controllers\Api\V1\CargoController::class, 'index']);
     });
 
@@ -119,12 +122,16 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'verified', 'permission:sistema.usuarios'])->prefix('admin')->group(function () {
         Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
         Route::post('/usuarios/{usuario}/confirm-persona', [App\Http\Controllers\Api\V1\UsuarioController::class, 'confirmPersona']);
+        Route::post('/usuarios/{usuario}/resend-activation', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendActivation']);
 
         // Gestión de Vinculaciones Escolares
         Route::apiResource('escuela-usuarios', App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class);
         Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class);
+        Route::post('personas/{persona}/resend-activation', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'resendActivation']);
         Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);
         Route::post('personas/{persona}/unlink-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'unlinkUser']);
+        Route::post('personas/{persona}/jefe-provincial', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeProvincial']);
+        Route::post('personas/{persona}/jefe-regional', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeRegional']);
         Route::post('personas/{persona}/jefe-distrital', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeDistrital']);
         Route::post('personas/{persona}/supervisor', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignSupervisor']);
         Route::delete('personas/{persona}/roles/{role}', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'removeRole']);

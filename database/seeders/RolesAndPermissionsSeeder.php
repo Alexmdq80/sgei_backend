@@ -104,7 +104,27 @@ class RolesAndPermissionsSeeder extends Seeder
         $responsable = Role::firstOrCreate(['name' => 'responsable', 'guard_name' => 'sanctum']);
         $responsable->givePermissionTo(['institucion.ver', 'estudiantes.ver', 'notas.ver', 'asistencia.ver']);
 
-        // 8. Jefe Distrital (Regional Admin)
+        // 8. Jefe Provincial (Provincial Admin)
+        $jefeProvincial = Role::firstOrCreate(['name' => 'jefe_provincial', 'guard_name' => 'sanctum']);
+        $jefeProvincial->givePermissionTo([
+            'institucion.ver',
+            'personal.ver',
+            'planes.ver',
+            'sistema.usuarios',
+            'sistema.roles'
+        ]);
+
+        // 9. Jefe Regional (Regional Admin)
+        $jefeRegional = Role::firstOrCreate(['name' => 'jefe_regional', 'guard_name' => 'sanctum']);
+        $jefeRegional->givePermissionTo([
+            'institucion.ver',
+            'personal.ver',
+            'planes.ver',
+            'sistema.usuarios',
+            'sistema.roles'
+        ]);
+
+        // 10. Jefe Distrital (District Admin)
         $jefeDistrital = Role::firstOrCreate(['name' => 'jefe_distrital', 'guard_name' => 'sanctum']);
         $jefeDistrital->givePermissionTo([
             'institucion.ver',
@@ -114,7 +134,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'sistema.roles'
         ]);
 
-        // 9. Supervisor Curricular (Academic Focus)
+        // 11. Supervisor Curricular (Academic Focus)
         $supervisor = Role::firstOrCreate(['name' => 'supervisor_curricular', 'guard_name' => 'sanctum']);
         $supervisor->givePermissionTo([
             'institucion.ver',
@@ -124,8 +144,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'planes.editar',
             'planes.eliminar',
             'asignaturas.ver',
-            'asignaturas.gestionar',
-            'sistema.usuarios' // Solo lectura (protegido por controlador)
+            'asignaturas.gestionar'
         ]);
     }
 }
