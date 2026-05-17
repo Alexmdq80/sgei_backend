@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('region_usuario', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignId('usuario_id')->constrained('usuarios')->onDelete('cascade');
-            $table->foreignId('region_id')->constrained('regiones')->onDelete('cascade');
+            $table->foreignId('region_id')->constrained('regions')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
             

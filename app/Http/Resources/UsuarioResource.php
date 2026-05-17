@@ -31,6 +31,9 @@ class UsuarioResource extends JsonResource
             'documento_tipo' => $this->whenLoaded('documentoTipo'),
             'persona' => $this->whenLoaded('persona'),
             'escuela_usuarios' => EscuelaUsuarioResource::collection($this->whenLoaded('escuelaUsuarios')),
+            'provincia_usuario' => $this->provinciaUsuario,
+            'region_usuario' => $this->regionUsuario,
+            'distrito_usuario' => $this->distritoUsuario,
         ];
     }
 }

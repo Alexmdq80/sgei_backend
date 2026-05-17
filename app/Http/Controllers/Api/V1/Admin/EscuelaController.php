@@ -32,6 +32,7 @@ class EscuelaController extends Controller
      */
     public function store(EscuelaRequest $request): JsonResponse
     {
+        $this->authorize('create', Escuela::class);
         $escuela = $this->escuelaService->create($request->validated());
         return response()->json($escuela, 201);
     }
@@ -41,12 +42,12 @@ class EscuelaController extends Controller
      */
     public function show(Escuela $escuela): JsonResponse
     {
+        $this->authorize('view', $escuela);
         return response()->json($escuela->load([
             'localidad.departamento.provincia', 
             'ambito', 
             'dependencia', 
-            'sector', 
-            'modalidadesNiveles'
+            'sector'
         ]));
     }
 
@@ -55,6 +56,7 @@ class EscuelaController extends Controller
      */
     public function update(EscuelaRequest $request, Escuela $escuela): JsonResponse
     {
+        $this->authorize('update', $escuela);
         $escuela = $this->escuelaService->update($escuela, $request->validated());
         return response()->json($escuela);
     }
@@ -64,6 +66,7 @@ class EscuelaController extends Controller
      */
     public function destroy(Escuela $escuela): JsonResponse
     {
+        $this->authorize('delete', $escuela);
         $this->escuelaService->delete($escuela);
         return response()->json(null, 204);
     }

@@ -29,7 +29,15 @@ class PersonaController extends Controller
     {
         $this->authorize('viewAny', Persona::class);
         
-        $query = Persona::with(['documentoTipo', 'usuario.roles', 'nacionalidad', 'genero']);
+        $query = Persona::with([
+            'documentoTipo', 
+            'usuario.roles', 
+            'usuario.provinciaUsuario.provincia', 
+            'usuario.regionUsuario.region', 
+            'usuario.distritoUsuario.distrito',
+            'nacionalidad', 
+            'genero'
+        ]);
 
         // 1. Búsqueda por nombre, apellido o documento
         if ($request->has('search') && !empty($request->search)) {
@@ -67,7 +75,10 @@ class PersonaController extends Controller
 
         return new PersonaResource($persona->load([
             'documentoTipo', 
-            'usuario', 
+            'usuario.roles',
+            'usuario.provinciaUsuario.provincia', 
+            'usuario.regionUsuario.region', 
+            'usuario.distritoUsuario.distrito',
             'nacionalidad', 
             'nacimientoPais', 
             'nacimientoProvincia', 
@@ -310,13 +321,24 @@ class PersonaController extends Controller
      */
     public function assignJefeRegional(Request $request, Persona $persona): \Illuminate\Http\JsonResponse
     {
-        if (!auth()->user()->hasRole('superuser')) {
-            return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario puede asignar el rol de Jefe Regional.'], 403);
+        $performer = auth()->user();
+        
+        // REGLA ESTRICTA: Superusuario o Jefe Provincial asigna Jefe Regional
+        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_provincial')) {
+            return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario o Jefe Provincial puede asignar el rol de Jefe Regional.'], 403);
         }
 
         $request->validate([
-            'region_id' => 'required|exists:regiones,id'
+            'region_id' => 'required|exists:regions,id'
         ]);
+
+        // Validaciones jerárquicas geográficas
+        if (!$performer->hasRole('superuser') && $performer->hasRole('jefe_provincial')) {
+            $region = \App\Models\Region::find($request->region_id);
+            if ($region->provincia_id !== $performer->provinciaUsuario->provincia_id) {
+                return response()->json(['error' => 'Acceso Denegado: Solo puedes asignar Jefes Regionales para regiones de tu propia provincia.'], 403);
+            }
+        }
 
         try {
             $user = $this->personaService->assignJefeRegional($persona, $request->region_id);
@@ -335,9 +357,11 @@ class PersonaController extends Controller
     public function assignJefeDistrital(Request $request, Persona $persona): \Illuminate\Http\JsonResponse
     {
         $performer = auth()->user();
-        // SEGÚN REGLA: Jefe Provincial asigna Jefe Distrital (Superuser también puede)
-        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_provincial')) {
-            return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario o Jefe Provincial puede asignar el rol de Jefe Distrital.'], 403);
+        
+        // REGLA ESTRICTA: Solo Superusuario o Jefe Regional puede asignar el rol de Jefe Distrital.
+        // (Se quita Jefe Provincial de este nivel para forzar la cadena lineal)
+        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_regional')) {
+            return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario o Jefe Regional puede asignar el rol de Jefe Distrital.'], 403);
         }
 
         $request->validate([
@@ -348,9 +372,11 @@ class PersonaController extends Controller
         if (!$performer->hasRole('superuser')) {
             $departamento = \App\Models\Departamento::find($request->departamento_id);
             
-            if ($performer->hasRole('jefe_provincial')) {
-                if ($departamento->provincia_id !== $performer->provinciaUsuario->provincia_id) {
-                    return response()->json(['error' => 'Acceso Denegado: Solo puedes asignar Jefes Distritales para departamentos de tu provincia.'], 403);
+            if ($performer->hasRole('jefe_regional')) {
+                // El departamento debe pertenecer a la región del Jefe Regional
+                $performer->loadMissing('regionUsuario.region');
+                if (!$performer->regionUsuario || $departamento->region_id !== $performer->regionUsuario->region_id) {
+                    return response()->json(['error' => 'Acceso Denegado: Solo puedes asignar Jefes Distritales para departamentos dentro de tu Región Educativa.'], 403);
                 }
             }
         }
@@ -399,18 +425,40 @@ class PersonaController extends Controller
             return response()->json(['error' => 'Rol no válido para esta operación administrativa.'], 422);
         }
 
-        // Reglas de seguridad jerárquica para remoción
+        // Reglas de seguridad jerárquica para remoción (Espejo de asignación)
         if (!$performer->hasRole('superuser')) {
-            if ($role === 'jefe_provincial') {
-                return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario puede remover el cargo de Jefe Provincial.'], 403);
+            if ($role === 'jefe_provincial' || $role === 'supervisor_curricular') {
+                return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario puede remover este cargo.'], 403);
             }
 
-            if ($role === 'jefe_regional' && !$performer->hasRole('jefe_provincial')) {
-                return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario o Jefe Provincial puede remover el cargo de Jefe Regional.'], 403);
+            if ($role === 'jefe_regional') {
+                if (!$performer->hasRole('jefe_provincial')) {
+                    return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario o Jefe Provincial puede remover el cargo de Jefe Regional.'], 403);
+                }
+                
+                $persona->loadMissing('usuario.regionUsuario.region');
+                $targetRegion = $persona->usuario?->regionUsuario?->region;
+                if ($targetRegion && $targetRegion->provincia_id !== $performer->provinciaUsuario->provincia_id) {
+                    return response()->json(['error' => 'Acceso Denegado: Solo puedes remover Jefes Regionales de tu propia provincia.'], 403);
+                }
             }
 
-            // Para Jefe Distrital y Supervisor, validamos pertenencia geográfica si es Jefe Provincial/Regional
-            // (Similar a la lógica de asignación, simplificada aquí por brevedad pero siguiendo el mismo principio)
+            if ($role === 'jefe_distrital') {
+                // REGLA ESTRICTA: Solo Jefe Regional puede remover Jefe Distrital
+                if (!$performer->hasRole('jefe_regional')) {
+                    return response()->json(['error' => 'Acceso Denegado: Solo un Superusuario o Jefe Regional puede remover el cargo de Jefe Distrital.'], 403);
+                }
+
+                $persona->loadMissing('usuario.distritoUsuario.distrito');
+                $targetDistrito = $persona->usuario?->distritoUsuario?->distrito;
+
+                if ($performer->hasRole('jefe_regional')) {
+                    $performer->loadMissing('regionUsuario');
+                    if (!$performer->regionUsuario || ($targetDistrito && $targetDistrito->region_id !== $performer->regionUsuario->region_id)) {
+                        return response()->json(['error' => 'Acceso Denegado: Solo puedes remover Jefes Distritales de tu propia Región Educativa.'], 403);
+                    }
+                }
+            }
         }
 
         try {

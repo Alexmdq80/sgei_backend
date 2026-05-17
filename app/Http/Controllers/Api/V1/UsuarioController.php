@@ -29,15 +29,7 @@ class UsuarioController extends Controller
      */
     public function resendActivation(Usuario $usuario): JsonResponse
     {
-        Gate::authorize('sistema.usuarios');
-
-        $performer = auth()->user();
-        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_distrital')) {
-            return response()->json([
-                'error' => 'Acceso Denegado: No tienes privilegios para reenviar invitaciones.', 
-                'code' => 403
-            ], 403);
-        }
+        $this->authorize('manageGlobal', Usuario::class);
 
         DB::transaction(function () use ($usuario) {
             $usuario->verification_token = Str::random(60);
@@ -60,7 +52,17 @@ class UsuarioController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Usuario::class);
+        
+        $performer = auth()->user();
         $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page']);
+
+        // REGLA: Equipo de Conducción solo ve usuarios vinculados a su colegio
+        if (!$performer->hasRole('superuser') && $performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
+            $escuelas = $performer->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id')->toArray();
+            $filters['escuela_ids'] = $escuelas; // El UserService debe manejar escuela_ids como array
+        }
+
         $users = $this->userService->getAll($filters);
 
         return UsuarioResource::collection($users);
@@ -71,15 +73,7 @@ class UsuarioController extends Controller
      */
     public function store(UsuarioRequest $request): JsonResponse
     {
-        Gate::authorize('sistema.usuarios');
-
-        $performer = auth()->user();
-        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_distrital')) {
-            return response()->json([
-                'error' => 'Tu rango actual no permite la creación global de usuarios. Esta acción está reservada para Jefes Distritales o Superusuarios.', 
-                'code' => 403
-            ], 403);
-        }
+        $this->authorize('create', Usuario::class);
 
         $user = $this->userService->create($request->validated());
 
@@ -94,6 +88,7 @@ class UsuarioController extends Controller
      */
     public function show(Usuario $usuario)
     {
+        $this->authorize('view', $usuario);
         return new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'roles']));
     }
 
@@ -102,18 +97,7 @@ class UsuarioController extends Controller
      */
     public function update(UsuarioRequest $request, Usuario $usuario): JsonResponse
     {
-        Gate::authorize('sistema.usuarios');
-
-        $performer = auth()->user();
-        $isSuperUser = $performer->hasRole('superuser');
-
-        // Solo el Superusuario puede editar perfiles de otros usuarios de forma administrativa
-        if (!$isSuperUser) {
-            return response()->json([
-                'error' => 'Acceso Denegado: Solo un Superusuario puede modificar datos de identidad de otros usuarios.', 
-                'code' => 403
-            ], 403);
-        }
+        $this->authorize('update', $usuario);
 
         $user = $this->userService->updateProfile($usuario, $request->validated());
 
@@ -125,18 +109,11 @@ class UsuarioController extends Controller
 
     public function confirmPersona(Usuario $usuario): JsonResponse
     {
-        Gate::authorize('sistema.usuarios');
-
+        // Se permite a SuperUser, Distrital y Conducción según PersonaPolicy o lógica de negocio
         $performer = auth()->user();
-        $isSuperUser = $performer->hasRole('superuser');
-        $isJefeDistrital = $performer->hasRole('jefe_distrital');
-        $isConduccion = $performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']);
         
-        if (!$isSuperUser && !$isJefeDistrital && !$isConduccion) {
-            return response()->json([
-                'error' => 'Acceso Denegado: No tienes los privilegios necesarios para confirmar vinculaciones de identidad. Esta acción está reservada para el Equipo de Conducción, Jefes Distritales o Superusuarios.',
-                'code' => 403
-            ], 403);
+        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_distrital') && !$performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
+            return response()->json(['error' => 'Acceso Denegado.'], 403);
         }
 
         if (!$usuario->hasVerifiedEmail()) {
@@ -164,11 +141,10 @@ class UsuarioController extends Controller
         }
 
         // REGLA ESPECÍFICA PARA EQUIPO DE CONDUCCIÓN
-        // Solo pueden vincular si la persona tiene relación con SUS colegios
-        if ($isConduccion && !$isSuperUser && !$isJefeDistrital) {
+        if ($performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']) && !$performer->hasRole('superuser')) {
             if (!$this->userService->isPersonaRelatedToUserSchools($performer, $persona)) {
                 return response()->json([
-                    'error' => 'Restricción de Seguridad: El Equipo de Conducción solo puede confirmar vinculaciones de personas relacionadas con su propia institución (por CUPOF, inscripción o vínculo familiar).',
+                    'error' => 'Restricción de Seguridad: El Equipo de Conducción solo puede confirmar vinculaciones de personas relacionadas con su propia institución.',
                     'code' => 403
                 ], 403);
             }
@@ -185,21 +161,10 @@ class UsuarioController extends Controller
 
     public function destroy(Usuario $usuario): JsonResponse
     {
-        Gate::authorize('sistema.usuarios');
-
-        $performer = auth()->user();
-        $isSuperUser = $performer->hasRole('superuser');
-
-        // Solo el Superusuario puede eliminar cuentas
-        if (!$isSuperUser) {
-            return response()->json([
-                'error' => 'Acceso Denegado: Solo un Superusuario tiene privilegios para eliminar cuentas del sistema.', 
-                'code' => 403
-            ], 403);
-        }
+        $this->authorize('delete', $usuario);
 
         // Impedir que el superusuario se elimine a sí mismo
-        if ($usuario->id === $performer->id) {
+        if ($usuario->id === auth()->id()) {
             return response()->json([
                 'error' => 'Operación Inválida: No puedes eliminar tu propia cuenta administrativa.',
                 'code' => 400

@@ -40,11 +40,11 @@ class Departamento extends Model
     }
 
     /**
-     * Relationship to the educational regions.
+     * Relationship to the educational region.
      */
-    public function regiones(): HasMany
+    public function region(): BelongsTo
     {
-        return $this->hasMany(Region::class);
+        return $this->belongsTo(Region::class);
     }
 
     /**

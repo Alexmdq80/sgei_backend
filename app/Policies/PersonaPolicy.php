@@ -10,26 +10,21 @@ class PersonaPolicy
 {
     /**
      * Determine whether the user can manage the persona padron (CRUD Global).
-     * Applied to: viewAny, create, view, update, delete.
+     * Applied to: viewAny, create, view, update.
      */
     private function canManageGlobalPadron(Usuario $usuario): bool
     {
-        // 1. Superusuario: Acceso Total
-        if ($usuario->hasRole('superuser')) {
+        // 1. Superusuario, Jefe Provincial, Regional, Distrital: Acceso Total al Padrón.
+        if ($usuario->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return true;
         }
 
-        // 2. Roles Jerárquicos Administrativos: Acceso Total al Padrón
-        if ($usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+        // 2. Equipo de Conducción: Acceso Total al Padrón (CRUD).
+        if ($usuario->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
             return true;
         }
 
-        // 3. Equipo de Conducción: Acceso Total al Padrón (para facilitar vinculaciones)
-        $isConduccion = $usuario->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']);
-        if ($isConduccion) {
-            return true;
-        }
-
+        // Supervisor Curricular y otros: SIN ACCESO (SEGÚN REGLA).
         return false;
     }
 
@@ -67,26 +62,25 @@ class PersonaPolicy
 
     /**
      * Determine whether the user can delete the model.
+     * SEGÚN REGLA: Sólo Superusuario, Provincial, Regional, Distrital y Conducción.
      */
     public function delete(Usuario $usuario, Persona $persona): bool
     {
-        // Solo Superusuario puede borrar personas (Soft Delete)
-        return $usuario->hasRole('superuser');
+        return $this->canManageGlobalPadron($usuario);
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Determine whether the user can assign roles.
+     * La lógica específica de jerarquía está en PersonaController,
+     * pero este Gate general valida si el usuario puede siquiera abrir el modal.
      */
-    public function restore(Usuario $usuario, Persona $persona): bool
+    public function assignRoles(Usuario $usuario): bool
     {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(Usuario $usuario, Persona $persona): bool
-    {
-        return false;
+        return $usuario->hasAnyRole([
+            'superuser', 
+            'jefe_provincial', 
+            'jefe_regional', 
+            'jefe_distrital'
+        ]);
     }
 }

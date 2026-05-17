@@ -55,6 +55,14 @@ class Provincia extends Model
     }
 
     /**
+     * Relationship to the regions in this province.
+     */
+    public function regiones(): HasMany
+    {
+        return $this->hasMany(Region::class);
+    }
+
+    /**
      * Relationship to the departments in this province.
      */
     public function departamentos(): HasMany

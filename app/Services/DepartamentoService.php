@@ -11,7 +11,7 @@ class DepartamentoService
      */
     public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        $query = Departamento::with(['provincia.nacion'])
+        $query = Departamento::with(['provincia.nacion', 'region'])
             ->orderBy('nombre');
 
         if ($search) {
@@ -21,6 +21,9 @@ class DepartamentoService
                         ->orWhereHas('nacion', function ($q2) use ($search) {
                             $q2->where('nombre', 'like', "%{$search}%");
                         });
+                })
+                ->orWhereHas('region', function ($q) use ($search) {
+                    $q->where('numero', 'like', "%{$search}%");
                 });
         }
 
@@ -32,7 +35,7 @@ class DepartamentoService
      */
     public function getById(int $id): Departamento
     {
-        return Departamento::with(['provincia.nacion'])->findOrFail($id);
+        return Departamento::with(['provincia.nacion', 'region'])->findOrFail($id);
     }
 
     /**
@@ -42,6 +45,7 @@ class DepartamentoService
     {
         return Departamento::create([
             'provincia_id' => $data['provincia_id'],
+            'region_id' => $data['region_id'] ?? null,
             'nombre' => mb_strtoupper($data['nombre']),
             'id_georef' => $data['id_georef'] ?? null,
         ]);
@@ -54,11 +58,12 @@ class DepartamentoService
     {
         $departamento->update([
             'provincia_id' => $data['provincia_id'],
+            'region_id' => $data['region_id'] ?? $departamento->region_id,
             'nombre' => mb_strtoupper($data['nombre']),
             'id_georef' => $data['id_georef'] ?? $departamento->id_georef,
         ]);
 
-        return $departamento->load(['provincia.nacion']);
+        return $departamento->load(['provincia.nacion', 'region']);
     }
 
     /**

@@ -45,11 +45,17 @@ class GeografiaController extends Controller
     }
 
     /**
-     * List all educational regions.
+     * List educational regions.
      */
-    public function regiones(): JsonResponse
+    public function regiones(GeografiaRequest $request): JsonResponse
     {
-        $regiones = \App\Models\Region::orderBy('numero')->get(['id', 'numero']);
+        $query = \App\Models\Region::query();
+
+        if ($request->has('provincia_id')) {
+            $query->where('provincia_id', $request->provincia_id);
+        }
+
+        $regiones = $query->orderBy('numero')->get(['id', 'numero', 'provincia_id']);
         return response()->json($regiones);
     }
 }

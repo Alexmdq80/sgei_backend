@@ -170,6 +170,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('continentes', App\Http\Controllers\Api\V1\ContinenteController::class);
         Route::apiResource('naciones', App\Http\Controllers\Api\V1\NacionController::class);
         Route::apiResource('provincias', App\Http\Controllers\Api\V1\ProvinciaController::class);
+        Route::apiResource('regiones', App\Http\Controllers\Api\V1\RegionController::class);
         Route::apiResource('departamentos', App\Http\Controllers\Api\V1\DepartamentoController::class);
         Route::apiResource('municipios', App\Http\Controllers\Api\V1\MunicipioController::class);
         Route::apiResource('localidades', App\Http\Controllers\Api\V1\LocalidadController::class);
