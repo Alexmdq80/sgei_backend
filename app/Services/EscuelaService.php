@@ -145,11 +145,12 @@ class EscuelaService
             throw new \Exception("El rol de Superusuario no puede ser asignado institucionalmente.", 403);
         }
 
-        $isTargetHierarchical = in_array($role->name, self::HIERARCHICAL_ROLES);
-
+        // REGLA ESTRICTA: Superusuario NO puede asignar roles institucionales directamente.
         if ($isSuperUser) {
-            return;
+            throw new \Exception("Acceso Denegado: Como Superusuario, no puedes asignar roles institucionales directamente. Esta acción está reservada para el Jefe Distrital o el Equipo de Conducción.", 403);
         }
+
+        $isTargetHierarchical = in_array($role->name, self::HIERARCHICAL_ROLES);
 
         // 1. Jefe Distrital puede asignar cargos jerárquicos (Equipo de Conducción)
         if ($isJefeDistrital) {
