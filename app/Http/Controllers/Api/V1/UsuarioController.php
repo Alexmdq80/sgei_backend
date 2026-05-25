@@ -29,7 +29,7 @@ class UsuarioController extends Controller
      */
     public function resendActivation(Usuario $usuario): JsonResponse
     {
-        $this->authorize('manageGlobal', Usuario::class);
+        $this->authorize('manageScoped', $usuario);
 
         DB::transaction(function () use ($usuario) {
             $usuario->verification_token = Str::random(60);
@@ -57,10 +57,25 @@ class UsuarioController extends Controller
         $performer = auth()->user();
         $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page']);
 
-        // REGLA: Equipo de Conducción solo ve usuarios vinculados a su colegio
-        if (!$performer->hasRole('superuser') && $performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-            $escuelas = $performer->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id')->toArray();
-            $filters['escuela_ids'] = $escuelas; // El UserService debe manejar escuela_ids como array
+        // APLICACIÓN DE ÁMBITOS JURISDICCIONALES (SCOPES)
+        if (!$performer->hasRole('superuser')) {
+            // 1. Jefe Provincial: Filtra por su Provincia
+            if ($performer->hasRole('jefe_provincial')) {
+                $filters['provincia_id'] = $performer->provincia_usuario?->provincia_id;
+            }
+            // 2. Jefe Regional: Filtra por su Región
+            elseif ($performer->hasRole('jefe_regional')) {
+                $filters['region_id'] = $performer->region_usuario?->region_id;
+            }
+            // 3. Jefe Distrital: Filtra por su Departamento (Distrito)
+            elseif ($performer->hasRole('jefe_distrital')) {
+                $filters['departamento_id'] = $performer->distrito_usuario?->departamento_id;
+            }
+            // 4. Equipo de Conducción: solo ve usuarios vinculados a su colegio
+            elseif ($performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
+                $escuelas = $performer->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id')->toArray();
+                $filters['escuela_ids'] = $escuelas;
+            }
         }
 
         $users = $this->userService->getAll($filters);
@@ -109,11 +124,11 @@ class UsuarioController extends Controller
 
     public function confirmPersona(Usuario $usuario): JsonResponse
     {
-        // Se permite a SuperUser, Distrital y Conducción según PersonaPolicy o lógica de negocio
         $performer = auth()->user();
         
-        if (!$performer->hasRole('superuser') && !$performer->hasRole('jefe_distrital') && !$performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-            return response()->json(['error' => 'Acceso Denegado.'], 403);
+        // Autorización basada en Jurisdicción
+        if (!$performer->hasRole('superuser') && !$performer->can('manageScoped', $usuario)) {
+            return response()->json(['error' => 'Acceso Denegado: No tienes permisos para gestionar este usuario según tu jurisdicción.'], 403);
         }
 
         if (!$usuario->hasVerifiedEmail()) {

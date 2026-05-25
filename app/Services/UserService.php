@@ -39,6 +39,37 @@ class UserService
             });
         }
 
+        // Filtros Jurisdiccionales
+        if (!empty($filters['provincia_id'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->whereHas('provinciaUsuario', function ($pq) use ($filters) {
+                    $pq->where('provincia_id', $filters['provincia_id']);
+                })->orWhereHas('escuelaUsuarios.escuela', function ($eq) use ($filters) {
+                    $eq->where('provincia_id', $filters['provincia_id']);
+                });
+            });
+        }
+
+        if (!empty($filters['region_id'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->whereHas('regionUsuario', function ($rq) use ($filters) {
+                    $rq->where('region_id', $filters['region_id']);
+                })->orWhereHas('escuelaUsuarios.escuela', function ($eq) use ($filters) {
+                    $eq->where('region_id', $filters['region_id']);
+                });
+            });
+        }
+
+        if (!empty($filters['departamento_id'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->whereHas('distritoUsuario', function ($dq) use ($filters) {
+                    $dq->where('departamento_id', $filters['departamento_id']);
+                })->orWhereHas('escuelaUsuarios.escuela', function ($eq) use ($filters) {
+                    $eq->where('localidad_departamento_id', $filters['departamento_id']);
+                });
+            });
+        }
+
         if (!empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
                 $q->where('nombre', 'like', '%' . $filters['search'] . '%')
@@ -51,6 +82,12 @@ class UserService
         if (!empty($filters['escuela_id'])) {
             $query->whereHas('escuelaUsuarios', function ($q) use ($filters) {
                 $q->where('escuela_id', $filters['escuela_id']);
+            });
+        }
+
+        if (!empty($filters['escuela_ids'])) {
+            $query->whereHas('escuelaUsuarios', function ($q) use ($filters) {
+                $q->whereIn('escuela_id', $filters['escuela_ids']);
             });
         }
 
