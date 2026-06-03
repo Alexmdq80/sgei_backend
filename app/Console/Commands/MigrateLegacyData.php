@@ -254,6 +254,13 @@ class MigrateLegacyData extends Command
                 $this->unknownEscuelaId = DB::table('escuelas')->insertGetId(['nombre' => 'DESCONOCIDO / SIN DATOS', 'created_at' => now(), 'updated_at' => now()]);
             }
 
+            if ($tableName === 'regions') {
+                $buenosAires = DB::table('provincias')->where('id_georef', '06')->first();
+                if ($buenosAires) {
+                    DB::table('regions')->whereNull('provincia_id')->update(['provincia_id' => $buenosAires->id]);
+                }
+            }
+
             $count = count($dataToInsert);
             $this->info("✓ Se migraron {$count} registros en '{$tableName}'.");
 
