@@ -46,7 +46,7 @@ test('admin can list all institutional links', function () {
              ->assertJsonCount(5, 'data');
 });
 
-test('superuser can assign any role to any user in any school', function () {
+test('superuser cannot assign roles directly via institutional links', function () {
     $escuela = Escuela::factory()->create();
     $user = Usuario::factory()->create(['estado' => 'email_verificado']);
     $role = \Spatie\Permission\Models\Role::where('name', 'profesor')->first();
@@ -58,20 +58,8 @@ test('superuser can assign any role to any user in any school', function () {
                          'role_id' => $role->id
                      ]);
 
-    $response->assertStatus(201)
-             ->assertJsonPath('message', 'Rol institucional asignado con éxito.');
-
-    $this->assertDatabaseHas('escuela_usuario', [
-        'usuario_id' => $user->id,
-        'escuela_id' => $escuela->id,
-        'role_id' => $role->id,
-        'verified_at' => now()->toDateTimeString()
-    ]);
-
-    $this->assertDatabaseHas('usuarios', [
-        'id' => $user->id,
-        'estado' => 'activo'
-    ]);
+    $response->assertStatus(403)
+              ->assertJsonPath('error', 'Acceso Denegado: Como Superusuario, no puedes asignar roles institucionales directamente. Esta acción está reservada para el Jefe Distrital o el Equipo de Conducción.');
 });
 
 test('superuser cannot assign superuser role to any user via institutional links', function () {

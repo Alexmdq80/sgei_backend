@@ -119,9 +119,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $jefeRegional->givePermissionTo([
             'institucion.ver',
             'personal.ver',
-            'planes.ver',
-            'sistema.usuarios',
-            'sistema.roles'
+            'planes.ver'
         ]);
 
         // 10. Jefe Distrital (District Admin)
@@ -129,9 +127,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $jefeDistrital->givePermissionTo([
             'institucion.ver',
             'personal.ver',
-            'planes.ver',
-            'sistema.usuarios',
-            'sistema.roles'
+            'planes.ver'
         ]);
 
         // 11. Supervisor Curricular (Academic Focus)

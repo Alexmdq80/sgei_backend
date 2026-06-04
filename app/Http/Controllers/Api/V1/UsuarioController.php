@@ -58,20 +58,12 @@ class UsuarioController extends Controller
         $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page']);
 
         // APLICACIÓN DE ÁMBITOS JURISDICCIONALES (SCOPES)
-        if (!$performer->hasRole('superuser')) {
+        if (!$performer->hasRole('superuser') && !$performer->es_administrador) {
             // 1. Jefe Provincial: Filtra por su Provincia
             if ($performer->hasRole('jefe_provincial')) {
                 $filters['provincia_id'] = $performer->provincia_usuario?->provincia_id;
             }
-            // 2. Jefe Regional: Filtra por su Región
-            elseif ($performer->hasRole('jefe_regional')) {
-                $filters['region_id'] = $performer->region_usuario?->region_id;
-            }
-            // 3. Jefe Distrital: Filtra por su Departamento (Distrito)
-            elseif ($performer->hasRole('jefe_distrital')) {
-                $filters['departamento_id'] = $performer->distrito_usuario?->departamento_id;
-            }
-            // 4. Equipo de Conducción: solo ve usuarios vinculados a su colegio
+            // 2. Equipo de Conducción: solo ve usuarios vinculados a su colegio
             elseif ($performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
                 $escuelas = $performer->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id')->toArray();
                 $filters['escuela_ids'] = $escuelas;
@@ -127,7 +119,7 @@ class UsuarioController extends Controller
         $performer = auth()->user();
         
         // Autorización basada en Jurisdicción
-        if (!$performer->hasRole('superuser') && !$performer->can('manageScoped', $usuario)) {
+        if (!$performer->hasRole('superuser') && !$performer->es_administrador && !$performer->can('manageScoped', $usuario)) {
             return response()->json(['error' => 'Acceso Denegado: No tienes permisos para gestionar este usuario según tu jurisdicción.'], 403);
         }
 

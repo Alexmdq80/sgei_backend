@@ -13,7 +13,7 @@ class UsuarioPolicy
      */
     public function manageGlobal(Usuario $user): bool
     {
-        return $user->hasRole('superuser');
+        return $user->hasRole('superuser') || $user->es_administrador;
     }
 
     /**
@@ -26,17 +26,17 @@ class UsuarioPolicy
 
     /**
      * Determine whether the user can view any models.
-     * SEGÚN REGLA: Superusuario, Equipo de Conducción o Jerárquicos (Provincial/Regional/Distrital).
+     * SEGÚN REGLA: Superusuario, Equipo de Conducción o Jefe Provincial.
      */
     public function viewAny(Usuario $user): bool
     {
         // 1. Superusuario: Acceso total.
-        if ($user->hasRole('superuser')) {
+        if ($user->hasRole('superuser') || $user->es_administrador) {
             return true;
         }
 
-        // 2. Roles Jerárquicos: Acceso (filtrado por su jurisdicción en el controller).
-        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+        // 2. Jefe Provincial: Acceso (filtrado por su jurisdicción en el controller).
+        if ($user->hasRole('jefe_provincial')) {
             return true;
         }
 
@@ -50,11 +50,11 @@ class UsuarioPolicy
 
     /**
      * Determine whether the user can view the model.
-     * SEGÚN REGLA: Superusuario o Jerárquicos dentro de su jurisdicción.
+     * SEGÚN REGLA: Superusuario, Jefe Provincial (misma provincia) o Conducción (mismo colegio).
      */
     public function view(Usuario $user, Usuario $model): bool
     {
-        if ($user->hasRole('superuser')) {
+        if ($user->hasRole('superuser') || $user->es_administrador) {
             return true;
         }
 
@@ -72,27 +72,7 @@ class UsuarioPolicy
             })->exists()) return true;
         }
 
-        // 2. Jefe Regional
-        if ($user->hasRole('jefe_regional')) {
-            $userRegId = $user->region_usuario?->region_id;
-            if ($userRegId && $model->region_usuario?->region_id === $userRegId) return true;
-            
-            if ($userRegId && $model->escuela_usuarios()->whereHas('escuela.region', function($q) use ($userRegId) {
-                $q->where('id', $userRegId);
-            })->exists()) return true;
-        }
-
-        // 3. Jefe Distrital
-        if ($user->hasRole('jefe_distrital')) {
-            $userDistId = $user->distrito_usuario?->departamento_id;
-            if ($userDistId && $model->distrito_usuario?->departamento_id === $userDistId) return true;
-
-            if ($userDistId && $model->escuela_usuarios()->whereHas('escuela', function($q) use ($userDistId) {
-                $q->where('localidad_departamento_id', $userDistId);
-            })->exists()) return true;
-        }
-
-        // 4. Equipo de Conducción
+        // 2. Equipo de Conducción
         if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
             $userEscuelas = $user->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id');
             $modelEscuelas = $model->escuela_usuarios()->pluck('escuela_id');
@@ -105,20 +85,20 @@ class UsuarioPolicy
 
     /**
      * Determine whether the user can create models.
-     * SEGÚN REGLA: Sólo Superusuario (para evitar creación de cuentas fantasma fuera de padrón).
+     * SEGÚN REGLA: Sólo Superusuario.
      */
     public function create(Usuario $user): bool
     {
-        return $user->hasRole('superuser');
+        return $user->hasRole('superuser') || $user->es_administrador;
     }
 
     /**
      * Determine whether the user can update the model.
-     * SEGÚN REGLA: Superusuario o Jerárquicos dentro de su jurisdicción.
+     * SEGÚN REGLA: Superusuario, el propio usuario o Jefe Provincial de la misma provincia.
      */
     public function update(Usuario $user, Usuario $model): bool
     {
-        if ($user->hasRole('superuser')) {
+        if ($user->hasRole('superuser') || $user->es_administrador) {
             return true;
         }
 
@@ -126,34 +106,31 @@ class UsuarioPolicy
             return true;
         }
 
-        // Delegar a la lógica de 'view' para validar jurisdicción
-        return $this->view($user, $model);
-    }
-
-    /**
-     * Determine whether the user can delete the model.
-     * SEGÚN REGLA: Superusuario global, o Conducción (sólo desvincular de su colegio).
-     * Nota: 'delete' aquí se refiere a la desvinculación o borrado administrativo.
-     */
-    public function delete(Usuario $user, Usuario $model): bool
-    {
-        if ($user->hasRole('superuser')) {
-            return true;
+        // El Jefe Provincial puede actualizar usuarios de su provincia
+        if ($user->hasRole('jefe_provincial')) {
+            return $this->view($user, $model);
         }
 
-        // El Equipo de Conducción puede "desvincular" (borrado administrativo si se interpreta así) 
-        // pero en este sistema la desvinculación institucional se maneja en EscuelaUsuarioController.
-        // Si el usuario se refiere a borrar la CUENTA, sólo Superusuario.
+        // El Equipo de Conducción tiene acceso sólo lectura (no pueden actualizar)
         return false;
     }
 
     /**
+     * Determine whether the user can delete the model.
+     * SEGÚN REGLA: Sólo Superusuario.
+     */
+    public function delete(Usuario $user, Usuario $model): bool
+    {
+        return $user->hasRole('superuser') || $user->es_administrador;
+    }
+
+    /**
      * Determine whether the user can desvincular institucionalmente.
-     * SEGÚN REGLA: Equipo de Conducción para su colegio.
+     * SEGÚN REGLA: Equipo de Conducción para su colegio, o Superusuario.
      */
     public function desvincular(Usuario $user, Usuario $model): bool
     {
-        if ($user->hasRole('superuser')) {
+        if ($user->hasRole('superuser') || $user->es_administrador) {
             return true;
         }
 

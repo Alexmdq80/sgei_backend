@@ -219,13 +219,11 @@ class PersonaController extends Controller
     public function tryLinkUser(Persona $persona): \Illuminate\Http\JsonResponse
     {
         $performer = auth()->user();
-        $isSuperUser = $performer->hasRole('superuser');
+        $isSuperUser = $performer->hasRole('superuser') || $performer->es_administrador;
         $isProvincial = $performer->hasRole('jefe_provincial');
-        $isRegional = $performer->hasRole('jefe_regional');
-        $isDistrital = $performer->hasRole('jefe_distrital');
         $isConduccion = $performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']);
         
-        if (!$isSuperUser && !$isProvincial && !$isRegional && !$isDistrital && !$isConduccion) {
+        if (!$isSuperUser && !$isProvincial && !$isConduccion) {
             return response()->json([
                 'error' => 'Acceso Denegado: No tienes los privilegios necesarios para confirmar vinculaciones de identidad.',
                 'code' => 403
@@ -279,33 +277,7 @@ class PersonaController extends Controller
                     ], 403);
                 }
             }
-            // 2. Jefe Regional: Solo puede vincular Jefes Distritales de su región
-            elseif ($isRegional) {
-                if (!$matchingUser->hasRole('jefe_distrital') || 
-                    $matchingUser->regionUsuario?->region_id !== $performer->regionUsuario?->region_id) {
-                    return response()->json([
-                        'error' => 'Restricción de Seguridad: Como Jefe Regional, solo puedes confirmar vinculaciones para el cargo de Jefe Distrital dentro de tu Región Educativa.',
-                        'code' => 403
-                    ], 403);
-                }
-            }
-            // 3. Jefe Distrital: Solo puede vincular personal de escuelas en su distrito
-            elseif ($isDistrital) {
-                // El Jefe Distrital puede gestionar a los directivos y agentes de su distrito
-                // Verificamos si el usuario destino tiene vinculación con alguna escuela del departamento del Jefe Distrital
-                $userDistId = $performer->distrito_usuario?->departamento_id;
-                $hasEscuelaInDistrito = $matchingUser->escuela_usuarios()->whereHas('escuela', function($q) use ($userDistId) {
-                    $q->where('localidad_departamento_id', $userDistId);
-                })->exists();
-
-                if (!$hasEscuelaInDistrito) {
-                    return response()->json([
-                        'error' => 'Restricción de Seguridad: Como Jefe Distrital, solo puedes confirmar vinculaciones para personal que pertenezca a instituciones dentro de tu distrito.',
-                        'code' => 403
-                    ], 403);
-                }
-            }
-            // 4. Equipo de Conducción: Solo pueden vincular si la persona tiene relación con SUS colegios
+            // 2. Equipo de Conducción: Solo pueden vincular si la persona tiene relación con SUS colegios
             elseif ($isConduccion) {
                 if (!$this->userService->isPersonaRelatedToUserSchools($performer, $persona)) {
                     return response()->json([
@@ -331,10 +303,8 @@ class PersonaController extends Controller
     public function unlinkUser(Persona $persona): \Illuminate\Http\JsonResponse
     {
         $performer = auth()->user();
-        $isSuperUser = $performer->hasRole('superuser');
+        $isSuperUser = $performer->hasRole('superuser') || $performer->es_administrador;
         $isProvincial = $performer->hasRole('jefe_provincial');
-        $isRegional = $performer->hasRole('jefe_regional');
-        $isDistrital = $performer->hasRole('jefe_distrital');
         $isConduccion = $performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']);
 
         if (!$persona->usuario_id) {
@@ -363,31 +333,7 @@ class PersonaController extends Controller
                     ], 403);
                 }
             }
-            // 2. Jefe Regional
-            elseif ($isRegional) {
-                if (!$linkedUser->hasRole('jefe_distrital') || 
-                    $linkedUser->regionUsuario?->region_id !== $performer->regionUsuario?->region_id) {
-                    return response()->json([
-                        'error' => 'Restricción de Seguridad: Como Jefe Regional, solo puedes desvincular usuarios con el cargo de Jefe Distrital dentro de tu Región Educativa.',
-                        'code' => 403
-                    ], 403);
-                }
-            }
-            // 3. Jefe Distrital
-            elseif ($isDistrital) {
-                $userDistId = $performer->distrito_usuario?->departamento_id;
-                $hasEscuelaInDistrito = $linkedUser->escuela_usuarios()->whereHas('escuela', function($q) use ($userDistId) {
-                    $q->where('localidad_departamento_id', $userDistId);
-                })->exists();
-
-                if (!$hasEscuelaInDistrito) {
-                    return response()->json([
-                        'error' => 'Restricción de Seguridad: Como Jefe Distrital, solo puedes desvincular personal que pertenezca a instituciones dentro de tu distrito.',
-                        'code' => 403
-                    ], 403);
-                }
-            }
-            // 4. Equipo de Conducción
+            // 2. Equipo de Conducción
             elseif ($isConduccion) {
                 if (!$this->userService->isPersonaRelatedToUserSchools($performer, $persona)) {
                     return response()->json([

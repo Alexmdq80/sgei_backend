@@ -18,6 +18,7 @@ beforeEach(function () {
         'es_administrador' => true,
         'email_verified_at' => now(),
     ]);
+    $this->admin->assignRole('superuser');
     $this->admin->givePermissionTo('sistema.usuarios');
 
     // 2. Setup Schools

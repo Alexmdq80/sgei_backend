@@ -89,7 +89,7 @@ test('el administrador puede listar todos los vínculos institucionales', functi
         ->assertJsonCount(5, 'data');
 });
 
-test('el administrador puede actualizar el rol institucional de un vínculo escuela-usuario', function () {
+test('el administrador superuser no puede actualizar el rol institucional de un vínculo escuela-usuario directamente', function () {
     $roleDirector = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
     $roleSecretario = \Spatie\Permission\Models\Role::where('name', 'secretario')->first()->id;
     
@@ -102,10 +102,8 @@ test('el administrador puede actualizar el rol institucional de un vínculo escu
 
     $this->actingAs($this->admin, 'sanctum')
          ->putJson("/api/v1/admin/escuela-usuarios/{$link->id}", [
-             'role_id' => $roleSecretario
+              'role_id' => $roleSecretario
          ])
-         ->assertStatus(200)
-         ->assertJsonPath('message', 'Rol institucional actualizado con éxito.');
-
-    expect(EscuelaUsuario::find($link->id)->role_id)->toBe($roleSecretario);
+         ->assertStatus(403)
+         ->assertJsonPath('error', 'Acceso Denegado: Como Superusuario, no puedes asignar roles institucionales directamente. Esta acción está reservada para el Jefe Distrital o el Equipo de Conducción.');
 });
