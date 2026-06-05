@@ -147,14 +147,13 @@ class UsuarioController extends Controller
             return response()->json(['error' => 'No se encontró ninguna persona en el padrón con datos coincidentes (DNI y Email) para confirmar.'], 404);
         }
 
-        // REGLA ESPECÍFICA PARA EQUIPO DE CONDUCCIÓN
+        // REGLA: El Equipo de Conducción NO puede confirmar vinculaciones de identidad.
+        // Solo Superusuario y Jefaturas Jerárquicas (Provincial, Regional, Distrital) tienen este poder.
         if ($performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']) && !$performer->hasRole('superuser')) {
-            if (!$this->userService->isPersonaRelatedToUserSchools($performer, $persona)) {
-                return response()->json([
-                    'error' => 'Restricción de Seguridad: El Equipo de Conducción solo puede confirmar vinculaciones de personas relacionadas con su propia institución.',
-                    'code' => 403
-                ], 403);
-            }
+            return response()->json([
+                'error' => 'Acceso Denegado: El Equipo de Conducción no tiene permisos para confirmar vinculaciones de identidad con el padrón.',
+                'code'  => 403
+            ], 403);
         }
 
         $persona->update(['usuario_id' => $usuario->id]);

@@ -44,8 +44,8 @@ class UserService
             $query->where(function ($q) use ($filters) {
                 $q->whereHas('provinciaUsuario', function ($pq) use ($filters) {
                     $pq->where('provincia_id', $filters['provincia_id']);
-                })->orWhereHas('escuelaUsuarios.escuela', function ($eq) use ($filters) {
-                    $eq->where('provincia_id', $filters['provincia_id']);
+                })->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
+                    $ld->where('provincia_id', $filters['provincia_id']);
                 });
             });
         }
@@ -54,8 +54,8 @@ class UserService
             $query->where(function ($q) use ($filters) {
                 $q->whereHas('regionUsuario', function ($rq) use ($filters) {
                     $rq->where('region_id', $filters['region_id']);
-                })->orWhereHas('escuelaUsuarios.escuela', function ($eq) use ($filters) {
-                    $eq->where('region_id', $filters['region_id']);
+                })->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
+                    $ld->where('region_id', $filters['region_id']);
                 });
             });
         }
@@ -64,8 +64,8 @@ class UserService
             $query->where(function ($q) use ($filters) {
                 $q->whereHas('distritoUsuario', function ($dq) use ($filters) {
                     $dq->where('departamento_id', $filters['departamento_id']);
-                })->orWhereHas('escuelaUsuarios.escuela', function ($eq) use ($filters) {
-                    $eq->where('localidad_departamento_id', $filters['departamento_id']);
+                })->orWhereHas('escuelaUsuarios.escuela.localidad', function ($l) use ($filters) {
+                    $l->where('departamento_id', $filters['departamento_id']);
                 });
             });
         }

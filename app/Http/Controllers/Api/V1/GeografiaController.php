@@ -27,7 +27,7 @@ class GeografiaController extends Controller
     {
         $departamentos = Departamento::where('provincia_id', $request->provincia_id)
             ->orderBy('nombre')
-            ->get(['id', 'nombre']);
+            ->get(['id', 'nombre', 'region_id']);
             
         return response()->json($departamentos);
     }
