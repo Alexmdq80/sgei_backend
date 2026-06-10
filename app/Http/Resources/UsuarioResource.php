@@ -33,7 +33,8 @@ class UsuarioResource extends JsonResource
             'escuela_usuarios' => EscuelaUsuarioResource::collection($this->whenLoaded('escuelaUsuarios')),
             'provincia_usuario' => $this->provinciaUsuario?->loadMissing('provincia'),
             'region_usuario' => $this->regionUsuario?->loadMissing('region'),
-            'distrito_usuario' => $this->distritoUsuario?->loadMissing(['distrito', 'distrito.departamento']),
+            'distrito_usuario' => $this->distritoUsuario?->loadMissing('distrito')
+            // 'distrito_usuario' => $this->distritoUsuario?->loadMissing(['distrito', 'distrito.departamento']),
         ];
     }
 }
