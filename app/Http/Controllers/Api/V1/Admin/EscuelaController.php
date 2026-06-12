@@ -24,7 +24,9 @@ class EscuelaController extends Controller
     public function index(Request $request): JsonResponse
     {
         $search = $request->query('search');
-        return response()->json($this->escuelaService->getAllAdmin($search));
+        $departamentoId = $request->query('localidad_departamento_id');
+        $perPage = $request->query('per_page', 20);
+        return response()->json($this->escuelaService->getAllAdmin($search, $departamentoId, $perPage));
     }
 
     /**

@@ -40,9 +40,9 @@ class EscuelaService
     }
 
     /**
-     * Get all schools for admin panel.
+     * Get all schools for admin panel with optional district filter and pagination size.
      */
-    public function getAllAdmin(string $search = null): \Illuminate\Pagination\LengthAwarePaginator
+    public function getAllAdmin(string $search = null, ?int $departamentoId = null, int $perPage = 20): \Illuminate\Pagination\LengthAwarePaginator
     {
         $query = Escuela::with(['localidad', 'ambito', 'dependencia', 'sector']);
 
@@ -54,7 +54,13 @@ class EscuelaService
             });
         }
 
-        return $query->orderBy('nombre')->paginate(20);
+        if ($departamentoId) {
+            $query->whereHas('localidad', function ($q) use ($departamentoId) {
+                $q->where('departamento_id', $departamentoId);
+            });
+        }
+
+        return $query->orderBy('nombre')->paginate($perPage);
     }
 
     /**
@@ -152,11 +158,23 @@ class EscuelaService
 
         $isTargetHierarchical = in_array($role->name, self::HIERARCHICAL_ROLES);
 
-        // 1. Jefe Distrital puede asignar cargos jerárquicos (Equipo de Conducción)
+        // 1. Jefe Distrital puede asignar cargos jerárquicos (Equipo de Conducción) dentro de su distrito
         if ($isJefeDistrital) {
             if (!$isTargetHierarchical) {
                 throw new \Exception("Como Jefe Distrital, solo tienes permitido asignar roles del Equipo de Conducción.", 403);
             }
+
+            $distritoId = $admin->distritoUsuario?->departamento_id;
+            if (!$distritoId) {
+                throw new \Exception("Acceso Denegado: No tienes un distrito asignado a tu perfil administrativo.", 403);
+            }
+
+            $escuela = Escuela::findOrFail($escuelaId);
+            $escuela->loadMissing('localidad');
+            if (!$escuela->localidad || $escuela->localidad->departamento_id !== $distritoId) {
+                throw new \Exception("Restricción de Seguridad: Como Jefe Distrital, solo puedes asignar roles en escuelas dentro de tu distrito.", 403);
+            }
+
             return;
         }
 

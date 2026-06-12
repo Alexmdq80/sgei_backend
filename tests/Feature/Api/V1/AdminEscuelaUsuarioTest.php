@@ -88,7 +88,20 @@ test('jefe distrital can assign hierarchical roles globally', function () {
     $jefe->assignRole('jefe_distrital');
     $jefe->givePermissionTo('sistema.usuarios');
 
-    $escuela = Escuela::factory()->create();
+    $departamento = \App\Models\Departamento::factory()->create();
+    \App\Models\DistritoUsuario::create([
+        'usuario_id' => $jefe->id,
+        'departamento_id' => $departamento->id
+    ]);
+
+    $localidad = \App\Models\Localidad::factory()->create([
+        'departamento_id' => $departamento->id
+    ]);
+
+    $escuela = Escuela::factory()->create([
+        'localidad_id' => $localidad->id
+    ]);
+
     $user = Usuario::factory()->create(['estado' => 'email_verificado']);
     $role = \Spatie\Permission\Models\Role::where('name', 'director')->first();
 
@@ -167,4 +180,37 @@ test('local admin can assign non-hierarchical roles to their school', function (
         'escuela_id' => $escuela->id,
         'role_id' => $targetRole->id
     ]);
+});
+
+test('jefe distrital cannot assign hierarchical roles to school outside their district', function () {
+    $jefe = Usuario::factory()->create();
+    $jefe->assignRole('jefe_distrital');
+    $jefe->givePermissionTo('sistema.usuarios');
+
+    $distritoJefe = \App\Models\Departamento::factory()->create();
+    \App\Models\DistritoUsuario::create([
+        'usuario_id' => $jefe->id,
+        'departamento_id' => $distritoJefe->id
+    ]);
+
+    $distritoEscuela = \App\Models\Departamento::factory()->create();
+    $localidad = \App\Models\Localidad::factory()->create([
+        'departamento_id' => $distritoEscuela->id
+    ]);
+    $escuela = Escuela::factory()->create([
+        'localidad_id' => $localidad->id
+    ]);
+
+    $user = Usuario::factory()->create(['estado' => 'email_verificado']);
+    $role = \Spatie\Permission\Models\Role::where('name', 'director')->first();
+
+    $response = $this->actingAs($jefe, 'sanctum')
+                     ->postJson("/api/v1/admin/escuela-usuarios", [
+                         'usuario_id' => $user->id,
+                         'escuela_id' => $escuela->id,
+                         'role_id' => $role->id
+                     ]);
+
+    $response->assertStatus(403)
+             ->assertJsonPath('error', 'Restricción de Seguridad: Como Jefe Distrital, solo puedes asignar roles en escuelas dentro de tu distrito.');
 });
