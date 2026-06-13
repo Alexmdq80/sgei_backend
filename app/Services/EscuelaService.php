@@ -30,13 +30,27 @@ class EscuelaService
             });
         }
 
-        foreach ($filters as $field => $value) {
-            if ($value) {
-                $query->where($field, $value);
+        if ($filters) {
+            foreach ($filters as $field => $value) {
+                if (!$value) continue;
+
+                if ($field === 'departamento_id') {
+                    $query->whereHas('localidad', function ($q) use ($value) {
+                        $q->where('departamento_id', $value);
+                    });
+                } elseif ($field === 'provincia_id') {
+                    $query->whereHas('localidad.departamento', function ($q) use ($value) {
+                        $q->where('provincia_id', $value);
+                    });
+                } elseif ($field === 'localidad_id') {
+                    $query->where('localidad_id', $value);
+                } else {
+                    $query->where($field, $value);
+                }
             }
         }
 
-        return $query->limit(50)->get();
+        return $query->orderBy('nombre')->limit(50)->get();
     }
 
     /**
@@ -158,24 +172,9 @@ class EscuelaService
 
         $isTargetHierarchical = in_array($role->name, self::HIERARCHICAL_ROLES);
 
-        // 1. Jefe Distrital puede asignar cargos jerárquicos (Equipo de Conducción) dentro de su distrito
+        // 1. Jefe Distrital NO puede realizar asignaciones directas (deben ser vía CUPOF)
         if ($isJefeDistrital) {
-            if (!$isTargetHierarchical) {
-                throw new \Exception("Como Jefe Distrital, solo tienes permitido asignar roles del Equipo de Conducción.", 403);
-            }
-
-            $distritoId = $admin->distritoUsuario?->departamento_id;
-            if (!$distritoId) {
-                throw new \Exception("Acceso Denegado: No tienes un distrito asignado a tu perfil administrativo.", 403);
-            }
-
-            $escuela = Escuela::findOrFail($escuelaId);
-            $escuela->loadMissing('localidad');
-            if (!$escuela->localidad || $escuela->localidad->departamento_id !== $distritoId) {
-                throw new \Exception("Restricción de Seguridad: Como Jefe Distrital, solo puedes asignar roles en escuelas dentro de tu distrito.", 403);
-            }
-
-            return;
+            throw new \Exception("Acceso Denegado: Como Jefe Distrital, no puedes gestionar roles institucionales directamente desde el Padrón. Debes realizarlo a través de la Gestión de CUPOF.", 403);
         }
 
         // 2. Equipo de Conducción NO puede asignar cargos jerárquicos

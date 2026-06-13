@@ -83,7 +83,7 @@ test('superuser cannot assign superuser role to any user via institutional links
     ]);
 });
 
-test('jefe distrital can assign hierarchical roles globally', function () {
+test('jefe distrital cannot assign hierarchical roles directly (must use CUPOF)', function () {
     $jefe = Usuario::factory()->create();
     $jefe->assignRole('jefe_distrital');
     $jefe->givePermissionTo('sistema.usuarios');
@@ -112,13 +112,8 @@ test('jefe distrital can assign hierarchical roles globally', function () {
                          'role_id' => $role->id
                      ]);
 
-    $response->assertStatus(201);
-    
-    $this->assertDatabaseHas('escuela_usuario', [
-        'usuario_id' => $user->id,
-        'escuela_id' => $escuela->id,
-        'role_id' => $role->id
-    ]);
+    $response->assertStatus(403)
+             ->assertJsonPath('error', 'Acceso Denegado: Como Jefe Distrital, no puedes gestionar roles institucionales directamente desde el Padrón. Debes realizarlo a través de la Gestión de CUPOF.');
 });
 
 test('local admin cannot assign hierarchical roles', function () {
@@ -182,7 +177,7 @@ test('local admin can assign non-hierarchical roles to their school', function (
     ]);
 });
 
-test('jefe distrital cannot assign hierarchical roles to school outside their district', function () {
+test('jefe distrital cannot assign hierarchical roles even if in their district (forced to CUPOF)', function () {
     $jefe = Usuario::factory()->create();
     $jefe->assignRole('jefe_distrital');
     $jefe->givePermissionTo('sistema.usuarios');
@@ -193,9 +188,8 @@ test('jefe distrital cannot assign hierarchical roles to school outside their di
         'departamento_id' => $distritoJefe->id
     ]);
 
-    $distritoEscuela = \App\Models\Departamento::factory()->create();
     $localidad = \App\Models\Localidad::factory()->create([
-        'departamento_id' => $distritoEscuela->id
+        'departamento_id' => $distritoJefe->id
     ]);
     $escuela = Escuela::factory()->create([
         'localidad_id' => $localidad->id
@@ -212,5 +206,5 @@ test('jefe distrital cannot assign hierarchical roles to school outside their di
                      ]);
 
     $response->assertStatus(403)
-             ->assertJsonPath('error', 'Restricción de Seguridad: Como Jefe Distrital, solo puedes asignar roles en escuelas dentro de tu distrito.');
+             ->assertJsonPath('error', 'Acceso Denegado: Como Jefe Distrital, no puedes gestionar roles institucionales directamente desde el Padrón. Debes realizarlo a través de la Gestión de CUPOF.');
 });

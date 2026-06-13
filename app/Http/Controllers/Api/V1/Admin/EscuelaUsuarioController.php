@@ -100,15 +100,22 @@ class EscuelaUsuarioController extends Controller
         try {
             $link = \App\Models\EscuelaUsuario::findOrFail($id);
             
-            // Solo permitir desvincular si tiene permisos de gestión en esa escuela
-            // (Validación similar a assignDirect pero simplificada aquí)
+            // Validar permisos usando el servicio antes de eliminar
+            $this->escuelaService->validateAssignmentPermissions($link->escuela_id, $link->role_id);
+
             $link->delete();
             
             return response()->json([
                 'message' => 'Vinculación eliminada con éxito.'
             ]);
         } catch (\Exception $e) {
-             return response()->json(['error' => $e->getMessage()], 400);
+             $code = $e->getCode();
+             $status = ($code >= 400 && $code < 600) ? $code : 400;
+
+             return response()->json([
+                 'error' => $e->getMessage(),
+                 'code' => $status
+             ], $status);
         }
     }
 }

@@ -26,7 +26,7 @@ class CupofService
         if ($isSuperUser) {
             // No filter applied here, proceeds to global filters
         }
-        // 1. Restriction for Hierarchical Admins: Only see hierarchical positions
+        // 1. Restriction for Hierarchical Admins: Only see hierarchical positions within their jurisdiction
         elseif ($isHierarchicalAdmin) {
             $hierarchicalKeywords = \App\Services\EscuelaService::HIERARCHICAL_ROLES;
             $query->where(function ($q) use ($hierarchicalKeywords) {
@@ -34,6 +34,26 @@ class CupofService
                     $q->orWhere('nombre_cargo', 'like', "%{$keyword}%");
                 }
             });
+
+            // Geographic Scope
+            if ($user->hasRole('jefe_provincial')) {
+                $provId = $user->provinciaUsuario?->provincia_id;
+                $query->whereHas('escuela.localidad.departamento', function($q) use ($provId) {
+                    $q->where('provincia_id', $provId);
+                });
+            } elseif ($user->hasRole('jefe_regional')) {
+                $regionId = $user->regionUsuario?->region_id;
+                $query->whereHas('escuela.localidad.departamento', function($q) use ($regionId) {
+                    $q->where('region_id', $regionId);
+                });
+            } elseif ($user->hasRole('jefe_distrital')) {
+                $distritoId = $user->distritoUsuario?->departamento_id;
+                $query->whereHas('escuela', function($q) use ($distritoId) {
+                    $q->whereHas('localidad', function($sq) use ($distritoId) {
+                        $sq->where('departamento_id', $distritoId);
+                    });
+                });
+            }
         } 
         // 2. Restriction for Conduction Team: Only see their own school(s)
         else {
@@ -59,7 +79,10 @@ class CupofService
             $query->where('escalafon_id', $filters['escalafon_id']);
         }
 
-        return $query->get();
+        return $query->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
+            ->orderBy('escuelas.nombre')
+            ->select('cupofs.*')
+            ->get();
     }
 
     /**
@@ -67,7 +90,7 @@ class CupofService
      */
     public function createCupof(array $data): Cupof
     {
-        $this->validateHierarchicalAccess($data['nombre_cargo'] ?? '');
+        $this->validateHierarchicalAccess($data['nombre_cargo'] ?? '', $data['escuela_id']);
 
         return Cupof::create([
             'codigo_cupof' => $data['codigo_cupof'],
@@ -86,7 +109,7 @@ class CupofService
      */
     public function assignPersona(Cupof $cupof, Persona $persona, array $details): CupofMovimiento
     {
-        $this->validateHierarchicalAccess($cupof->nombre_cargo ?? '');
+        $this->validateHierarchicalAccess($cupof->nombre_cargo ?? '', $cupof->escuela_id);
 
         return DB::transaction(function () use ($cupof, $persona, $details) {
             // 1. Deactivate any current active movement just in case
@@ -117,7 +140,7 @@ class CupofService
      */
     public function releaseCupof(Cupof $cupof, ?string $motivoBaja = null): bool
     {
-        $this->validateHierarchicalAccess($cupof->nombre_cargo ?? '');
+        $this->validateHierarchicalAccess($cupof->nombre_cargo ?? '', $cupof->escuela_id);
 
         $persona = $cupof->movimientoActivo?->persona;
 
@@ -145,9 +168,9 @@ class CupofService
     }
 
     /**
-     * Validates if the current user has permissions to manage the given cargo name.
+     * Validates if the current user has permissions to manage the given cargo name and school.
      */
-    private function validateHierarchicalAccess(string $nombreCargo): void
+    private function validateHierarchicalAccess(string $nombreCargo, ?int $escuelaId = null): void
     {
         $user = auth()->user();
         if (!$user) throw new \Exception("Usuario no autenticado", 401);
@@ -158,9 +181,9 @@ class CupofService
         $isHierarchicalAdmin = $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
         
         $isHierarchical = false;
-        $nombreCargo = mb_strtolower($nombreCargo, 'UTF-8');
+        $nombreCargoLower = mb_strtolower($nombreCargo, 'UTF-8');
         foreach (\App\Services\EscuelaService::HIERARCHICAL_ROLES as $role) {
-            if (str_contains($nombreCargo, $role)) {
+            if (str_contains($nombreCargoLower, $role)) {
                 $isHierarchical = true;
                 break;
             }
@@ -170,10 +193,31 @@ class CupofService
             if (!$isHierarchical) {
                 throw new \Exception("Como cargo jerárquico administrativo, solo tienes permitido gestionar cargos del Equipo de Conducción.", 403);
             }
+
+            // Geographic Validation
+            if ($escuelaId) {
+                $escuela = \App\Models\Escuela::with('localidad.departamento')->findOrFail($escuelaId);
+                
+                if ($user->hasRole('jefe_provincial')) {
+                    $provId = $user->provinciaUsuario?->provincia_id;
+                    if ($escuela->localidad?->departamento?->provincia_id !== $provId) {
+                        throw new \Exception("Acceso Denegado: Como Jefe Provincial, solo puedes gestionar cargos en escuelas de tu propia provincia.", 403);
+                    }
+                } elseif ($user->hasRole('jefe_regional')) {
+                    $regionId = $user->regionUsuario?->region_id;
+                    if ($escuela->localidad?->departamento?->region_id !== $regionId) {
+                        throw new \Exception("Acceso Denegado: Como Jefe Regional, solo puedes gestionar cargos en escuelas de tu propia región educativa.", 403);
+                    }
+                } elseif ($user->hasRole('jefe_distrital')) {
+                    $distritoId = $user->distritoUsuario?->departamento_id;
+                    if ($escuela->localidad?->departamento_id !== $distritoId) {
+                        throw new \Exception("Acceso Denegado: Como Jefe Distrital, solo puedes gestionar cargos en escuelas de tu propio distrito educativo.", 403);
+                    }
+                }
+            }
         } else {
             // Equipo de Conducción (Director, Vice, etc.)
-            // Now allowed to manage all positions in their school (including hierarchical)
-            // No restriction here, just verify they are indeed conduction (this is double-checked by the Policy)
+            // Validation is mostly handled by CupofPolicy or previous checks
         }
     }
 
