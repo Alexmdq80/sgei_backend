@@ -44,6 +44,8 @@ class CargoRequest extends FormRequest
                 'max:255',
                 Rule::unique('cargos', 'nombre')->ignore($id)
             ],
+            'tipo' => ['required', 'string', Rule::in(['horas', 'modulos', 'cargo'])],
+            'escalafon_id' => ['nullable', 'integer', 'exists:escalafones,id'],
             'requiere_cursos' => ['boolean'],
             'activo' => ['boolean'],
         ];

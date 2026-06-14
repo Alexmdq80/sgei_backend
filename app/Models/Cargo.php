@@ -20,6 +20,8 @@ class Cargo extends Model
      */
     protected $fillable = [
         'nombre',
+        'tipo',
+        'escalafon_id',
         'requiere_cursos',
         'activo'
     ];
@@ -32,7 +34,16 @@ class Cargo extends Model
     protected $casts = [
         'requiere_cursos' => 'boolean',
         'activo' => 'boolean',
+        'escalafon_id' => 'integer',
     ];
+
+    /**
+     * Relation with Escalafon.
+     */
+    public function escalafon(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Escalafon::class);
+    }
 
     /**
      * Interact with the cargo's name.

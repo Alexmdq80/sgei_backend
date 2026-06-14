@@ -24,8 +24,8 @@ class CupofPolicy
             return false;
         }
 
-        // 2. Administrative hierarchy can view (filtered by hierarchical cargos in Service)
-        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+        // 2. Administrative hierarchy: ONLY District Chief can view (limited to hierarchical positions)
+        if ($user->hasRole('jefe_distrital')) {
             return true;
         }
 
@@ -40,8 +40,8 @@ class CupofPolicy
     {
         if ($user->hasRole('superuser')) return true;
 
-        // Hierarchical admins can also create CUPOF slots (only hierarchical ones as validated in Service)
-        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+        // Hierarchical admins: ONLY District Chief
+        if ($user->hasRole('jefe_distrital')) {
             return true;
         }
 
@@ -65,8 +65,8 @@ class CupofPolicy
             }
         }
 
-        // Hierarchical admins: Only hierarchical positions
-        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+        // Hierarchical admins: ONLY District Chief can assign hierarchical positions
+        if ($user->hasRole('jefe_distrital')) {
             return $isHierarchical;
         }
 

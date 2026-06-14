@@ -26,7 +26,7 @@ class UsuarioPolicy
 
     /**
      * Determine whether the user can view any models.
-     * SEGÚN REGLA: Superusuario, Equipo de Conducción o Jefe Provincial.
+     * SEGÚN REGLA: Superusuario, Equipo de Conducción o Jefaturas (Provincial, Regional, Distrital).
      */
     public function viewAny(Usuario $user): bool
     {
@@ -35,8 +35,8 @@ class UsuarioPolicy
             return true;
         }
 
-        // 2. Jefe Provincial: Acceso (filtrado por su jurisdicción en el controller).
-        if ($user->hasRole('jefe_provincial')) {
+        // 2. Jefaturas Jerárquicas: Acceso (filtrado por su jurisdicción en el controller/service).
+        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return true;
         }
 
@@ -50,7 +50,6 @@ class UsuarioPolicy
 
     /**
      * Determine whether the user can view the model.
-     * SEGÚN REGLA: Superusuario, Jefe Provincial (misma provincia) o Conducción (mismo colegio).
      */
     public function view(Usuario $user, Usuario $model): bool
     {
@@ -61,18 +60,41 @@ class UsuarioPolicy
         // 1. Jefe Provincial
         if ($user->hasRole('jefe_provincial')) {
             $userProvId = $user->provincia_usuario?->provincia_id;
-            $modelProvId = $model->provincia_usuario?->provincia_id;
-            
-            // Si el modelo tiene provincia asignada directamente o vía su escuela
-            if ($userProvId && $modelProvId && $userProvId === $modelProvId) return true;
+            if (!$userProvId) return false;
 
-            // También ver si el usuario destino tiene escuelas en esa provincia
-            if ($userProvId && $model->escuela_usuarios()->whereHas('escuela', function($q) use ($userProvId) {
-                $q->where('provincia_id', $userProvId);
-            })->exists()) return true;
+            // Directo, vía región, vía distrito o vía escuela
+            return $model->provinciaUsuario?->provincia_id === $userProvId ||
+                   $model->regionUsuario?->region?->provincia_id === $userProvId ||
+                   $model->distritoUsuario?->distrito?->provincia_id === $userProvId ||
+                   $model->escuela_usuarios()->whereHas('escuela.localidad.departamento', function($q) use ($userProvId) {
+                       $q->where('provincia_id', $userProvId);
+                   })->exists();
         }
 
-        // 2. Equipo de Conducción
+        // 2. Jefe Regional
+        if ($user->hasRole('jefe_regional')) {
+            $userRegId = $user->region_usuario?->region_id;
+            if (!$userRegId) return false;
+
+            return $model->regionUsuario?->region_id === $userRegId ||
+                   $model->distritoUsuario?->distrito?->region_id === $userRegId ||
+                   $model->escuela_usuarios()->whereHas('escuela.localidad.departamento', function($q) use ($userRegId) {
+                       $q->where('region_id', $userRegId);
+                   })->exists();
+        }
+
+        // 3. Jefe Distrital
+        if ($user->hasRole('jefe_distrital')) {
+            $userDistId = $user->distrito_usuario?->departamento_id;
+            if (!$userDistId) return false;
+
+            return $model->distritoUsuario?->departamento_id === $userDistId ||
+                   $model->escuela_usuarios()->whereHas('escuela.localidad', function($q) use ($userDistId) {
+                       $q->where('departamento_id', $userDistId);
+                   })->exists();
+        }
+
+        // 4. Equipo de Conducción
         if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
             $userEscuelas = $user->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id');
             $modelEscuelas = $model->escuela_usuarios()->pluck('escuela_id');
@@ -94,7 +116,7 @@ class UsuarioPolicy
 
     /**
      * Determine whether the user can update the model.
-     * SEGÚN REGLA: Superusuario, el propio usuario o Jefe Provincial de la misma provincia.
+     * SEGÚN REGLA: Superusuario, el propio usuario o Jefaturas de la misma jurisdicción.
      */
     public function update(Usuario $user, Usuario $model): bool
     {
@@ -106,8 +128,8 @@ class UsuarioPolicy
             return true;
         }
 
-        // El Jefe Provincial puede actualizar usuarios de su provincia
-        if ($user->hasRole('jefe_provincial')) {
+        // Jefaturas pueden actualizar usuarios de su jurisdicción
+        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return $this->view($user, $model);
         }
 

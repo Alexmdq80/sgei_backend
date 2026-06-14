@@ -22,6 +22,8 @@ class UserService
     public function getAll(array $filters = []): LengthAwarePaginator
     {
         $user = auth()->user();
+        $isJefeProvincial = $user?->hasRole('jefe_provincial');
+        $isJefeRegional = $user?->hasRole('jefe_regional');
         $isJefeDistrital = $user?->hasRole('jefe_distrital');
 
         $query = Usuario::query()->with([
@@ -29,13 +31,39 @@ class UserService
             'documentoTipo', 
             'escuelaUsuarios.escuela', 
             'escuelaUsuarios.role',
-            'roles'
+            'roles',
+            'provinciaUsuario.provincia',
+            'regionUsuario.region',
+            'distritoUsuario.distrito'
         ]);
 
-        if ($isJefeDistrital) {
+        // Enforce Jurisdiction for non-superusers
+        if ($user && !$user->hasRole('superuser')) {
+            if ($isJefeProvincial && $user->provinciaUsuario) {
+                $filters['provincia_id'] = $user->provinciaUsuario->provincia_id;
+            } elseif ($isJefeRegional && $user->regionUsuario) {
+                $filters['region_id'] = $user->regionUsuario->region_id;
+            } elseif ($isJefeDistrital && $user->distritoUsuario) {
+                $filters['departamento_id'] = $user->distritoUsuario->departamento_id;
+            } elseif ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
+                $filters['escuela_ids'] = $user->escuelaUsuarios()->whereNotNull('verified_at')->pluck('escuela_id')->toArray();
+            }
+        }
+
+        // Apply Hierarchical Roles restriction for all Chiefs
+        if ($isJefeProvincial || $isJefeRegional || $isJefeDistrital) {
             $hierarchicalRoles = \App\Services\EscuelaService::HIERARCHICAL_ROLES;
-            $query->whereHas('escuelaUsuarios.role', function ($q) use ($hierarchicalRoles) {
-                $q->whereIn('name', $hierarchicalRoles);
+            $globalHierarchicalRoles = ['jefe_provincial', 'jefe_regional', 'jefe_distrital'];
+
+            $query->where(function ($q) use ($hierarchicalRoles, $globalHierarchicalRoles) {
+                // Roles en Escuelas (Directivos, etc)
+                $q->whereHas('escuelaUsuarios.role', function ($sq) use ($hierarchicalRoles) {
+                    $sq->whereIn('name', $hierarchicalRoles);
+                })
+                // O Roles Globales de Jefatura
+                ->orWhereHas('roles', function ($sq) use ($globalHierarchicalRoles) {
+                    $sq->whereIn('name', $globalHierarchicalRoles);
+                });
             });
         }
 
@@ -44,7 +72,14 @@ class UserService
             $query->where(function ($q) use ($filters) {
                 $q->whereHas('provinciaUsuario', function ($pq) use ($filters) {
                     $pq->where('provincia_id', $filters['provincia_id']);
-                })->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
+                })
+                ->orWhereHas('regionUsuario.region', function ($rq) use ($filters) {
+                    $rq->where('provincia_id', $filters['provincia_id']);
+                })
+                ->orWhereHas('distritoUsuario.distrito', function ($dq) use ($filters) {
+                    $dq->where('provincia_id', $filters['provincia_id']);
+                })
+                ->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
                     $ld->where('provincia_id', $filters['provincia_id']);
                 });
             });
@@ -54,7 +89,11 @@ class UserService
             $query->where(function ($q) use ($filters) {
                 $q->whereHas('regionUsuario', function ($rq) use ($filters) {
                     $rq->where('region_id', $filters['region_id']);
-                })->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
+                })
+                ->orWhereHas('distritoUsuario.distrito', function ($dq) use ($filters) {
+                    $dq->where('region_id', $filters['region_id']);
+                })
+                ->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
                     $ld->where('region_id', $filters['region_id']);
                 });
             });
@@ -64,7 +103,8 @@ class UserService
             $query->where(function ($q) use ($filters) {
                 $q->whereHas('distritoUsuario', function ($dq) use ($filters) {
                     $dq->where('departamento_id', $filters['departamento_id']);
-                })->orWhereHas('escuelaUsuarios.escuela.localidad', function ($l) use ($filters) {
+                })
+                ->orWhereHas('escuelaUsuarios.escuela.localidad', function ($l) use ($filters) {
                     $l->where('departamento_id', $filters['departamento_id']);
                 });
             });

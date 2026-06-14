@@ -40,6 +40,7 @@ test('un administrador puede crear un cargo', function () {
     $response = $this->actingAs($this->user, 'sanctum')
         ->postJson('/api/v1/admin/cargos', [
             'nombre' => 'Cargo Nuevo',
+            'tipo' => 'cargo',
             'requiere_cursos' => true
         ]);
 
@@ -67,6 +68,7 @@ test('un usuario sin permisos no puede crear un cargo', function () {
     $response = $this->actingAs($this->user, 'sanctum')
         ->postJson('/api/v1/admin/cargos', [
             'nombre' => 'Cargo Nuevo',
+            'tipo' => 'cargo',
             'requiere_cursos' => true
         ]);
 
@@ -80,6 +82,7 @@ test('un administrador puede actualizar un cargo', function () {
     $response = $this->actingAs($this->user, 'sanctum')
         ->putJson("/api/v1/admin/cargos/{$cargo->id}", [
             'nombre' => 'Cargo Actualizado',
+            'tipo' => 'horas',
             'activo' => false
         ]);
 

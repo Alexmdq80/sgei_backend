@@ -12,7 +12,8 @@ class CargoService
      */
     public function listActive(): Collection
     {
-        return Cargo::where('activo', true)
+        return Cargo::with('escalafon')
+            ->where('activo', true)
             ->orderBy('nombre')
             ->get();
     }

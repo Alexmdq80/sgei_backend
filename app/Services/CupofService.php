@@ -5,7 +5,10 @@ namespace App\Services;
 use App\Models\Persona;
 use App\Models\Cupof;
 use App\Models\CupofMovimiento;
+use App\Notifications\CupofAssignmentNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Collection;
 
 class CupofService
@@ -107,11 +110,11 @@ class CupofService
     /**
      * Assign a persona to a CUPOF slot.
      */
-    public function assignPersona(Cupof $cupof, Persona $persona, array $details): CupofMovimiento
+    public function assignPersona(Cupof $cupof, Persona $persona, array $details): array
     {
         $this->validateHierarchicalAccess($cupof->nombre_cargo ?? '', $cupof->escuela_id);
 
-        return DB::transaction(function () use ($cupof, $persona, $details) {
+        $movimiento = DB::transaction(function () use ($cupof, $persona, $details) {
             // 1. Deactivate any current active movement just in case
             $cupof->movimientos()->where('activo', true)->update(['activo' => false, 'fecha_fin' => now()]);
 
@@ -133,6 +136,31 @@ class CupofService
 
             return $movimiento;
         });
+
+        // Try to send notification
+        $email = $persona->usuario?->email ?? $persona->contacto?->email;
+        $notificationSent = false;
+
+        if ($email) {
+            try {
+                $personaNombre = $persona->nombre . ' ' . $persona->apellido;
+                if ($persona->usuario) {
+                    $persona->usuario->notify(new CupofAssignmentNotification($cupof, $details['situacion_revista'], $personaNombre));
+                } else {
+                    Notification::route('mail', $email)
+                        ->notify(new CupofAssignmentNotification($cupof, $details['situacion_revista'], $personaNombre));
+                }
+                $notificationSent = true;
+            } catch (\Exception $e) {
+                Log::error("Error enviando notificación de asignación CUPOF: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'movimiento' => $movimiento,
+            'notification_sent' => $notificationSent,
+            'email_found' => !empty($email)
+        ];
     }
 
     /**
@@ -259,7 +287,7 @@ class CupofService
     /**
      * Determines and syncs all roles the user has in a school based on all active CUPOFs.
      */
-    private function refreshUserRoleInSchool($usuario, $escuelaId, $persona): void
+    public function refreshUserRoleInSchool($usuario, $escuelaId, $persona): void
     {
         // 1. Get all unique roles derived from active CUPOFs for this persona in this school
         $activeCupofs = Cupof::with(['escalafon', 'puestoTipo'])->whereHas('movimientos', function($q) use ($persona) {
@@ -309,7 +337,7 @@ class CupofService
     /**
      * Maps a single CUPOF to a Role name.
      */
-    private function mapCupofToRole(Cupof $cupof): string
+    public function mapCupofToRole(Cupof $cupof): string
     {
         // Prioritize the specific cargo name if it exists
         $cargo = mb_strtolower($cupof->nombre_cargo ?? '', 'UTF-8');

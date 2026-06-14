@@ -9,17 +9,23 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use App\Http\Resources\PersonaResource;
 use App\Services\UserService;
 use App\Services\PersonaService;
+use App\Services\CupofService;
 use App\Http\Requests\Api\V1\Admin\PersonaRequest;
 
 class PersonaController extends Controller
 {
     protected UserService $userService;
     protected PersonaService $personaService;
+    protected CupofService $cupofService;
 
-    public function __construct(UserService $userService, PersonaService $personaService)
-    {
+    public function __construct(
+        UserService $userService, 
+        PersonaService $personaService,
+        CupofService $cupofService
+    ) {
         $this->userService = $userService;
         $this->personaService = $personaService;
+        $this->cupofService = $cupofService;
     }
 
     /**
@@ -299,18 +305,22 @@ class PersonaController extends Controller
             elseif ($isDistrital) {
                 $userDistId = $performer->distritoUsuario?->departamento_id;
                 
-                $hasConduccionRole = $matchingUser->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']);
+                // Cargamos movimientos activos para validar contra la Persona (no el Usuario, que aún no tiene roles)
+                $persona->load(['movimientosCupofActivos.cupof.escuela.localidad', 'movimientosCupofActivos.cupof.escalafon', 'movimientosCupofActivos.cupof.puestoTipo']);
                 
-                $isTargetInMyDistrict = false;
-                if ($hasConduccionRole) {
-                    $isTargetInMyDistrict = $matchingUser->escuelaUsuarios()
-                        ->whereHas('escuela.localidad', function($q) use ($userDistId) {
-                            $q->where('departamento_id', $userDistId);
-                        })
-                        ->exists();
+                $isTargetConduccionInMyDistrict = false;
+                foreach ($persona->movimientosCupofActivos as $movimiento) {
+                    $escuela = $movimiento->cupof->escuela;
+                    if ($escuela->localidad?->departamento_id === $userDistId) {
+                        $roleName = $this->cupofService->mapCupofToRole($movimiento->cupof);
+                        if (in_array($roleName, ['director', 'vicedirector', 'secretario', 'prosecretario'])) {
+                            $isTargetConduccionInMyDistrict = true;
+                            break;
+                        }
+                    }
                 }
 
-                if (!$hasConduccionRole || !$isTargetInMyDistrict) {
+                if (!$isTargetConduccionInMyDistrict) {
                     return response()->json([
                         'error' => 'Restricción de Seguridad: Como Jefe Distrital, solo puedes confirmar vinculaciones para el Equipo de Conducción de escuelas dentro de tu distrito.',
                         'code' => 403
@@ -321,6 +331,15 @@ class PersonaController extends Controller
 
         $persona->update(['usuario_id' => $matchingUser->id]);
         $matchingUser->update(['estado' => 'activo']);
+
+        // Sincronizar roles basados en CUPOF ahora que hay vínculo de identidad
+        if (!$persona->relationLoaded('movimientosCupofActivos')) {
+            $persona->load(['movimientosCupofActivos.cupof']);
+        }
+        
+        foreach ($persona->movimientosCupofActivos as $movimiento) {
+            $this->cupofService->refreshUserRoleInSchool($matchingUser, $movimiento->cupof->escuela_id, $persona);
+        }
 
         return response()->json([
             'message' => 'Usuario vinculado con éxito.',
@@ -404,6 +423,9 @@ class PersonaController extends Controller
         
         // El usuario vuelve a estado verificado pero no vinculado
         if ($linkedUser) {
+            // Eliminar vinculaciones institucionales ya que el usuario ya no representa a la persona (agente)
+            \App\Models\EscuelaUsuario::where('usuario_id', $linkedUser->id)->delete();
+
             $linkedUser->update(['estado' => 'email_verificado']);
         }
 

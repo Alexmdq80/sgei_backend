@@ -52,11 +52,18 @@ class CupofController extends Controller
 
         $validated = $request->validated();
         $persona = Persona::findOrFail($validated['persona_id']);
-        $movimiento = $this->cupofService->assignPersona($cupof, $persona, $validated);
+        $result = $this->cupofService->assignPersona($cupof, $persona, $validated);
+
+        $warning = null;
+        if (!$result['email_found']) {
+            $warning = 'La persona asignada no tiene un correo electrónico registrado. No se pudo enviar la notificación.';
+        }
 
         return response()->json([
             'message' => 'Persona asignada exitosamente al CUPOF',
-            'movimiento' => $movimiento
+            'movimiento' => $result['movimiento'],
+            'notification_sent' => $result['notification_sent'],
+            'warning' => $warning
         ]);
     }
 

@@ -54,21 +54,7 @@ class UsuarioController extends Controller
     {
         $this->authorize('viewAny', Usuario::class);
         
-        $performer = auth()->user();
         $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page']);
-
-        // APLICACIÓN DE ÁMBITOS JURISDICCIONALES (SCOPES)
-        if (!$performer->hasRole('superuser') && !$performer->es_administrador) {
-            // 1. Jefe Provincial: Filtra por su Provincia
-            if ($performer->hasRole('jefe_provincial')) {
-                $filters['provincia_id'] = $performer->provincia_usuario?->provincia_id;
-            }
-            // 2. Equipo de Conducción: solo ve usuarios vinculados a su colegio
-            elseif ($performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-                $escuelas = $performer->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id')->toArray();
-                $filters['escuela_ids'] = $escuelas;
-            }
-        }
 
         $users = $this->userService->getAll($filters);
 
