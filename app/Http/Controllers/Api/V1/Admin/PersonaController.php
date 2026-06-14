@@ -245,19 +245,19 @@ class PersonaController extends Controller
         }
 
         if ($persona->usuario_id) {
-            return response()->json(['error' => 'Esta persona ya tiene un usuario vinculado.'], 422);
+            $existingUser = $persona->usuario;
+            if (!$existingUser || $existingUser->estado !== 'vinculacion_pendiente') {
+                return response()->json(['error' => 'Esta persona ya tiene un usuario vinculado y activo.'], 422);
+            }
+            // Si el usuario existe y está pendiente, permitimos que el flujo continúe para validación jerárquica y activación
+            $matchingUser = $existingUser;
+        } else {
+            $matchingUser = \App\Models\Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
+                ->where('documento_numero', $persona->documento_numero)
+                ->where('email', $persona->contacto->email)
+                ->with(['roles', 'provinciaUsuario', 'regionUsuario.region', 'distritoUsuario'])
+                ->first();
         }
-
-        $persona->loadMissing('contacto');
-        if (!$persona->contacto || !$persona->contacto->email) {
-            return response()->json(['error' => 'La persona no tiene un email de contacto registrado en el padrón para validar la identidad digital.'], 422);
-        }
-
-        $matchingUser = \App\Models\Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
-            ->where('documento_numero', $persona->documento_numero)
-            ->where('email', $persona->contacto->email)
-            ->with(['roles', 'provinciaUsuario', 'regionUsuario.region', 'distritoUsuario'])
-            ->first();
 
         if (!$matchingUser) {
             return response()->json(['error' => 'No se encontró ningún usuario con el mismo documento y correo electrónico coincidente.'], 404);

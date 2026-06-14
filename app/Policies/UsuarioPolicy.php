@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Usuario;
+use App\Models\Persona;
 use Illuminate\Auth\Access\Response;
 
 class UsuarioPolicy
@@ -59,45 +60,93 @@ class UsuarioPolicy
 
         // 1. Jefe Provincial
         if ($user->hasRole('jefe_provincial')) {
-            $userProvId = $user->provincia_usuario?->provincia_id;
+            $userProvId = $user->provinciaUsuario?->provincia_id;
             if (!$userProvId) return false;
 
             // Directo, vía región, vía distrito o vía escuela
-            return $model->provinciaUsuario?->provincia_id === $userProvId ||
+            $isInJurisdiction = $model->provinciaUsuario?->provincia_id === $userProvId ||
                    $model->regionUsuario?->region?->provincia_id === $userProvId ||
                    $model->distritoUsuario?->distrito?->provincia_id === $userProvId ||
-                   $model->escuela_usuarios()->whereHas('escuela.localidad.departamento', function($q) use ($userProvId) {
+                   $model->escuelaUsuarios()->whereHas('escuela.localidad.departamento', function($q) use ($userProvId) {
                        $q->where('provincia_id', $userProvId);
                    })->exists();
+
+            if ($isInJurisdiction) return true;
+
+            // Check matching persona for pending vinculation
+            if ($model->estado === 'vinculacion_pendiente') {
+                return Persona::where('documento_tipo_id', $model->documento_tipo_id)
+                    ->where('documento_numero', $model->documento_numero)
+                    ->whereHas('contacto', function ($q) use ($model) {
+                        $q->where('email', $model->email);
+                    })
+                    ->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($q) use ($userProvId) {
+                        $q->where('provincia_id', $userProvId);
+                    })->exists();
+            }
+
+            return false;
         }
 
         // 2. Jefe Regional
         if ($user->hasRole('jefe_regional')) {
-            $userRegId = $user->region_usuario?->region_id;
+            $userRegId = $user->regionUsuario?->region_id;
             if (!$userRegId) return false;
 
-            return $model->regionUsuario?->region_id === $userRegId ||
+            $isInJurisdiction = $model->regionUsuario?->region_id === $userRegId ||
                    $model->distritoUsuario?->distrito?->region_id === $userRegId ||
-                   $model->escuela_usuarios()->whereHas('escuela.localidad.departamento', function($q) use ($userRegId) {
+                   $model->escuelaUsuarios()->whereHas('escuela.localidad.departamento', function($q) use ($userRegId) {
                        $q->where('region_id', $userRegId);
                    })->exists();
+
+            if ($isInJurisdiction) return true;
+
+            // Check matching persona for pending vinculation
+            if ($model->estado === 'vinculacion_pendiente') {
+                return Persona::where('documento_tipo_id', $model->documento_tipo_id)
+                    ->where('documento_numero', $model->documento_numero)
+                    ->whereHas('contacto', function ($q) use ($model) {
+                        $q->where('email', $model->email);
+                    })
+                    ->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($q) use ($userRegId) {
+                        $q->where('region_id', $userRegId);
+                    })->exists();
+            }
+
+            return false;
         }
 
         // 3. Jefe Distrital
         if ($user->hasRole('jefe_distrital')) {
-            $userDistId = $user->distrito_usuario?->departamento_id;
+            $userDistId = $user->distritoUsuario?->departamento_id;
             if (!$userDistId) return false;
 
-            return $model->distritoUsuario?->departamento_id === $userDistId ||
-                   $model->escuela_usuarios()->whereHas('escuela.localidad', function($q) use ($userDistId) {
+            $isInJurisdiction = $model->distritoUsuario?->departamento_id === $userDistId ||
+                   $model->escuelaUsuarios()->whereHas('escuela.localidad', function($q) use ($userDistId) {
                        $q->where('departamento_id', $userDistId);
                    })->exists();
+
+            if ($isInJurisdiction) return true;
+
+            // Check matching persona for pending vinculation
+            if ($model->estado === 'vinculacion_pendiente') {
+                return Persona::where('documento_tipo_id', $model->documento_tipo_id)
+                    ->where('documento_numero', $model->documento_numero)
+                    ->whereHas('contacto', function ($q) use ($model) {
+                        $q->where('email', $model->email);
+                    })
+                    ->whereHas('movimientosCupofActivos.cupof.escuela.localidad', function ($q) use ($userDistId) {
+                        $q->where('departamento_id', $userDistId);
+                    })->exists();
+            }
+
+            return false;
         }
 
         // 4. Equipo de Conducción
         if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-            $userEscuelas = $user->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id');
-            $modelEscuelas = $model->escuela_usuarios()->pluck('escuela_id');
+            $userEscuelas = $user->escuelaUsuarios()->whereNotNull('verified_at')->pluck('escuela_id');
+            $modelEscuelas = $model->escuelaUsuarios()->pluck('escuela_id');
             
             return $userEscuelas->intersect($modelEscuelas)->isNotEmpty();
         }
@@ -157,8 +206,8 @@ class UsuarioPolicy
         }
 
         if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-            $userEscuelas = $user->escuela_usuarios()->whereNotNull('verified_at')->pluck('escuela_id');
-            $modelEscuelas = $model->escuela_usuarios()->pluck('escuela_id');
+            $userEscuelas = $user->escuelaUsuarios()->whereNotNull('verified_at')->pluck('escuela_id');
+            $modelEscuelas = $model->escuelaUsuarios()->pluck('escuela_id');
             
             return $userEscuelas->intersect($modelEscuelas)->isNotEmpty();
         }

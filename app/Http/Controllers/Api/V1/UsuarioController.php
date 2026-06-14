@@ -117,7 +117,18 @@ class UsuarioController extends Controller
         }
 
         if ($usuario->persona) {
-            return response()->json(['error' => 'El usuario ya está vinculado a un registro del padrón.'], 422);
+            // Si ya está vinculado, simplemente nos aseguramos de que el estado sea activo
+            if ($usuario->estado !== 'activo') {
+                $usuario->update(['estado' => 'activo']);
+            }
+
+            // Sincronizar roles por si acaso quedó desfasado
+            app(\App\Services\CupofService::class)->syncAllRolesFromCupof($usuario);
+
+            return response()->json([
+                'message' => 'El usuario ya se encontraba vinculado y ahora ha sido activado.',
+                'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role']))
+            ]);
         }
 
         // Buscar la persona que coincida (DNI + Email)
@@ -145,9 +156,12 @@ class UsuarioController extends Controller
         $persona->update(['usuario_id' => $usuario->id]);
         $usuario->update(['estado' => 'activo']);
 
+        // Sincronizar roles basados en CUPOF inmediatamente tras la vinculación
+        app(\App\Services\CupofService::class)->syncAllRolesFromCupof($usuario);
+
         return response()->json([
             'message' => 'Vinculación con el padrón confirmada con éxito.',
-            'user' => new UsuarioResource($usuario->fresh(['persona']))
+            'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role']))
         ]);
     }
 

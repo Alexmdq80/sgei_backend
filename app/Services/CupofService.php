@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Persona;
+use App\Models\Usuario;
 use App\Models\Cupof;
 use App\Models\CupofMovimiento;
 use App\Notifications\CupofAssignmentNotification;
@@ -282,6 +283,25 @@ class CupofService
 
         // If it's an assignment, ensure the link exists and is active
         $this->refreshUserRoleInSchool($usuario, $escuelaId, $persona);
+    }
+
+    /**
+     * Syncs all school-user links and roles for a user based on all active CUPOF movements.
+     * Useful after a persona is linked to a user account.
+     */
+    public function syncAllRolesFromCupof(Usuario $usuario): void
+    {
+        $persona = $usuario->persona;
+        if (!$persona) return;
+
+        $schoolIds = $persona->movimientosCupofActivos()
+            ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
+            ->distinct()
+            ->pluck('cupofs.escuela_id');
+
+        foreach ($schoolIds as $escuelaId) {
+            $this->refreshUserRoleInSchool($usuario, $escuelaId, $persona);
+        }
     }
 
     /**

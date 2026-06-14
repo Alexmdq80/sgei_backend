@@ -37,9 +37,9 @@ test('user status is set to vinculacion_pendiente when email is verified and mat
     // 3. Verify email (triggers linkToPersona)
     $user->markEmailAsVerified();
 
-    // 4. Check if status is pending and NOT linked yet
+    // 4. Check if status is pending and NOT linked technically yet (waiting for confirmation)
     $this->assertEquals('vinculacion_pendiente', $user->fresh()->estado);
-    $this->assertNull($persona->fresh()->usuario_id);
+    $this->assertNull($persona->fresh()->usuario_id, 'Technical link should NOT be automatic');
 });
 
 test('user status is set to vinculacion_pendiente when persona is created with matching email and user is verified', function () {
@@ -64,10 +64,10 @@ test('user status is set to vinculacion_pendiente when persona is created with m
 
     $response->assertStatus(201);
     
-    // NEW RULE: Should be pending confirmation even if verified
+    // NEW RULE: Should be pending confirmation even if verified, and NO technical link yet
     $this->assertEquals('vinculacion_pendiente', $user->fresh()->estado);
     $persona = Persona::where('documento_numero', '12345678')->first();
-    $this->assertNull($persona->usuario_id, 'Should NOT link automatically anymore');
+    $this->assertNull($persona->usuario_id, 'Should NOT perform technical link automatically');
 });
 
 test('user status is set to vinculacion_pendiente when persona is created with matching email but user NOT verified', function () {
@@ -91,10 +91,10 @@ test('user status is set to vinculacion_pendiente when persona is created with m
 
     $response->assertStatus(201);
     
-    // Check if status is pending and NOT linked
+    // Check if status is pending and NOT linked technically
     $this->assertEquals('vinculacion_pendiente', $user->fresh()->estado);
     $persona = Persona::where('documento_numero', '87654321')->first();
-    $this->assertNull($persona->usuario_id);
+    $this->assertNull($persona->usuario_id, 'Should NOT perform technical link automatically');
 });
 
 test('admin can confirm vinculation manually', function () {
@@ -282,13 +282,21 @@ test('jefe distrital can confirm vinculation of conduccion in their district', f
         'email_verified_at' => now(),
         'estado' => 'vinculacion_pendiente'
     ]);
-    $user->assignRole('director');
-    \App\Models\EscuelaUsuario::create([
-        'id' => \Illuminate\Support\Str::uuid(),
+
+    // Crear CUPOF y movimiento para la persona en una escuela del distrito
+    $cupof = \App\Models\Cupof::factory()->create([
         'escuela_id' => $school->id,
-        'usuario_id' => $user->id,
-        'role_id' => \Spatie\Permission\Models\Role::where('name', 'director')->first()->id,
-        'verified_at' => now()
+        'nombre_cargo' => 'DIRECTOR/A',
+        'escalafon_id' => 1, // Docente
+        'puesto_tipo_id' => 1 // Cargo
+    ]);
+    
+    \App\Models\CupofMovimiento::create([
+        'cupof_id' => $cupof->id,
+        'persona_id' => $persona->id,
+        'situacion_revista' => 'titular',
+        'fecha_inicio' => now(),
+        'activo' => true
     ]);
 
     // Performer is jefe distrital of dept

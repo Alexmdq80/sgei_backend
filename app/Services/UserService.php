@@ -63,7 +63,9 @@ class UserService
                 // O Roles Globales de Jefatura
                 ->orWhereHas('roles', function ($sq) use ($globalHierarchicalRoles) {
                     $sq->whereIn('name', $globalHierarchicalRoles);
-                });
+                })
+                // También ver usuarios que están esperando vinculación (pueden ser sus futuros directivos)
+                ->orWhere('estado', 'vinculacion_pendiente');
             });
         }
 
@@ -81,6 +83,30 @@ class UserService
                 })
                 ->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
                     $ld->where('provincia_id', $filters['provincia_id']);
+                })
+                ->orWhereHas('persona', function ($pq) use ($filters) {
+                    $pq->where('created_by', auth()->id())
+                       ->orWhereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function($sq) use ($filters) {
+                           $sq->where('provincia_id', $filters['provincia_id']);
+                       });
+                })
+                // NEW: Match with persona in this province for pending vinculation
+                ->orWhere(function ($sq) use ($filters) {
+                    $sq->where('estado', 'vinculacion_pendiente')
+                       ->whereExists(function ($ex) use ($filters) {
+                           $ex->select(\DB::raw(1))
+                              ->from('personas')
+                              ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
+                              ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
+                              ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
+                              ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
+                              ->join('departamentos', 'localidads.departamento_id', '=', 'departamentos.id')
+                              ->join('regions', 'departamentos.region_id', '=', 'regions.id')
+                              ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
+                              ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
+                              ->where('cupof_movimientos.activo', true)
+                              ->where('regions.provincia_id', $filters['provincia_id']);
+                       });
                 });
             });
         }
@@ -95,6 +121,29 @@ class UserService
                 })
                 ->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
                     $ld->where('region_id', $filters['region_id']);
+                })
+                ->orWhereHas('persona', function ($pq) use ($filters) {
+                    $pq->where('created_by', auth()->id())
+                       ->orWhereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function($sq) use ($filters) {
+                           $sq->where('region_id', $filters['region_id']);
+                       });
+                })
+                // NEW: Match with persona in this region for pending vinculation
+                ->orWhere(function ($sq) use ($filters) {
+                    $sq->where('estado', 'vinculacion_pendiente')
+                       ->whereExists(function ($ex) use ($filters) {
+                           $ex->select(\DB::raw(1))
+                              ->from('personas')
+                              ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
+                              ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
+                              ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
+                              ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
+                              ->join('departamentos', 'localidads.departamento_id', '=', 'departamentos.id')
+                              ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
+                              ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
+                              ->where('cupof_movimientos.activo', true)
+                              ->where('departamentos.region_id', $filters['region_id']);
+                       });
                 });
             });
         }
@@ -106,6 +155,28 @@ class UserService
                 })
                 ->orWhereHas('escuelaUsuarios.escuela.localidad', function ($l) use ($filters) {
                     $l->where('departamento_id', $filters['departamento_id']);
+                })
+                ->orWhereHas('persona', function ($pq) use ($filters) {
+                    $pq->where('created_by', auth()->id())
+                       ->orWhereHas('movimientosCupofActivos.cupof.escuela.localidad', function($sq) use ($filters) {
+                           $sq->where('departamento_id', $filters['departamento_id']);
+                       });
+                })
+                // NEW: Match with persona in this department for pending vinculation
+                ->orWhere(function ($sq) use ($filters) {
+                    $sq->where('estado', 'vinculacion_pendiente')
+                       ->whereExists(function ($ex) use ($filters) {
+                           $ex->select(\DB::raw(1))
+                              ->from('personas')
+                              ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
+                              ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
+                              ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
+                              ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
+                              ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
+                              ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
+                              ->where('cupof_movimientos.activo', true)
+                              ->where('localidads.departamento_id', $filters['departamento_id']);
+                       });
                 });
             });
         }
@@ -167,11 +238,11 @@ class UserService
 
         $user = Usuario::create($data);
 
-        // Si el admin lo crea ya verificado (o si por alguna razón ya tiene email_verified_at)
-        if ($user->hasVerifiedEmail()) {
-            $this->linkToPersona($user);
-        } else {
-            // Enviar notificación de verificación
+        // Intentar vincular inmediatamente si existe coincidencia en el padrón (por DNI y Email)
+        $this->linkToPersona($user);
+
+        if (!$user->hasVerifiedEmail()) {
+            // Enviar notificación de verificación si aún no lo está
             $user->notify(new VerifyEmailNotification($user->verification_token));
         }
 
@@ -185,7 +256,9 @@ class UserService
      */
     public function linkToPersona(Usuario $user): void
     {
-        if (!$user->hasVerifiedEmail()) {
+        // If the user is already linked technically, we don't need to do anything here.
+        // They are already identified.
+        if ($user->persona) {
             return;
         }
 
@@ -203,19 +276,9 @@ class UserService
                           ->first();
 
         if ($persona) {
-            // Match found + Email IS Verified (checked at start of method)
-            // The user says for THIS case (verified match during registration/verification)
-            // wait, should this be pending too?
-            // "si al momento de registrar el usuario existe coincidencia... dejar pendiente"
-            // "si al momento de crear una persona, existe coincidencia... y verificado... automática"
-            
-            // I'll keep linkToPersona (user registration side) as PENDING as requested before,
-            // unless the user meant "all verified matches are automatic".
-            // BUT the user specifically said "si al momento de crear una persona... automática".
-            // Let's assume the difference is who initiates the action.
-            // If ADMIN creates Persona -> Match Verified User -> Link Automatic.
-            // If USER creates Account -> Match Persona -> Link Pending.
-            
+            // Match found: set to pending confirmation. 
+            // The user will still need to verify email if they haven't yet, 
+            // but they are now visible to their administrators.
             $user->update(['estado' => 'vinculacion_pendiente']);
         }
     }
@@ -231,6 +294,7 @@ class UserService
      */
     public function linkPersonaToUser(Persona $persona): void
     {
+        // If the persona is already linked to a user, do nothing.
         if ($persona->usuario_id) {
             return;
         }
@@ -251,6 +315,7 @@ class UserService
                        ->where('email', $persona->contacto->email)
                        ->first();
 
+        // If user found and NOT already linked to ANY persona, set to pending confirmation.
         if ($user && !$user->persona) {
             // Match found: set to pending confirmation regardless of verification status
             $user->update(['estado' => 'vinculacion_pendiente']);

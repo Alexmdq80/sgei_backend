@@ -51,6 +51,10 @@ class PersonaService
 
             // Link persona to user
             $persona->update(['usuario_id' => $user->id]);
+            
+            // Sincronizar roles basados en CUPOF
+            app(\App\Services\CupofService::class)->syncAllRolesFromCupof($user);
+            
             // Importante: No ponemos 'activo' todavía, el estado final lo pondrá el flujo de activación
             
             return $user->fresh();
