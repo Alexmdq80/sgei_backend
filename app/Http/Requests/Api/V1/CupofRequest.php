@@ -32,4 +32,21 @@ class CupofRequest extends FormRequest
 
         return $rules;
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     */
+    public function messages(): array
+    {
+        return [
+            'codigo_cupof.required' => 'El código CUPOF es obligatorio.',
+            'codigo_cupof.unique' => 'Ya existe un puesto registrado con este código CUPOF.',
+            'escuela_id.required' => 'Debe seleccionar una institución.',
+            'escuela_id.exists' => 'La institución seleccionada no es válida.',
+            'escalafon_id.required' => 'El escalafón es obligatorio.',
+            'puesto_tipo_id.required' => 'El tipo de puesto es obligatorio.',
+            'cantidad.integer' => 'La cantidad debe ser un número entero.',
+            'cantidad.min' => 'La cantidad debe ser al menos 1.',
+        ];
+    }
 }

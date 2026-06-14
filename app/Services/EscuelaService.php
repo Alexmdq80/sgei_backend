@@ -50,7 +50,7 @@ class EscuelaService
             }
         }
 
-        return $query->orderBy('nombre')->limit(50)->get();
+        return $query->orderBy('nombre')->limit(500)->get();
     }
 
     /**

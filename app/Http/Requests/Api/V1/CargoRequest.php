@@ -50,4 +50,18 @@ class CargoRequest extends FormRequest
             'activo' => ['boolean'],
         ];
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     */
+    public function messages(): array
+    {
+        return [
+            'nombre.required' => 'El nombre del cargo es obligatorio.',
+            'nombre.unique' => 'Ya existe un cargo registrado con este nombre.',
+            'tipo.required' => 'El tipo de designación es obligatorio.',
+            'tipo.in' => 'El tipo de designación seleccionado no es válido.',
+            'escalafon_id.exists' => 'El escalafón seleccionado no es válido.',
+        ];
+    }
 }
