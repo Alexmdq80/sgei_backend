@@ -23,7 +23,24 @@ class EscuelaUsuarioController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+        
+        // El permiso viewAny en la Policy verifica si es Superuser, Jefe o Conducción
+        $this->authorize('viewAny', \App\Models\EscuelaUsuario::class);
+
         $query = \App\Models\EscuelaUsuario::with(['usuario.persona', 'escuela', 'role']);
+
+        // Si no es Superusuario ni Jefatura, limitamos a sus propias escuelas (Equipo de Conducción)
+        if (!$user->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+            $mySchools = $user->escuelaUsuarios()
+                ->whereHas('role', function($q) {
+                    $q->whereIn('name', \App\Services\EscuelaService::HIERARCHICAL_ROLES);
+                })
+                ->whereNotNull('verified_at')
+                ->pluck('escuela_id');
+            
+            $query->whereIn('escuela_id', $mySchools);
+        }
 
         if ($request->has('escuela_id')) {
             $query->where('escuela_id', $request->escuela_id);

@@ -15,6 +15,8 @@ class AgenteController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Agente::class);
+
         $query = Agente::with('persona');
 
         if ($request->has('search')) {
@@ -34,6 +36,8 @@ class AgenteController extends Controller
      */
     public function store(AgenteRequest $request): JsonResponse
     {
+        $this->authorize('create', Agente::class);
+
         $agente = Agente::create($request->validated());
         return response()->json($agente->load('persona'), 201);
     }

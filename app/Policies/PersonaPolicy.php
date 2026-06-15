@@ -19,13 +19,14 @@ class PersonaPolicy
             return true;
         }
 
-        // 2. Equipo de Conducción: Acceso Total al Padrón (CRUD).
-        if ($usuario->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-            return true;
-        }
-
-        // Supervisor Curricular y otros: SIN ACCESO (SEGÚN REGLA).
-        return false;
+        // 2. Equipo de Conducción: Acceso Total al Padrón (CRUD) para sus escuelas.
+        // Verificamos si tiene algún rol directivo en cualquier escuela vinculada.
+        return $usuario->escuelaUsuarios()
+            ->whereHas('role', function($q) {
+                $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
+            })
+            ->whereNotNull('verified_at')
+            ->exists();
     }
 
     /**

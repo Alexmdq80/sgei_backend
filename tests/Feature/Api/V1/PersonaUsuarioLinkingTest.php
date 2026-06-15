@@ -139,8 +139,8 @@ test('supervisor role cannot confirm vinculation manually', function () {
         'email' => 'test@example.com'
     ]);
 
-    // Admin without appropriate role (supervisor_curricular has sistema.usuarios but not in allowedRoles)
-    $admin = Usuario::factory()->create(['es_administrador' => true]);
+    // Admin without appropriate role (supervisor_curricular has not enough permissions)
+    $admin = Usuario::factory()->create(['es_administrador' => false]);
     $admin->assignRole('supervisor_curricular');
 
     $response = $this->actingAs($admin, 'sanctum')

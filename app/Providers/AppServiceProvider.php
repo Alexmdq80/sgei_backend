@@ -58,5 +58,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('resend-verification', function (Request $request) {
             return Limit::perHour(3)->by($request->user()?->id ?: $request->ip());
         });
+
+        // Register Gates and Policies
+        \Illuminate\Support\Facades\Gate::define('view-comunidad', [\App\Policies\ComunidadEducativaPolicy::class, 'view']);
     }
 }
