@@ -59,8 +59,9 @@ class DistritoUsuarioController extends Controller
     /**
      * Remove the association.
      */
-    public function destroy(DistritoUsuario $distritoUsuario): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
+        $distritoUsuario = DistritoUsuario::findOrFail($id);
         $this->authorize('manage-districts', Usuario::class);
 
         $distritoUsuario->delete();

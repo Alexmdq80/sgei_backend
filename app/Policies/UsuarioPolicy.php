@@ -25,28 +25,12 @@ class UsuarioPolicy
         return $this->update($user, $model);
     }
 
-    /**
-     * Determine whether the user can view any models.
-     * SEGÚN REGLA: Superusuario, Equipo de Conducción o Jefaturas (Provincial, Regional, Distrital).
-     */
     public function viewAny(Usuario $user): bool
     {
-        // 1. Superusuario: Acceso total.
-        if ($user->hasRole('superuser') || $user->es_administrador) {
-            return true;
-        }
-
-        // 2. Jefaturas Jerárquicas: Acceso (filtrado por su jurisdicción en el controller/service).
-        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-            return true;
-        }
-
-        // 3. Equipo de Conducción: Acceso (filtrado por su colegio en el controller).
-        if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-            return true;
-        }
-
-        return false;
+        // Solo Superusuario y jefes jerárquicos tienen acceso a ver la nómina de usuarios.
+        return $user->hasRole('superuser') 
+            || $user->es_administrador 
+            || $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
     }
 
     /**

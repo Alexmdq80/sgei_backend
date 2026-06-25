@@ -14,19 +14,8 @@ class PersonaPolicy
      */
     private function canManageGlobalPadron(Usuario $usuario): bool
     {
-        // 1. Superusuario, Jefe Provincial, Regional, Distrital: Acceso Total al Padrón.
-        if ($usuario->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-            return true;
-        }
-
-        // 2. Equipo de Conducción: Acceso Total al Padrón (CRUD) para sus escuelas.
-        // Verificamos si tiene algún rol directivo en cualquier escuela vinculada.
-        return $usuario->escuelaUsuarios()
-            ->whereHas('role', function($q) {
-                $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
-            })
-            ->whereNotNull('verified_at')
-            ->exists();
+        // Solo Superusuario tiene acceso al padrón global de personas.
+        return $usuario->hasRole('superuser') || $usuario->es_administrador;
     }
 
     /**

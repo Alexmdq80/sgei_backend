@@ -149,6 +149,9 @@ Route::prefix('v1')->group(function () {
             Route::post('personas/{persona}/supervisor', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignSupervisor']);
             Route::delete('personas/{persona}/roles/{role}', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'removeRole']);
 
+            // Catálogo de Cargos (CRUD de maestro, el index es público vía /api/v1/cargos)
+            Route::apiResource('cargos', App\Http\Controllers\Api\V1\CargoController::class)->except(['index']);
+
             // Gestión de Ciclos Lectivos (Panel Maestro)
             Route::apiResource('lectivos', App\Http\Controllers\Api\V1\LectivoController::class)->except(['index']);
             Route::apiResource('anios', App\Http\Controllers\Api\V1\AnioController::class);
@@ -184,6 +187,8 @@ Route::prefix('v1')->group(function () {
 
             // Catálogos Georef
             Route::apiResource('distritos-usuarios', App\Http\Controllers\Api\V1\Admin\DistritoUsuarioController::class)->only(['index', 'store', 'destroy']);
+            Route::apiResource('provincias-usuarios', App\Http\Controllers\Api\V1\Admin\ProvinciaUsuarioController::class)->only(['index', 'store', 'destroy']);
+            Route::apiResource('regiones-usuarios', App\Http\Controllers\Api\V1\Admin\RegionUsuarioController::class)->only(['index', 'store', 'destroy']);
             Route::apiResource('georef-fuentes', App\Http\Controllers\Api\V1\GeorefFuenteController::class);
             Route::apiResource('georef-categorias', App\Http\Controllers\Api\V1\GeorefCategoriaController::class);
             Route::apiResource('georef-funcions', App\Http\Controllers\Api\V1\GeorefFuncionController::class);
