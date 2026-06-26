@@ -150,16 +150,9 @@ class PersonaController extends Controller
                 ], 403);
             }
 
-            // Si cambia el DNI, desvincular automáticamente al usuario
+            // Si cambia el DNI, desvincular automáticamente al usuario y limpiar roles/contextos
             if ($dniChanged) {
-                $linkedUser = $persona->usuario;
-                $persona->update(['usuario_id' => null]);
-                
-                // Actualizar estado del usuario desvinculado según su verificación
-                if ($linkedUser) {
-                    $newState = $linkedUser->hasVerifiedEmail() ? 'email_verificado' : 'email_pendiente';
-                    $linkedUser->update(['estado' => $newState]);
-                }
+                $this->personaService->unlinkUser($persona);
             }
         }
 
@@ -419,15 +412,7 @@ class PersonaController extends Controller
             }
         }
 
-        $persona->update(['usuario_id' => null]);
-        
-        // El usuario vuelve a estado verificado pero no vinculado
-        if ($linkedUser) {
-            // Eliminar vinculaciones institucionales ya que el usuario ya no representa a la persona (agente)
-            \App\Models\EscuelaUsuario::where('usuario_id', $linkedUser->id)->delete();
-
-            $linkedUser->update(['estado' => 'email_verificado']);
-        }
+        $this->personaService->unlinkUser($persona);
 
         return response()->json([
             'message' => 'Usuario desvinculado con éxito.'

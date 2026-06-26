@@ -330,3 +330,42 @@ test('conduccion role cannot confirm vinculation of anyone', function () {
 
     $response->assertStatus(403);
 });
+
+test('unlinking user from persona revokes all roles except superuser and removes geographical contexts', function () {
+    $persona = Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678'
+    ]);
+    Contacto::create(['persona_id' => $persona->id, 'email' => 'test@example.com']);
+
+    $user = Usuario::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678',
+        'email' => 'test@example.com',
+        'estado' => 'activo'
+    ]);
+    $persona->update(['usuario_id' => $user->id]);
+
+    $user->assignRole('jefe_regional');
+    $user->assignRole('superuser');
+    $region = \App\Models\Region::create(['numero' => '99', 'vigente' => true]);
+    \App\Models\RegionUsuario::create([
+        'usuario_id' => $user->id,
+        'region_id' => $region->id
+    ]);
+
+    $admin = Usuario::factory()->create(['es_administrador' => true]);
+    $admin->assignRole('superuser');
+
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->postJson("/api/v1/admin/personas/{$persona->id}/unlink-user");
+
+    $response->assertOk();
+    $persona->refresh();
+    $user->refresh();
+
+    $this->assertNull($persona->usuario_id);
+    $this->assertFalse($user->hasRole('jefe_regional'), 'Role jefe_regional should be revoked');
+    $this->assertTrue($user->hasRole('superuser'), 'Role superuser should be kept');
+    $this->assertSoftDeleted('region_usuario', ['usuario_id' => $user->id]);
+});

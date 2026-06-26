@@ -168,6 +168,41 @@ class PersonaService
     }
 
     /**
+     * Desvincula un usuario de una persona, revoca todos sus roles (excepto superuser)
+     * y elimina todas sus vinculaciones institucionales y geográficas.
+     */
+    public function unlinkUser(Persona $persona): void
+    {
+        $linkedUser = $persona->usuario;
+
+        DB::transaction(function () use ($persona, $linkedUser) {
+            // 1. Desvincular técnicamente a la persona del usuario
+            $persona->update(['usuario_id' => null]);
+
+            if ($linkedUser) {
+                // 2. Eliminar vinculaciones institucionales (escuelas)
+                \App\Models\EscuelaUsuario::where('usuario_id', $linkedUser->id)->delete();
+
+                // 3. Eliminar vinculaciones geográficas de roles de jefatura
+                \App\Models\ProvinciaUsuario::where('usuario_id', $linkedUser->id)->delete();
+                \App\Models\RegionUsuario::where('usuario_id', $linkedUser->id)->delete();
+                DistritoUsuario::where('usuario_id', $linkedUser->id)->delete();
+
+                // 4. Revocar todos los roles de Spatie, preservando 'superuser' si lo tuviera
+                $rolesToKeep = [];
+                if ($linkedUser->hasRole('superuser')) {
+                    $rolesToKeep[] = 'superuser';
+                }
+                $linkedUser->syncRoles($rolesToKeep);
+
+                // 5. El usuario vuelve a un estado según su verificación de email
+                $newState = $linkedUser->hasVerifiedEmail() ? 'email_verificado' : 'email_pendiente';
+                $linkedUser->update(['estado' => $newState]);
+            }
+        });
+    }
+
+    /**
      * Manually resends the activation email for a Persona.
      */
     public function resendActivation(Persona $persona): Usuario

@@ -10,28 +10,40 @@ class PersonaPolicy
 {
     /**
      * Determine whether the user can manage the persona padron (CRUD Global).
-     * Applied to: viewAny, create, view, update.
+     * Applied to: create, update, delete.
      */
     private function canManageGlobalPadron(Usuario $usuario): bool
     {
-        // Solo Superusuario tiene acceso al padrón global de personas.
+        // Solo Superusuario/Administrador tiene acceso de escritura al padrón global.
         return $usuario->hasRole('superuser') || $usuario->es_administrador;
     }
 
     /**
+     * Determine whether the user can search/read the persona padron.
+     * Jefaturas tienen acceso de lectura para buscar personas al asignar roles.
+     */
+    private function canReadPadron(Usuario $usuario): bool
+    {
+        return $this->canManageGlobalPadron($usuario)
+            || $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
+    }
+
+    /**
      * Determine whether the user can view any models.
+     * Jefaturas pueden buscar personas para asignar roles (solo lectura).
      */
     public function viewAny(Usuario $usuario): bool
     {
-        return $this->canManageGlobalPadron($usuario);
+        return $this->canReadPadron($usuario);
     }
 
     /**
      * Determine whether the user can view the model.
+     * Jefaturas pueden ver el detalle de una persona para asignar roles.
      */
     public function view(Usuario $usuario, Persona $persona): bool
     {
-        return $this->canManageGlobalPadron($usuario);
+        return $this->canReadPadron($usuario);
     }
 
     /**

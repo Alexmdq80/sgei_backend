@@ -370,7 +370,7 @@ class UserService
 
                 // 1. Unlink from current persona if linked
                 if ($user->persona) {
-                    $user->persona->update(['usuario_id' => null]);
+                    app(PersonaService::class)->unlinkUser($user->persona);
                 }
 
                 // 2. Data for matching
