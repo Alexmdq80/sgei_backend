@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerifiedWithBypass::class,
+            'block_panel_general' => \App\Http\Middleware\BlockPanelGeneralAccess::class,
         ]);
 
         // 3. TrustProxies es correcto si usas Apache como Proxy.

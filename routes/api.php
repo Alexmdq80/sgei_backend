@@ -119,7 +119,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Gestión Administrativa
-    Route::middleware(['auth:sanctum', 'verified'])->prefix('admin')->group(function () {
+    Route::middleware(['auth:sanctum', 'verified', 'block_panel_general'])->prefix('admin')->group(function () {
         
         // --- RUTAS DE ACCESO INSTITUCIONAL (Accesibles por Directivos y Jefaturas) ---
         // Protegidas individualmente por Policies
