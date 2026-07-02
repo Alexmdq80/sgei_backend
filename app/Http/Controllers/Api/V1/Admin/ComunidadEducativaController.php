@@ -6,14 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Persona;
 use Illuminate\Http\Request;
 use App\Http\Resources\PersonaResource;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ComunidadEducativaController extends Controller
 {
     /**
      * Lista a toda la comunidad educativa vinculada a una escuela.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Http\JsonResponse
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
         $schoolId = $request->input('escuela_id');
         $relacionFilter = $request->input('relacion');

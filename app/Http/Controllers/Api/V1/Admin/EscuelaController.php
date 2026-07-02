@@ -25,8 +25,20 @@ class EscuelaController extends Controller
     {
         $search = $request->query('search');
         $departamentoId = $request->query('localidad_departamento_id');
+        $nivelId = $request->query('nivel_id');
+        $sectorId = $request->query('sector_id');
+        $provinciaId = $request->query('provincia_id');
+        $regionId = $request->query('region_id');
         $perPage = $request->query('per_page', 20);
-        return response()->json($this->escuelaService->getAllAdmin($search, $departamentoId, $perPage));
+        return response()->json($this->escuelaService->getAllAdmin(
+            $search, 
+            $departamentoId, 
+            $perPage, 
+            $nivelId, 
+            $sectorId,
+            $provinciaId,
+            $regionId
+        ));
     }
 
     /**

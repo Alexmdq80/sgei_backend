@@ -41,7 +41,7 @@ class EscuelaController extends Controller
      */
     public function niveles(): JsonResponse
     {
-        $niveles = \App\Models\Nivel::where('vigente', true)->orderBy('orden')->get(['id', 'nombre']);
+        $niveles = \App\Models\Nivel::where('vigente', true)->orderBy('id')->get(['id', 'nombre']);
         return response()->json($niveles);
     }
 
@@ -50,7 +50,7 @@ class EscuelaController extends Controller
      */
     public function sectores(): JsonResponse
     {
-        $sectores = \App\Models\Sector::where('vigente', true)->orderBy('orden')->get(['id', 'nombre']);
+        $sectores = \App\Models\Sector::where('vigente', true)->orderBy('nombre')->get(['id', 'nombre']);
         return response()->json($sectores);
     }
 }

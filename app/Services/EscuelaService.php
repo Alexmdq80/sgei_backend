@@ -44,6 +44,10 @@ class EscuelaService
                     });
                 } elseif ($field === 'localidad_id') {
                     $query->where('localidad_id', $value);
+                } elseif ($field === 'nivel_id') {
+                    $query->whereHas('modalidadesNiveles', function ($q) use ($value) {
+                        $q->where('nivel_id', $value);
+                    });
                 } else {
                     $query->where($field, $value);
                 }
@@ -54,11 +58,18 @@ class EscuelaService
     }
 
     /**
-     * Get all schools for admin panel with optional district filter and pagination size.
+     * Get all schools for admin panel with optional district filter, level, sector and pagination size.
      */
-    public function getAllAdmin(string $search = null, ?int $departamentoId = null, int $perPage = 20): \Illuminate\Pagination\LengthAwarePaginator
-    {
-        $query = Escuela::with(['localidad', 'ambito', 'dependencia', 'sector']);
+    public function getAllAdmin(
+        string $search = null, 
+        ?int $departamentoId = null, 
+        int $perPage = 20, 
+        ?int $nivelId = null, 
+        ?int $sectorId = null,
+        ?int $provinciaId = null,
+        ?int $regionId = null
+    ): \Illuminate\Pagination\LengthAwarePaginator {
+        $query = Escuela::with(['localidad.departamento', 'ambito', 'dependencia', 'sector']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -72,6 +83,28 @@ class EscuelaService
             $query->whereHas('localidad', function ($q) use ($departamentoId) {
                 $q->where('departamento_id', $departamentoId);
             });
+        }
+
+        if ($provinciaId) {
+            $query->whereHas('localidad.departamento', function ($q) use ($provinciaId) {
+                $q->where('provincia_id', $provinciaId);
+            });
+        }
+
+        if ($regionId) {
+            $query->whereHas('localidad.departamento', function ($q) use ($regionId) {
+                $q->where('region_id', $regionId);
+            });
+        }
+
+        if ($nivelId) {
+            $query->whereHas('modalidadesNiveles', function ($q) use ($nivelId) {
+                $q->where('nivel_id', $nivelId);
+            });
+        }
+
+        if ($sectorId) {
+            $query->where('sector_id', $sectorId);
         }
 
         return $query->orderBy('nombre')->paginate($perPage);
