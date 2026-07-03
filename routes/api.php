@@ -116,6 +116,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/anio-planes', function() {
             return response()->json(\App\Models\AnioPlan::with(['plan', 'anio'])->get());
         });
+        Route::get('/escalafones', [App\Http\Controllers\Api\V1\EscalafonController::class, 'index']);
+        Route::get('/puesto-tipos', [App\Http\Controllers\Api\V1\PuestoTipoController::class, 'index']);
     });
 
     // Gestión Administrativa
