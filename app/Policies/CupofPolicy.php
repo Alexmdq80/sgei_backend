@@ -19,18 +19,23 @@ class CupofPolicy
             return true;
         }
 
-        // 1. Curricular Supervisors are forbidden from CUPOF management
+        // 1. School conduction team always has access to their school's CUPOFs,
+        //    regardless of any other Spatie roles they may hold.
+        if ($this->isConduccion($user)) {
+            return true;
+        }
+
+        // 2. Curricular Supervisors (non-conduction) are forbidden from CUPOF management
         if ($user->hasRole('supervisor_curricular')) {
             return false;
         }
 
-        // 2. Administrative hierarchy: ONLY District Chief can view (limited to hierarchical positions)
+        // 3. Administrative hierarchy: ONLY District Chief can view
         if ($user->hasRole('jefe_distrital')) {
             return true;
         }
 
-        // 3. School conduction (Team) can view their own school
-        return $user->escuelaUsuarios()->whereNotNull('verified_at')->exists();
+        return false;
     }
 
     /**
@@ -40,13 +45,17 @@ class CupofPolicy
     {
         if ($user->hasRole('superuser')) return true;
 
+        // Conduction team always takes priority
+        if ($this->isConduccion($user)) {
+            return true;
+        }
+
         // Hierarchical admins: ONLY District Chief
         if ($user->hasRole('jefe_distrital')) {
             return true;
         }
 
-        // Only conduction team in their school can create new CUPOF slots
-        return $this->isConduccion($user);
+        return false;
     }
 
     /**

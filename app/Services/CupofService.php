@@ -83,6 +83,36 @@ class CupofService
             $query->where('escalafon_id', $filters['escalafon_id']);
         }
 
+        if (isset($filters['localidad_id']) && !empty($filters['localidad_id'])) {
+            $query->whereHas('escuela', function ($q) use ($filters) {
+                $q->where('localidad_id', $filters['localidad_id']);
+            });
+        }
+
+        if (isset($filters['nivel_id']) && !empty($filters['nivel_id'])) {
+            $query->whereHas('escuela.modalidadesNiveles', function ($q) use ($filters) {
+                $q->where('nivel_id', $filters['nivel_id']);
+            });
+        }
+
+        if (isset($filters['sector_id']) && !empty($filters['sector_id'])) {
+            $query->whereHas('escuela', function ($q) use ($filters) {
+                $q->where('sector_id', $filters['sector_id']);
+            });
+        }
+
+        if (isset($filters['numero']) && !empty($filters['numero'])) {
+            $query->whereHas('escuela', function ($q) use ($filters) {
+                $q->where('numero', $filters['numero']);
+            });
+        }
+
+        if (isset($filters['school_name']) && !empty($filters['school_name'])) {
+            $query->whereHas('escuela', function ($q) use ($filters) {
+                $q->where('nombre', 'like', "%{$filters['school_name']}%");
+            });
+        }
+
         return $query->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
             ->orderBy('escuelas.nombre')
             ->select('cupofs.*')

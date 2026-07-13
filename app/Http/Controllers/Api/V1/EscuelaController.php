@@ -23,7 +23,7 @@ class EscuelaController extends Controller
     {
         try {
             $term = $request->query('search');
-            $filters = $request->only(['provincia_id', 'departamento_id', 'localidad_id', 'nivel_id', 'sector_id']);
+            $filters = $request->only(['provincia_id', 'departamento_id', 'localidad_id', 'nivel_id', 'sector_id', 'numero']);
             
             $escuelas = $this->escuelaService->search($term, $filters);
 
