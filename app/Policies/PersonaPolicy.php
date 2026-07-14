@@ -51,7 +51,14 @@ class PersonaPolicy
      */
     public function create(Usuario $usuario): bool
     {
-        return $this->canManageGlobalPadron($usuario);
+        return $this->canManageGlobalPadron($usuario)
+            || $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])
+            || $usuario->escuelaUsuarios()
+                ->whereHas('role', function($q) {
+                    $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
+                })
+                ->whereNotNull('verified_at')
+                ->exists();
     }
 
     /**
