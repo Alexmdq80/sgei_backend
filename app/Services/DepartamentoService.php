@@ -9,22 +9,32 @@ class DepartamentoService
     /**
      * Get paginated departments with their province and nation.
      */
-    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?string $search = null, int $perPage = 15, array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = Departamento::with(['provincia.nacion', 'region'])
             ->orderBy('nombre');
 
         if ($search) {
-            $query->where('nombre', 'like', "%{$search}%")
-                ->orWhereHas('provincia', function ($q) use ($search) {
-                    $q->where('nombre', 'like', "%{$search}%")
-                        ->orWhereHas('nacion', function ($q2) use ($search) {
-                            $q2->where('nombre', 'like', "%{$search}%");
-                        });
-                })
-                ->orWhereHas('region', function ($q) use ($search) {
-                    $q->where('numero', 'like', "%{$search}%");
-                });
+            $query->where(function ($q) use ($search) {
+                $q->where('nombre', 'like', "%{$search}%")
+                    ->orWhereHas('provincia', function ($q2) use ($search) {
+                        $q2->where('nombre', 'like', "%{$search}%")
+                            ->orWhereHas('nacion', function ($q3) use ($search) {
+                                $q3->where('nombre', 'like', "%{$search}%");
+                            });
+                    })
+                    ->orWhereHas('region', function ($q2) use ($search) {
+                        $q2->where('numero', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if (!empty($filters['region_id'])) {
+            $query->where('region_id', $filters['region_id']);
+        }
+
+        if (!empty($filters['provincia_id'])) {
+            $query->where('provincia_id', $filters['provincia_id']);
         }
 
         return $query->paginate($perPage);

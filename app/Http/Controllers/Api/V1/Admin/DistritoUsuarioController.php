@@ -18,13 +18,34 @@ class DistritoUsuarioController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('manage-districts', Usuario::class);
+        $usuario = auth()->user();
 
-        $associations = DistritoUsuario::with(['usuario.persona', 'distrito'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $esSuperuser       = $usuario->hasRole('superuser');
+        $esJefeProvincial  = $usuario->hasRole('jefe_provincial');
+        $esJefeRegional    = $usuario->hasRole('jefe_regional');
 
-        return response()->json($associations);
+        if (!$esSuperuser && !$esJefeProvincial && !$esJefeRegional) {
+            return response()->json([
+                'error' => 'Acceso Denegado.',
+                'code'  => 403
+            ], 403);
+        }
+
+        $query = DistritoUsuario::with(['usuario.persona', 'distrito.departamento.region.provincia']);
+
+        if ($esJefeRegional) {
+            $regionId = $usuario->regionUsuario?->region_id;
+            $query->whereHas('distrito', function ($q) use ($regionId) {
+                $q->where('region_id', $regionId);
+            });
+        } elseif ($esJefeProvincial) {
+            $provinciaId = $usuario->provinciaUsuario?->provincia_id;
+            $query->whereHas('distrito.region', function ($q) use ($provinciaId) {
+                $q->where('provincia_id', $provinciaId);
+            });
+        }
+
+        return response()->json($query->orderBy('created_at', 'desc')->get());
     }
 
     /**
@@ -32,17 +53,47 @@ class DistritoUsuarioController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $this->authorize('manage-districts', Usuario::class);
+        $usuario = auth()->user();
+
+        $esSuperuser       = $usuario->hasRole('superuser');
+        $esJefeProvincial  = $usuario->hasRole('jefe_provincial');
+        $esJefeRegional    = $usuario->hasRole('jefe_regional');
+
+        if (!$esSuperuser && !$esJefeProvincial && !$esJefeRegional) {
+            return response()->json([
+                'error' => 'Acceso Denegado.',
+                'code'  => 403
+            ], 403);
+        }
 
         $validated = $request->validate([
-            'usuario_id' => 'required|uuid|exists:usuarios,id',
+            'usuario_id'      => 'required|uuid|exists:usuarios,id',
             'departamento_id' => 'required|exists:departamentos,id',
         ]);
 
-        // Asegurarse de que el usuario tenga el rol jefe_distrital
-        $usuario = Usuario::findOrFail($validated['usuario_id']);
-        if (!$usuario->hasRole('jefe_distrital')) {
-            $usuario->assignRole('jefe_distrital');
+        $departamento = \App\Models\Departamento::with('region')->findOrFail($validated['departamento_id']);
+
+        if ($esJefeRegional) {
+            $regionId = $usuario->regionUsuario?->region_id;
+            if ($departamento->region_id !== $regionId) {
+                return response()->json([
+                    'error' => 'Acceso Denegado: Solo podés asignar Jefes Distritales en departamentos de tu región.',
+                    'code'  => 403
+                ], 403);
+            }
+        } elseif ($esJefeProvincial) {
+            $provinciaId = $usuario->provinciaUsuario?->provincia_id;
+            if ($departamento->region?->provincia_id !== $provinciaId) {
+                return response()->json([
+                    'error' => 'Acceso Denegado: Solo podés asignar Jefes Distritales en departamentos de tu provincia.',
+                    'code'  => 403
+                ], 403);
+            }
+        }
+
+        $targetUser = Usuario::findOrFail($validated['usuario_id']);
+        if (!$targetUser->hasRole('jefe_distrital')) {
+            $targetUser->assignRole('jefe_distrital');
         }
 
         $association = DistritoUsuario::updateOrCreate(
@@ -52,7 +103,7 @@ class DistritoUsuarioController extends Controller
 
         return response()->json([
             'message' => 'Jefe Distrital asignado correctamente.',
-            'data' => $association->load(['usuario.persona', 'distrito'])
+            'data'    => $association->load(['usuario.persona', 'distrito'])
         ], 201);
     }
 
@@ -61,13 +112,45 @@ class DistritoUsuarioController extends Controller
      */
     public function destroy(string $id): JsonResponse
     {
-        $distritoUsuario = DistritoUsuario::findOrFail($id);
-        $this->authorize('manage-districts', Usuario::class);
+        $distritoUsuario = DistritoUsuario::with('distrito.region')->findOrFail($id);
+        $usuario = auth()->user();
+
+        $esSuperuser       = $usuario->hasRole('superuser');
+        $esJefeProvincial  = $usuario->hasRole('jefe_provincial');
+        $esJefeRegional    = $usuario->hasRole('jefe_regional');
+
+        if (!$esSuperuser && !$esJefeProvincial && !$esJefeRegional) {
+            return response()->json([
+                'error' => 'Acceso Denegado.',
+                'code'  => 403
+            ], 403);
+        }
+
+        if ($esJefeRegional) {
+            $regionId = $usuario->regionUsuario?->region_id;
+            if ($distritoUsuario->distrito?->region_id !== $regionId) {
+                return response()->json([
+                    'error' => 'Acceso Denegado: Solo podés remover Jefes Distritales de tu región.',
+                    'code'  => 403
+                ], 403);
+            }
+        } elseif ($esJefeProvincial) {
+            $provinciaId = $usuario->provinciaUsuario?->provincia_id;
+            if ($distritoUsuario->distrito?->region?->provincia_id !== $provinciaId) {
+                return response()->json([
+                    'error' => 'Acceso Denegado: Solo podés remover Jefes Distritales de tu provincia.',
+                    'code'  => 403
+                ], 403);
+            }
+        }
+
+        $targetUser = $distritoUsuario->usuario;
+        if ($targetUser?->hasRole('jefe_distrital')) {
+            $targetUser->removeRole('jefe_distrital');
+        }
 
         $distritoUsuario->delete();
 
-        return response()->json([
-            'message' => 'Asignación de distrito eliminada.'
-        ]);
+        return response()->json(['message' => 'Asignación de distrito eliminada.']);
     }
 }

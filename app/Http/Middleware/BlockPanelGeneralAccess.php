@@ -50,6 +50,16 @@ class BlockPanelGeneralAccess
         if ($hasRestrictedRole) {
             $path = $request->path();
             
+            // Jefe Regional y Jefe Provincial necesitan leer departamentos
+            // para poder asignar Jefes Distritales. Solo se permite GET.
+            $canReadDepartamentos = $user->hasAnyRole(['jefe_regional', 'jefe_provincial', 'superuser'])
+                && preg_match("#api/v1/admin/departamentos(\$|/)#", $path)
+                && $request->isMethod('GET');
+
+            if ($canReadDepartamentos) {
+                return $next($request);
+            }
+
             // Lista de segmentos de ruta correspondientes al Panel General que deben bloquearse por completo.
             $panelGeneralResources = [
                 'cargos',
