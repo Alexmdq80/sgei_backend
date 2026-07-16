@@ -31,7 +31,7 @@ class DistritoUsuarioController extends Controller
             ], 403);
         }
 
-        $query = DistritoUsuario::with(['usuario.persona', 'distrito.departamento.region.provincia']);
+        $query = DistritoUsuario::with(['usuario.persona', 'distrito.region.provincia']);
 
         if ($esJefeRegional) {
             $regionId = $usuario->regionUsuario?->region_id;
