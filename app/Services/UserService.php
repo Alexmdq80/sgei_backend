@@ -84,11 +84,14 @@ class UserService
                 ->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
                     $ld->where('provincia_id', $filters['provincia_id']);
                 })
-                ->orWhereHas('persona', function ($pq) use ($filters) {
+                /*->orWhereHas('persona', function ($pq) use ($filters) {
                     $pq->where('created_by', auth()->id())
                        ->orWhereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function($sq) use ($filters) {
                            $sq->where('provincia_id', $filters['provincia_id']);
                        });
+                })*/
+                ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($filters) {
+                    $sq->where('provincia_id', $filters['provincia_id']);
                 })
                 // NEW: Match with persona in this province for pending vinculation
                 ->orWhere(function ($sq) use ($filters) {
@@ -122,11 +125,14 @@ class UserService
                 ->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
                     $ld->where('region_id', $filters['region_id']);
                 })
-                ->orWhereHas('persona', function ($pq) use ($filters) {
+                /*->orWhereHas('persona', function ($pq) use ($filters) {
                     $pq->where('created_by', auth()->id())
                        ->orWhereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function($sq) use ($filters) {
                            $sq->where('region_id', $filters['region_id']);
                        });
+                })*/
+                ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($filters) {
+                    $sq->where('region_id', $filters['region_id']);
                 })
                 // NEW: Match with persona in this region for pending vinculation
                 ->orWhere(function ($sq) use ($filters) {
@@ -156,11 +162,14 @@ class UserService
                 ->orWhereHas('escuelaUsuarios.escuela.localidad', function ($l) use ($filters) {
                     $l->where('departamento_id', $filters['departamento_id']);
                 })
-                ->orWhereHas('persona', function ($pq) use ($filters) {
+                /*->orWhereHas('persona', function ($pq) use ($filters) {
                     $pq->where('created_by', auth()->id())
                        ->orWhereHas('movimientosCupofActivos.cupof.escuela.localidad', function($sq) use ($filters) {
                            $sq->where('departamento_id', $filters['departamento_id']);
                        });
+                })*/
+                ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($filters) {
+                    $sq->where('departamento_id', $filters['departamento_id']);
                 })
                 // NEW: Match with persona in this department for pending vinculation
                 ->orWhere(function ($sq) use ($filters) {

@@ -54,8 +54,9 @@ class UsuarioController extends Controller
     {
         $this->authorize('viewAny', Usuario::class);
         
-        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page']);
-
+        //$filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page']);
+        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page', 'provincia_id', 'region_id', 'departamento_id']);
+        
         $users = $this->userService->getAll($filters);
 
         return UsuarioResource::collection($users);
@@ -64,7 +65,7 @@ class UsuarioController extends Controller
     /**
      * Store a newly created user in storage.
      */
-    public function store(UsuarioRequest $request): JsonResponse
+    /* public function store(UsuarioRequest $request): JsonResponse
     {
         $this->authorize('create', Usuario::class);
 
@@ -74,7 +75,7 @@ class UsuarioController extends Controller
             'message' => 'Usuario creado con éxito.',
             'user' => new UsuarioResource($user)
         ], 201);
-    }
+    }*/ 
 
     /**
      * Display the specified user.

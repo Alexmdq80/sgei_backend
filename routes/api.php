@@ -141,7 +141,7 @@ Route::prefix('v1')->group(function () {
 
         // --- RUTAS DE ADMINISTRACIÓN GLOBAL (Requieren permiso sistema.usuarios) ---
         Route::middleware('permission:sistema.usuarios')->group(function() {
-            Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
+            Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class)->except([ 'store' ]);
             Route::post('/usuarios/{usuario}/confirm-persona', [App\Http\Controllers\Api\V1\UsuarioController::class, 'confirmPersona']);
             Route::post('/usuarios/{usuario}/resend-activation', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendActivation']);
 
