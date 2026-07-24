@@ -49,7 +49,7 @@ class ComunidadEducativaPolicy
         }
 
         // 5. Equipo de Conducción → solo SU escuela (verificado)
-        return $user->escuelaUsuarios()
+        return $user->persona?->escuelasPersonas()
             ->where('escuela_id', $escuelaId)
             ->whereHas('role', function ($q) {
                 $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);

@@ -5,6 +5,9 @@ use App\Models\Escuela;
 use App\Models\EscuelaUsuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use App\Models\Provincia;
+use App\Models\Departamento;
+use App\Models\Localidad;
 
 uses(RefreshDatabase::class);
 
@@ -62,6 +65,62 @@ beforeEach(function () {
 
     // User 4: No vinculations
     Usuario::factory()->create(['nombre' => 'User Four']);
+
+    // Provincia A con su departamento y localidad
+    $this->provinciaA = Provincia::factory()->create(['nombre' => 'Provincia A']);
+    $this->departamentoA = Departamento::factory()->create([
+        'nombre' => 'Depto A',
+        'provincia_id' => $this->provinciaA->id
+    ]);
+    $this->localidadA = Localidad::factory()->create([
+        'nombre' => 'Loc A',
+        'departamento_id' => $this->departamentoA->id
+    ]);
+
+    // Provincia B con su departamento y localidad
+    $this->provinciaB = Provincia::factory()->create(['nombre' => 'Provincia B']);
+    $this->departamentoB = Departamento::factory()->create([
+        'nombre' => 'Depto B',
+        'provincia_id' => $this->provinciaB->id
+    ]);
+    $this->localidadB = Localidad::factory()->create([
+        'nombre' => 'Loc B',
+        'departamento_id' => $this->departamentoB->id
+    ]);
+
+    // Escuela C en Provincia A
+    $this->escuelaC = Escuela::factory()->create([
+        'nombre' => 'Escuela C',
+        'cue_anexo' => '333333300',
+        'localidad_id' => $this->localidadA->id
+    ]);
+
+    // Escuela D en Provincia B
+    $this->escuelaD = Escuela::factory()->create([
+        'nombre' => 'Escuela D',
+        'cue_anexo' => '444444400',
+        'localidad_id' => $this->localidadB->id
+    ]);
+
+    // User 5: Vinculado a Escuela C (Provincia A)
+    $user5 = Usuario::factory()->create(['nombre' => 'User Five']);
+    EscuelaUsuario::create([
+        'id' => Str::uuid(),
+        'usuario_id' => $user5->id,
+        'escuela_id' => $this->escuelaC->id,
+        'role_id' => $rol->id,
+        'verified_at' => now()
+    ]);
+
+    // User 6: Vinculado a Escuela D (Provincia B)
+    $user6 = Usuario::factory()->create(['nombre' => 'User Six']);
+    EscuelaUsuario::create([
+        'id' => Str::uuid(),
+        'usuario_id' => $user6->id,
+        'escuela_id' => $this->escuelaD->id,
+        'role_id' => $rol->id,
+        'verified_at' => now()
+    ]);
 });
 
 test('el administrador puede filtrar usuarios por escuela específica', function () {
@@ -81,11 +140,13 @@ test('el administrador puede filtrar usuarios con vinculaciones ya aprobadas', f
         ->getJson("/api/v1/admin/usuarios?vinculation=vinculated");
 
     $response->assertStatus(200)
-        ->assertJsonCount(2, 'data') // User One and User Three
+        ->assertJsonCount(4, 'data') // User One and User Three
         ->assertJsonFragment(['nombre' => 'User One'])
         ->assertJsonFragment(['nombre' => 'User Three'])
         ->assertJsonMissing(['nombre' => 'User Two'])
-        ->assertJsonMissing(['nombre' => 'User Four']);
+        ->assertJsonMissing(['nombre' => 'User Four'])
+        ->assertJsonFragment(['nombre' => 'User Five'])
+        ->assertJsonFragment(['nombre' => 'User Six']);
 });
 
 test('el administrador puede filtrar usuarios con vinculaciones pendientes', function () {
@@ -107,4 +168,32 @@ test('la respuesta de usuarios incluye el CUE y el nombre del rol escolar', func
     $response->assertStatus(200)
         ->assertJsonPath('data.0.escuela_usuarios.0.escuela.cue_anexo', '111111100')
         ->assertJsonPath('data.0.escuela_usuarios.0.role.name', 'director');
+});
+
+test('el administrador puede filtrar usuarios por provincia', function () {
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/usuarios?provincia_id={$this->provinciaA->id}");
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'User Five'])
+        ->assertJsonMissing(['nombre' => 'User Six'])
+        ->assertJsonMissing(['nombre' => 'User Four']);
+});
+
+test('el administrador puede filtrar usuarios por departamento', function () {
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/usuarios?departamento_id={$this->departamentoA->id}");
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'User Five'])
+        ->assertJsonMissing(['nombre' => 'User Six']);
+});
+
+test('el administrador puede filtrar usuarios por búsqueda combinada con provincia', function () {
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/usuarios?search=User&provincia_id={$this->provinciaB->id}");
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'User Six'])
+        ->assertJsonMissing(['nombre' => 'User Five']);
 });

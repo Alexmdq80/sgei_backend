@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Usuario;
 use App\Models\Persona;
 use App\Models\Escuela;
-use App\Models\EscuelaUsuario;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
@@ -27,10 +26,10 @@ class UserService
         $isJefeDistrital = $user?->hasRole('jefe_distrital');
 
         $query = Usuario::query()->with([
-            'persona', 
-            'documentoTipo', 
-            'escuelaUsuarios.escuela', 
-            'escuelaUsuarios.role',
+            'persona',
+            'documentoTipo',
+            'persona.escuelasPersonas.escuela',
+            'persona.escuelasPersonas.role',
             'roles',
             'provinciaUsuario.provincia',
             'regionUsuario.region',
@@ -46,7 +45,7 @@ class UserService
             } elseif ($isJefeDistrital && $user->distritoUsuario) {
                 $filters['departamento_id'] = $user->distritoUsuario->departamento_id;
             } elseif ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-                $filters['escuela_ids'] = $user->escuelaUsuarios()->whereNotNull('verified_at')->pluck('escuela_id')->toArray();
+                $filters['escuela_ids'] = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? []; 
             }
         }
 
@@ -57,7 +56,7 @@ class UserService
 
             $query->where(function ($q) use ($hierarchicalRoles, $globalHierarchicalRoles) {
                 // Roles en Escuelas (Directivos, etc)
-                $q->whereHas('escuelaUsuarios.role', function ($sq) use ($hierarchicalRoles) {
+                $q->whereHas('persona.escuelasPersonas.role', function ($sq) use ($hierarchicalRoles) {
                     $sq->whereIn('name', $hierarchicalRoles);
                 })
                 // O Roles Globales de Jefatura
@@ -81,7 +80,7 @@ class UserService
                 ->orWhereHas('distritoUsuario.distrito', function ($dq) use ($filters) {
                     $dq->where('provincia_id', $filters['provincia_id']);
                 })
-                ->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
+                ->orWhereHas('persona.escuelasPersonas.escuela.localidad.departamento', function ($ld) use ($filters) {
                     $ld->where('provincia_id', $filters['provincia_id']);
                 })
                 /*->orWhereHas('persona', function ($pq) use ($filters) {
@@ -92,6 +91,16 @@ class UserService
                 })*/
                 ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($filters) {
                     $sq->where('provincia_id', $filters['provincia_id']);
+                })
+                // Usuarios vinculados a estudiantes con inscripción
+                ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($filters) {
+                    $sq->where('provincia_id', $filters['provincia_id']);
+                })
+                // Usuarios vinculados como adultos responsables de estudiantes con inscripción
+                ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($filters) {
+                    $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($filters) {
+                        $sq->where('provincia_id', $filters['provincia_id']);
+                    });
                 })
                 // NEW: Match with persona in this province for pending vinculation
                 ->orWhere(function ($sq) use ($filters) {
@@ -122,7 +131,7 @@ class UserService
                 ->orWhereHas('distritoUsuario.distrito', function ($dq) use ($filters) {
                     $dq->where('region_id', $filters['region_id']);
                 })
-                ->orWhereHas('escuelaUsuarios.escuela.localidad.departamento', function ($ld) use ($filters) {
+                ->orWhereHas('persona.escuelasPersonas.escuela.localidad.departamento', function ($ld) use ($filters) {
                     $ld->where('region_id', $filters['region_id']);
                 })
                 /*->orWhereHas('persona', function ($pq) use ($filters) {
@@ -133,6 +142,16 @@ class UserService
                 })*/
                 ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($filters) {
                     $sq->where('region_id', $filters['region_id']);
+                })
+                // Usuarios vinculados a estudiantes con inscripción
+                ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($filters) {
+                    $sq->where('region_id', $filters['region_id']);
+                })
+                // Usuarios vinculados como adultos responsables de estudiantes con inscripción
+                ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($filters) {
+                    $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($filters) {
+                        $sq->where('region_id', $filters['region_id']);
+                    });
                 })
                 // NEW: Match with persona in this region for pending vinculation
                 ->orWhere(function ($sq) use ($filters) {
@@ -159,7 +178,7 @@ class UserService
                 $q->whereHas('distritoUsuario', function ($dq) use ($filters) {
                     $dq->where('departamento_id', $filters['departamento_id']);
                 })
-                ->orWhereHas('escuelaUsuarios.escuela.localidad', function ($l) use ($filters) {
+                ->orWhereHas('persona.escuelasPersonas.escuela.localidad', function ($l) use ($filters) {
                     $l->where('departamento_id', $filters['departamento_id']);
                 })
                 /*->orWhereHas('persona', function ($pq) use ($filters) {
@@ -170,6 +189,16 @@ class UserService
                 })*/
                 ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($filters) {
                     $sq->where('departamento_id', $filters['departamento_id']);
+                })
+                // Usuarios vinculados a estudiantes con inscripción
+                ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($filters) {
+                    $sq->where('departamento_id', $filters['departamento_id']);
+                })
+                // Usuarios vinculados como adultos responsables de estudiantes con inscripción
+                ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($filters) {
+                    $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($filters) {
+                        $sq->where('departamento_id', $filters['departamento_id']);
+                    });
                 })
                 // NEW: Match with persona in this department for pending vinculation
                 ->orWhere(function ($sq) use ($filters) {
@@ -200,19 +229,19 @@ class UserService
 
         // Filtro por Escuela específica (ID o CUE)
         if (!empty($filters['escuela_id'])) {
-            $query->whereHas('escuelaUsuarios', function ($q) use ($filters) {
+            $query->whereHas('persona.escuelasPersonas', function ($q) use ($filters) {
                 $q->where('escuela_id', $filters['escuela_id']);
             });
         }
 
         if (!empty($filters['escuela_ids'])) {
-            $query->whereHas('escuelaUsuarios', function ($q) use ($filters) {
+            $query->whereHas('persona.escuelasPersonas', function ($q) use ($filters) {
                 $q->whereIn('escuela_id', $filters['escuela_ids']);
             });
         }
 
         if (!empty($filters['cue_anexo'])) {
-            $query->whereHas('escuelaUsuarios.escuela', function ($q) use ($filters) {
+            $query->whereHas('persona.escuelasPersonas.escuela', function ($q) use ($filters) {
                 $q->where('cue_anexo', $filters['cue_anexo']);
             });
         }
@@ -220,11 +249,11 @@ class UserService
         // Filtro por Estado de Vinculación
         if (!empty($filters['vinculation'])) {
             if ($filters['vinculation'] === 'vinculated') {
-                $query->whereHas('escuelaUsuarios', function ($q) {
+                $query->whereHas('persona.escuelasPersonas', function ($q) {
                     $q->whereNotNull('verified_at');
                 });
             } elseif ($filters['vinculation'] === 'pending') {
-                $query->whereHas('escuelaUsuarios', function ($q) {
+                $query->whereHas('persona.escuelasPersonas', function ($q) {
                     $q->whereNull('verified_at');
                 });
             }
@@ -500,12 +529,14 @@ class UserService
     {
         $leadershipRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
-        return Escuela::whereHas('escuelaUsuarios', function ($query) use ($user, $leadershipRoles) {
-            $query->where('usuario_id', $user->id)
-                  ->whereNotNull('verified_at')
-                  ->whereHas('role', function ($q) use ($leadershipRoles) {
-                      $q->whereIn('name', $leadershipRoles);
-                  });
+        return Escuela::whereHas('escuelasPersonas', function ($query) use ($user, $leadershipRoles) {
+            $query->whereHas('persona', function($q) use ($user) {
+                $q->where('usuario_id', $user->id);
+            })
+            ->whereNotNull('verified_at')
+            ->whereHas('role', function ($q) use ($leadershipRoles) {
+                $q->whereIn('name', $leadershipRoles);
+            });
         })->get();
     }
 
@@ -532,8 +563,8 @@ class UserService
     public function isPersonaRelatedToUserSchools(Usuario $performer, Persona $persona): bool
     {
         // 1. Get performer's schools
-        $performerSchoolIds = $performer->escuelaUsuarios()->pluck('escuela_id')->toArray();
-        
+        $performerSchoolIds = $performer->persona?->escuelasPersonas()->pluck('escuela_id')->toArray() ?? [];
+
         if (empty($performerSchoolIds)) {
             return false;
         }

@@ -51,7 +51,7 @@ class UsuarioPolicy
             $isInJurisdiction = $model->provinciaUsuario?->provincia_id === $userProvId ||
                    $model->regionUsuario?->region?->provincia_id === $userProvId ||
                    $model->distritoUsuario?->distrito?->provincia_id === $userProvId ||
-                   $model->escuelaUsuarios()->whereHas('escuela.localidad.departamento', function($q) use ($userProvId) {
+                   $model->persona?->escuelasPersonas()->whereHas('escuela.localidad.departamento', function($q) use ($userProvId) {
                        $q->where('provincia_id', $userProvId);
                    })->exists();
 
@@ -79,7 +79,7 @@ class UsuarioPolicy
 
             $isInJurisdiction = $model->regionUsuario?->region_id === $userRegId ||
                    $model->distritoUsuario?->distrito?->region_id === $userRegId ||
-                   $model->escuelaUsuarios()->whereHas('escuela.localidad.departamento', function($q) use ($userRegId) {
+                   $model->persona?->escuelasPersonas()->whereHas('escuela.localidad.departamento', function($q) use ($userRegId) {
                        $q->where('region_id', $userRegId);
                    })->exists();
 
@@ -106,7 +106,7 @@ class UsuarioPolicy
             if (!$userDistId) return false;
 
             $isInJurisdiction = $model->distritoUsuario?->departamento_id === $userDistId ||
-                   $model->escuelaUsuarios()->whereHas('escuela.localidad', function($q) use ($userDistId) {
+                   $model->persona?->escuelasPersonas()->whereHas('escuela.localidad', function($q) use ($userDistId) {
                        $q->where('departamento_id', $userDistId);
                    })->exists();
 
@@ -129,9 +129,9 @@ class UsuarioPolicy
 
         // 4. Equipo de Conducción
         if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-            $userEscuelas = $user->escuelaUsuarios()->whereNotNull('verified_at')->pluck('escuela_id');
-            $modelEscuelas = $model->escuelaUsuarios()->pluck('escuela_id');
-            
+            $userEscuelas = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id');
+            $modelEscuelas = $model->persona?->escuelasPersonas()->pluck('escuela_id');
+
             return $userEscuelas->intersect($modelEscuelas)->isNotEmpty();
         }
 
@@ -190,9 +190,9 @@ class UsuarioPolicy
         }
 
         if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
-            $userEscuelas = $user->escuelaUsuarios()->whereNotNull('verified_at')->pluck('escuela_id');
-            $modelEscuelas = $model->escuelaUsuarios()->pluck('escuela_id');
-            
+            $userEscuelas = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id');
+            $modelEscuelas = $model->persona?->escuelasPersonas()->pluck('escuela_id');
+
             return $userEscuelas->intersect($modelEscuelas)->isNotEmpty();
         }
 

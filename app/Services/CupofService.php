@@ -61,7 +61,7 @@ class CupofService
         } 
         // 2. Restriction for Conduction Team: Only see their own school(s)
         else {
-            $schoolIds = $user->escuelaUsuarios()
+            $schoolIds = $user->escuelasPersonas()
                 ->whereHas('role', function($q) {
                     $q->whereIn('name', \App\Services\EscuelaService::HIERARCHICAL_ROLES);
                 })
@@ -163,7 +163,7 @@ class CupofService
             $cupof->update(['estado_cupof' => 'ocupado']);
 
             // 4. Sync School-User Link and Role
-            $this->syncEscuelaUsuario($cupof, $persona);
+            $this->syncEscuelaPersona($cupof, $persona);
 
             return $movimiento;
         });
@@ -219,7 +219,7 @@ class CupofService
 
             // 3. Sync/Revoke School-User Link if persona exists
             if ($persona) {
-                $this->syncEscuelaUsuario($cupof, $persona, true);
+                $this->syncEscuelaPersona($cupof, $persona, true);
             }
 
             return $updated;
@@ -281,9 +281,9 @@ class CupofService
     }
 
     /**
-     * Syncs the EscuelaUsuario record based on CUPOF assignments.
+     * Syncs the EscuelaPersona record based on CUPOF assignments.
      */
-    private function syncEscuelaUsuario(Cupof $cupof, Persona $persona, bool $isRelease = false): void
+    private function syncEscuelaPersona(Cupof $cupof, Persona $persona, bool $isRelease = false): void
     {
         $usuario = $persona->usuario;
         if (!$usuario) return;
@@ -301,7 +301,7 @@ class CupofService
 
             if (!$hasOtherCupofs) {
                 // If no more CUPOFs, we mark the link as inactive (Soft Delete or verified_at null)
-                \App\Models\EscuelaUsuario::where('usuario_id', $usuario->id)
+                \App\Models\EscuelaPersona::where('persona_id', $persona->id)
                     ->where('escuela_id', $escuelaId)
                     ->update(['verified_at' => null]);
             } else {
@@ -358,9 +358,9 @@ class CupofService
             $roleId = $roleIds[$roleName] ?? null;
             if (!$roleId) continue;
 
-            \App\Models\EscuelaUsuario::updateOrCreate(
+            \App\Models\EscuelaPersona::updateOrCreate(
                 [
-                    'usuario_id' => $usuario->id, 
+                    'persona_id' => $persona->id,
                     'escuela_id' => $escuelaId,
                     'role_id' => $roleId
                 ],
@@ -372,7 +372,7 @@ class CupofService
 
         // 4. Cleanup: Remove roles that the user NO LONGER has in this school via CUPOF
         $rolesToKeep = $roleIds->values()->toArray();
-        \App\Models\EscuelaUsuario::where('usuario_id', $usuario->id)
+        \App\Models\EscuelaPersona::where('persona_id', $persona->id)
             ->where('escuela_id', $escuelaId)
             ->whereNotNull('role_id')
             ->whereNotIn('role_id', $rolesToKeep)

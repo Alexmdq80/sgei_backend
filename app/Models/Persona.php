@@ -107,7 +107,13 @@ class Persona extends Model
     {
         return $this->belongsTo(Usuario::class);
     }
-
+    /**
+     * Relationship to school associations via the pivot model.
+     */
+    public function escuelasPersonas(): HasMany
+    {
+        return $this->hasMany(EscuelaPersona::class);
+    }
     /**
      * Relationship to the document type.
      */

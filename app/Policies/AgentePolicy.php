@@ -19,7 +19,7 @@ class AgentePolicy
         }
 
         // 2. Equipo de Conducción
-        return $usuario->escuelaUsuarios()
+        return $usuario->persona?->escuelasPersonas()
             ->whereHas('role', function($q) {
                 $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
             })

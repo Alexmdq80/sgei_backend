@@ -30,7 +30,7 @@ class UsuarioResource extends JsonResource
             'permissions' => $this->getAllPermissions()->pluck('name'),
             'documento_tipo' => $this->whenLoaded('documentoTipo'),
             'persona' => $this->whenLoaded('persona'),
-            'escuela_usuarios' => EscuelaUsuarioResource::collection($this->whenLoaded('escuelaUsuarios')),
+            'escuelas_personas' => EscuelaPersonaResource::collection($this->whenLoaded('persona.escuelasPersonas')),
             'provincia_usuario' => $this->provinciaUsuario?->loadMissing('provincia'),
             'region_usuario' => $this->regionUsuario?->loadMissing('region'),
             'distrito_usuario' => $this->distritoUsuario?->loadMissing('distrito')

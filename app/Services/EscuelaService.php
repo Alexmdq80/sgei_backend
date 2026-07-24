@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\Escuela;
 use App\Models\Usuario;
-use App\Models\EscuelaUsuario;
+use App\Models\EscuelaPersona;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -216,7 +216,9 @@ class EscuelaService
         }
 
         // 3. Verificar si el admin tiene rol jerárquico en la escuela destino
-        $isAdminHierarchicalInSchool = EscuelaUsuario::where('usuario_id', $admin->id)
+        $isAdminHierarchicalInSchool = EscuelaPersona::whereHas('persona', function($q) use ($admin) {
+                $q->where('usuario_id', $admin->id);
+            })
             ->where('escuela_id', $escuelaId)
             ->whereHas('role', function($q) {
                 $q->whereIn('name', self::HIERARCHICAL_ROLES);
@@ -233,13 +235,16 @@ class EscuelaService
      * Direct assign a role to a user in a school (verified).
      * This method is now intended for administrative overrides or CUPOF syncing.
      */
-    public function assignDirect(Usuario $targetUser, int $escuelaId, int $roleId): EscuelaUsuario
+    public function assignDirect(Usuario $targetUser, int $escuelaId, int $roleId): EscuelaPersona
     {
         $this->validateAssignmentPermissions($escuelaId, $roleId);
 
-        $link = EscuelaUsuario::updateOrCreate(
+        $persona = $targetUser->persona;
+        if (!$persona) throw new \Exception("El usuario no tiene una persona vinculada.", 422);
+
+        $link = EscuelaPersona::updateOrCreate(
             [
-                'usuario_id' => $targetUser->id,
+                'persona_id' => $persona->id,
                 'escuela_id' => $escuelaId,
                 'role_id' => $roleId
             ],
@@ -253,16 +258,19 @@ class EscuelaService
             $targetUser->update(['estado' => 'activo']);
         }
 
-        return $link->load(['usuario.persona', 'escuela', 'role']);
+        return $link->load(['persona.usuario', 'escuela', 'role']);
     }
 
     /**
      * User requests to join a school.
      */
-    public function joinSchool(Usuario $user, int $escuelaId, int $roleId): EscuelaUsuario
+    public function joinSchool(Usuario $user, int $escuelaId, int $roleId): EscuelaPersona
     {
+        $persona = $user->persona;
+        if (!$persona) throw new \Exception("El usuario no tiene una persona vinculada.", 422);
+
         // Check if already linked or pending
-        $existing = EscuelaUsuario::where('usuario_id', $user->id)
+        $existing = EscuelaPersona::where('persona_id', $persona->id)
             ->where('escuela_id', $escuelaId)
             ->first();
 
@@ -270,9 +278,9 @@ class EscuelaService
             throw new \Exception("Ya tienes una solicitud activa o vinculación con esta institución.", 422);
         }
 
-        return EscuelaUsuario::create([
+        return EscuelaPersona::create([
             'id' => Str::uuid(),
-            'usuario_id' => $user->id,
+            'persona_id' => $persona->id,
             'escuela_id' => $escuelaId,
             'role_id' => $roleId,
             'verified_at' => null // Pending admin confirmation
@@ -284,7 +292,10 @@ class EscuelaService
      */
     public function cancelJoinRequest(Usuario $user, int $escuelaId): bool
     {
-        $link = EscuelaUsuario::where('usuario_id', $user->id)
+        $persona = $user->persona;
+        if (!$persona) throw new \Exception("El usuario no tiene una persona vinculada.", 404);
+
+        $link = EscuelaPersona::where('persona_id', $persona->id)
             ->where('escuela_id', $escuelaId)
             ->whereNull('verified_at')
             ->firstOrFail();

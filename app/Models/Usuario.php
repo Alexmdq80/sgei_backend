@@ -149,14 +149,6 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Relationship to schools associated with the user.
-     */
-    public function escuelaUsuarios(): HasMany
-    {
-        return $this->hasMany(EscuelaUsuario::class);
-    }
-
-    /**
      * Relationship to refresh tokens associated with the user.
      */
     public function refreshTokens(): HasMany
