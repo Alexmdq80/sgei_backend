@@ -125,7 +125,7 @@ Route::prefix('v1')->group(function () {
         
         // --- RUTAS DE ACCESO INSTITUCIONAL (Accesibles por Directivos y Jefaturas) ---
         // Protegidas individualmente por Policies
-        Route::apiResource('escuela-usuarios', App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class);
+        Route::apiResource('escuela-personas', App\Http\Controllers\Api\V1\Admin\EscuelaPersonaController::class);
         Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class);
         Route::post('personas/{persona}/resend-activation', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'resendActivation']);
         Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);

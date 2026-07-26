@@ -34,8 +34,8 @@ class ProfileController extends Controller
                 'persona', 
                 'documentoTipo', 
                 'roles', 
-                'escuelaUsuarios.escuela', 
-                'escuelaUsuarios.role',
+                'persona.escuelasPersonas.escuela', 
+                'persona.escuelasPersonas.role',
                 'provinciaUsuario',
                 'regionUsuario',
                 'distritoUsuario'
@@ -52,7 +52,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Perfil actualizado con éxito.',
-            'user' => $user->load(['persona', 'documentoTipo', 'escuelaUsuarios.escuela', 'escuelaUsuarios.role'])
+            'user' => $user->load(['persona', 'documentoTipo', 'persona.escuelasPersonas.escuela', 'persona.escuelasPersonas.role'])
         ]);
     }
 

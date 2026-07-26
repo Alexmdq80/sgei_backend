@@ -87,6 +87,7 @@ class MigrateLegacyData extends Command
             'personas',
             'usuarios',
             'escuela_usuario',
+            'escuela_persona',
             'domicilios',
             'contactos',
             'persona_vinculo_persona',
@@ -151,6 +152,9 @@ class MigrateLegacyData extends Command
             'escuela_usuario' => [
                 'role_id' => 'usuario_tipo_id'
             ],
+            'escuela_persona' => [
+                'role_id' => 'usuario_tipo_id'
+            ],
             'propuestas' => [
                 'anio_plan_id' => 'plan_anio_id'
             ]
@@ -206,7 +210,7 @@ class MigrateLegacyData extends Command
                         $value = $legacyArray[$legacyColumnName];
 
                         // Lógica Especial: Mapeo de Roles
-                        if ($tableName === 'escuela_usuario' && $column === 'role_id') {
+                        if (($tableName === 'escuela_usuario' || $tableName === 'escuela_persona') && $column === 'role_id') {
                             $value = $this->roleMap[$value] ?? null;
                             if (!$value) return null;
                         }

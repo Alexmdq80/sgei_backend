@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\EscuelaService;
-use App\Http\Resources\EscuelaUsuarioResource;
-use App\Http\Requests\Api\V1\Admin\EscuelaUsuarioRequest;
+use App\Http\Resources\EscuelaPersonaResource;
+use App\Http\Requests\Api\V1\Admin\EscuelaPersonaRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
-class EscuelaUsuarioController extends Controller
+class EscuelaPersonaController extends Controller
 {
     protected EscuelaService $escuelaService;
 
@@ -26,13 +26,13 @@ class EscuelaUsuarioController extends Controller
         $user = auth()->user();
         
         // El permiso viewAny en la Policy verifica si es Superuser, Jefe o Conducción
-        $this->authorize('viewAny', \App\Models\EscuelaUsuario::class);
+        $this->authorize('viewAny', \App\Models\EscuelaPersona::class);
 
-        $query = \App\Models\EscuelaUsuario::with(['usuario.persona', 'escuela', 'role']);
+        $query = \App\Models\EscuelaPersona::with(['persona', 'escuela', 'role']);
 
-        // Si no es Superusuario ni Jefatura, limitamos a sus propias escuelas (Equipo de Conducción)
+        // Si no es Superusuario ni Jefatura, limitamos a sus propias escuelas
         if (!$user->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-            $mySchools = $user->escuelaUsuarios()
+            $mySchools = $user->persona?->escuelasPersonas()    
                 ->whereHas('role', function($q) {
                     $q->whereIn('name', \App\Services\EscuelaService::HIERARCHICAL_ROLES);
                 })
@@ -41,30 +41,32 @@ class EscuelaUsuarioController extends Controller
             
             $query->whereIn('escuela_id', $mySchools);
         }
-
+        
         if ($request->has('escuela_id')) {
             $query->where('escuela_id', $request->escuela_id);
         }
 
-        if ($request->has('usuario_id')) {
-            $query->where('usuario_id', $request->usuario_id);
+        if ($request->has('persona_id')) {    
+            $query->where('persona_id', $request->persona_id);
         }
 
-        return EscuelaUsuarioResource::collection($query->paginate($request->per_page ?? 15));
+        return EscuelaPersonaResource::collection($query->paginate($request->per_page ?? 15));
+                
     }
 
     /**
      * Direct assign a user to a school.
      */
-    public function store(EscuelaUsuarioRequest $request): JsonResponse
+    public function store(EscuelaPersonaRequest $request): JsonResponse
     {
         try {
-            $user = \App\Models\Usuario::findOrFail($request->usuario_id);
-            $link = $this->escuelaService->assignDirect($user, $request->escuela_id, $request->role_id);
+            $persona = \App\Models\Persona::findOrFail($request->persona_id);
+            
+            $link = $this->escuelaService->assignDirect($persona, $request->escuela_id, $request->role_id);
 
             return response()->json([
                 'message' => 'Rol institucional asignado con éxito.',
-                'data' => new EscuelaUsuarioResource($link)
+                'data' => new EscuelaPersonaResource($link)
             ], 201);
         } catch (\Exception $e) {
             $code = $e->getCode();
@@ -80,15 +82,13 @@ class EscuelaUsuarioController extends Controller
     /**
      * Update an existing school-user link (change role).
      */
-    public function update(EscuelaUsuarioRequest $request, string $id): JsonResponse
+    public function update(EscuelaPersonaRequest $request, string $id): JsonResponse
     {
         try {
-            $link = \App\Models\EscuelaUsuario::findOrFail($id);
+            $link = \App\Models\EscuelaPersona::findOrFail($id);
             
-            // Validar permisos usando el nuevo método del servicio
             $this->escuelaService->validateAssignmentPermissions($link->escuela_id, $request->role_id);
 
-            // Actualizar el rol del registro específico
             $link->update([
                 'role_id' => $request->role_id,
                 'updated_by' => auth()->id()
@@ -96,7 +96,7 @@ class EscuelaUsuarioController extends Controller
 
             return response()->json([
                 'message' => 'Rol institucional actualizado con éxito.',
-                'data' => new EscuelaUsuarioResource($link->fresh()->load(['usuario.persona', 'escuela', 'role']))
+                'data' => new EscuelaPersonaResource($link->fresh()->load(['persona', 'escuela', 'role']))
             ]);
         } catch (\Exception $e) {
             $code = $e->getCode();
@@ -115,9 +115,8 @@ class EscuelaUsuarioController extends Controller
     public function destroy(string $id): JsonResponse
     {
         try {
-            $link = \App\Models\EscuelaUsuario::findOrFail($id);
+            $link = \App\Models\EscuelaPersona::findOrFail($id);  
             
-            // Validar permisos usando el servicio antes de eliminar
             $this->escuelaService->validateAssignmentPermissions($link->escuela_id, $link->role_id);
 
             $link->delete();

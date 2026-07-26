@@ -128,7 +128,7 @@ class UsuarioController extends Controller
 
             return response()->json([
                 'message' => 'El usuario ya se encontraba vinculado y ahora ha sido activado.',
-                'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role']))
+                'user' => new UsuarioResource($usuario->fresh(['persona', 'persona.escuelasPersonas.role']))
             ]);
         }
 
@@ -162,7 +162,7 @@ class UsuarioController extends Controller
 
         return response()->json([
             'message' => 'Vinculación con el padrón confirmada con éxito.',
-            'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role']))
+            'user' => new UsuarioResource($usuario->fresh(['persona', 'persona.escuelasPersonas.role']))
         ]);
     }
 
