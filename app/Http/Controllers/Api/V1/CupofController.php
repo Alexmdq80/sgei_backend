@@ -39,7 +39,8 @@ class CupofController extends Controller
     {
         $this->authorize('create', Cupof::class);
 
-        $cupof = $this->cupofService->createCupof($request->validated());
+        $dto = \App\DTOs\Cupof\CreateCupofDTO::fromRequest($request);
+        $cupof = $this->cupofService->createCupof($dto);
         return response()->json($cupof, 201);
     }
 

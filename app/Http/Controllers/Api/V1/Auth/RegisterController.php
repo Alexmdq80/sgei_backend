@@ -29,7 +29,8 @@ class RegisterController extends Controller
         $data['estado'] = 'email_pendiente';
 
         try {
-            $user = $this->userService->create($data);
+            $dto = \App\DTOs\User\CreateUserDTO::fromArray($data);
+            $user = $this->userService->create($dto);
 
             return response()->json([
                 'message' => 'Usuario registrado con éxito. Por favor, verifica tu correo electrónico.',

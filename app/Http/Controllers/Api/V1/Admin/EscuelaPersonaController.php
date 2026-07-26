@@ -28,7 +28,7 @@ class EscuelaPersonaController extends Controller
         // El permiso viewAny en la Policy verifica si es Superuser, Jefe o Conducción
         $this->authorize('viewAny', \App\Models\EscuelaPersona::class);
 
-        $query = \App\Models\EscuelaPersona::with(['persona', 'escuela', 'role']);
+        $query = \App\Models\EscuelaPersona::with(['persona.documentoTipo', 'escuela.localidad', 'role']);
 
         // Si no es Superusuario ni Jefatura, limitamos a sus propias escuelas
         if (!$user->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {

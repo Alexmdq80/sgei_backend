@@ -93,7 +93,8 @@ class UsuarioController extends Controller
     {
         $this->authorize('update', $usuario);
 
-        $user = $this->userService->updateProfile($usuario, $request->validated());
+        $dto = \App\DTOs\User\UpdateUserProfileDTO::fromRequest($request);
+        $user = $this->userService->updateProfile($usuario, $dto);
 
         return response()->json([
             'message' => 'Usuario actualizado con éxito.',

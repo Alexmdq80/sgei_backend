@@ -48,7 +48,8 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): JsonResponse
     {
-        $user = $this->userService->updateProfile(Auth::user(), $request->validated());
+        $dto = \App\DTOs\User\UpdateUserProfileDTO::fromRequest($request);
+        $user = $this->userService->updateProfile(Auth::user(), $dto);
 
         return response()->json([
             'message' => 'Perfil actualizado con éxito.',

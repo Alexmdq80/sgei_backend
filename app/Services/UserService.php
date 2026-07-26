@@ -12,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Support\Str;
+use App\DTOs\User\CreateUserDTO;
+use App\DTOs\User\UpdateUserProfileDTO;
 
 class UserService
 {
@@ -265,16 +267,18 @@ class UserService
     /**
      * Create a new user (Administrative).
      */
-    public function create(array $data): Usuario
+    public function create(CreateUserDTO|array $data): Usuario
     {
-        // Asegurar contraseña: si está vacía, usar el default del sistema
-        $password = !empty($data['password']) ? $data['password'] : 'Sgei!2026_Admin';
-        $data['password'] = Hash::make($password);
+        $dto = $data instanceof CreateUserDTO ? $data : CreateUserDTO::fromArray($data);
         
-        $data['verification_token'] = Str::random(60);
-        $data['verification_token_created_at'] = now();
+        $arrayData = $dto->toArray();
+        $password = !empty($dto->password) ? $dto->password : 'Sgei!2026_Admin';
+        $arrayData['password'] = Hash::make($password);
+        
+        $arrayData['verification_token'] = $dto->verificationToken ?? Str::random(60);
+        $arrayData['verification_token_created_at'] = $dto->verificationTokenCreatedAt ?? now();
 
-        $user = Usuario::create($data);
+        $user = Usuario::create($arrayData);
 
         // Intentar vincular inmediatamente si existe coincidencia en el padrón (por DNI y Email)
         $this->linkToPersona($user);
@@ -380,12 +384,15 @@ class UserService
     /**
      * Update the user's basic profile information.
      */
-    public function updateProfile(Usuario $user, array $data): \App\Models\Usuario
+    public function updateProfile(Usuario $user, UpdateUserProfileDTO|array $data): \App\Models\Usuario
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $data) {
+        $dto = $data instanceof UpdateUserProfileDTO ? $data : UpdateUserProfileDTO::fromArray($data);
+        $data = $dto->toArray();
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $data, $dto) {
             // Handle password update if provided
-            if (!empty($data['password'])) {
-                $data['password'] = Hash::make($data['password']);
+            if (!empty($dto->password)) {
+                $data['password'] = Hash::make($dto->password);
             } else {
                 unset($data['password']); // Don't try to update password if empty
             }

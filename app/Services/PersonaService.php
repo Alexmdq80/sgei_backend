@@ -181,7 +181,7 @@ class PersonaService
 
             if ($linkedUser) {
                 // 2. Eliminar vinculaciones institucionales (escuelas)
-                \App\Models\EscuelaUsuario::where('usuario_id', $linkedUser->id)->delete();
+                \App\Models\EscuelaPersona::where('persona_id', $persona->id)->delete();
 
                 // 3. Eliminar vinculaciones geográficas de roles de jefatura
                 \App\Models\ProvinciaUsuario::where('usuario_id', $linkedUser->id)->delete();

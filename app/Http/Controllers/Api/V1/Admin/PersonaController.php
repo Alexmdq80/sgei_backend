@@ -397,7 +397,7 @@ class PersonaController extends Controller
 
                 $isTargetInMyDistrict = false;
                 if ($hasConduccionRole) {
-                    $isTargetInMyDistrict = $linkedUser->escuelaUsuarios()
+                    $isTargetInMyDistrict = $linkedUser->persona?->escuelasPersonas()
                         ->whereHas('escuela.localidad', function($q) use ($userDistId) {
                             $q->where('departamento_id', $userDistId);
                         })

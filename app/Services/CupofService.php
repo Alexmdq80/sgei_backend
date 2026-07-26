@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Collection;
+use App\DTOs\Cupof\CreateCupofDTO;
 
 class CupofService
 {
@@ -122,19 +123,21 @@ class CupofService
     /**
      * Create a new CUPOF slot.
      */
-    public function createCupof(array $data): Cupof
+    public function createCupof(CreateCupofDTO|array $data): Cupof
     {
-        $this->validateHierarchicalAccess($data['nombre_cargo'] ?? '', $data['escuela_id']);
+        $dto = $data instanceof CreateCupofDTO ? $data : CreateCupofDTO::fromArray($data);
+
+        $this->validateHierarchicalAccess($dto->nombreCargo ?? '', $dto->escuelaId);
 
         return Cupof::create([
-            'codigo_cupof' => $data['codigo_cupof'],
-            'escuela_id' => $data['escuela_id'],
-            'asignatura_id' => $data['asignatura_id'] ?? null,
-            'nombre_cargo' => $data['nombre_cargo'] ?? null,
-            'escalafon_id' => $data['escalafon_id'],
-            'puesto_tipo_id' => $data['puesto_tipo_id'],
-            'cantidad' => $data['cantidad'] ?? 1,
-            'estado_cupof' => 'disponible',
+            'codigo_cupof' => $dto->codigoCupof,
+            'escuela_id' => $dto->escuelaId,
+            'asignatura_id' => $dto->asignaturaId,
+            'nombre_cargo' => $dto->nombreCargo,
+            'escalafon_id' => $dto->escalafonId,
+            'puesto_tipo_id' => $dto->puestoTipoId,
+            'cantidad' => $dto->cantidad,
+            'estado_cupof' => $dto->estadoCupof,
         ]);
     }
 

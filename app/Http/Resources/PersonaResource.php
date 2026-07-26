@@ -2,9 +2,13 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Persona;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin Persona
+ */
 class PersonaResource extends JsonResource
 {
     /**
@@ -14,46 +18,64 @@ class PersonaResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        if ($this->resource instanceof Persona) {
+            $loads = [];
+            if ($this->relationLoaded('movimientosCupofActivos')) {
+                $loads[] = 'movimientosCupofActivos.cupof.escalafon';
+            }
+            if ($this->relationLoaded('vinculosComoAdulto')) {
+                $loads[] = 'vinculosComoAdulto.pivot.vinculo';
+            }
+            if ($this->relationLoaded('domicilio')) {
+                $loads[] = 'domicilio.calle';
+            }
+            if (!empty($loads)) {
+                $this->resource->loadMissing($loads);
+            }
+        }
+
         return [
             'id' => $this->id,
             'nombre' => $this->nombre,
             'apellido' => $this->apellido,
             'nombre_completo' => "{$this->apellido}, {$this->nombre}",
             'documento_tipo_id' => $this->documento_tipo_id,
-            'documento_tipo' => $this->documentoTipo ? [
+            'documento_tipo' => $this->whenLoaded('documentoTipo', fn () => [
                 'id' => $this->documentoTipo->id,
                 'nombre' => $this->documentoTipo->nombre,
-            ] : null,
+            ]),
             'documento_numero' => $this->documento_numero,
             'CUIL_prefijo' => $this->CUIL_prefijo,
             'CUIL_sufijo' => $this->CUIL_sufijo,
-            'cuil' => $this->CUIL_prefijo . "-" . $this->documento_numero . "-" . $this->CUIL_sufijo,
+            'cuil' => ($this->CUIL_prefijo && $this->CUIL_sufijo) 
+                ? "{$this->CUIL_prefijo}-{$this->documento_numero}-{$this->CUIL_sufijo}" 
+                : null,
             'nacimiento_fecha' => $this->nacimiento_fecha?->format('Y-m-d'),
-            'genero' => $this->genero ? [
+            'genero' => $this->whenLoaded('genero', fn () => [
                 'id' => $this->genero->id,
                 'nombre' => $this->genero->nombre,
-            ] : null,
+            ]),
             'usuario_id' => $this->usuario_id,
-            'usuario_email' => $this->usuario?->email,
+            'usuario_email' => $this->whenLoaded('usuario', fn () => $this->usuario?->email),
             'usuario' => new UsuarioResource($this->whenLoaded('usuario')),
-            'nacionalidad' => $this->nacionalidad?->nombre,
-            'nacimiento_pais' => $this->nacimientoPais?->nombre,
-            'nacimiento_provincia' => $this->nacimientoProvincia?->nombre,
-            'nacimiento_localidad' => $this->nacimientoLocalidad?->nombre,
-            'domicilio' => $this->domicilio ? [
+            'nacionalidad' => $this->whenLoaded('nacionalidad', fn () => $this->nacionalidad?->nombre),
+            'nacimiento_pais' => $this->whenLoaded('nacimientoPais', fn () => $this->nacimientoPais?->nombre),
+            'nacimiento_provincia' => $this->whenLoaded('nacimientoProvincia', fn () => $this->nacimientoProvincia?->nombre),
+            'nacimiento_localidad' => $this->whenLoaded('nacimientoLocalidad', fn () => $this->nacimientoLocalidad?->nombre),
+            'domicilio' => $this->whenLoaded('domicilio', fn () => [
                 'calle' => $this->domicilio->calle?->nombre,
                 'numero' => $this->domicilio->numero,
                 'piso' => $this->domicilio->piso,
                 'depto' => $this->domicilio->depto,
                 'barrio' => $this->domicilio->barrio,
-            ] : null,
-            'contacto' => $this->contacto ? [
+            ]),
+            'contacto' => $this->whenLoaded('contacto', fn () => [
                 'telefono_fijo' => $this->contacto->telefono_fijo,
                 'telefono_movil' => $this->contacto->telefono_movil,
                 'email' => $this->contacto->email,
-            ] : null,
+            ]),
             'relaciones' => $this->getRelacionesInstitucionales(),
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
 
@@ -67,8 +89,8 @@ class PersonaResource extends JsonResource
         // 1. Relación Laboral (CUPOF)
         if ($this->relationLoaded('movimientosCupofActivos')) {
             foreach ($this->movimientosCupofActivos as $movimiento) {
-                $escalafon = mb_strtolower($movimiento->cupof->escalafon->nombre ?? '', 'UTF-8');
-                $cargo = mb_strtoupper($movimiento->cupof->nombre_cargo ?? '', 'UTF-8');
+                $escalafon = mb_strtolower($movimiento->cupof?->escalafon?->nombre ?? '', 'UTF-8');
+                $cargo = mb_strtoupper($movimiento->cupof?->nombre_cargo ?? '', 'UTF-8');
                 
                 if (str_contains($escalafon, 'docente')) {
                     $relaciones[] = "DOCENTE ({$cargo})";
@@ -91,7 +113,7 @@ class PersonaResource extends JsonResource
         if ($this->relationLoaded('vinculosComoAdulto')) {
             foreach ($this->vinculosComoAdulto as $v) {
                 // El pivot es PersonaVinculoPersona, que tiene la relación 'vinculo'
-                $nombreVinculo = mb_strtoupper($v->pivot->vinculo->nombre ?? 'VÍNCULO', 'UTF-8');
+                $nombreVinculo = mb_strtoupper($v->pivot?->vinculo?->nombre ?? 'VÍNCULO', 'UTF-8');
                 $relaciones[] = $nombreVinculo;
             }
         }
