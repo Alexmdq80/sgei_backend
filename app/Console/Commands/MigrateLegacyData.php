@@ -34,7 +34,7 @@ class MigrateLegacyData extends Command
     {
         $this->info('--- INICIANDO MIGRACIÓN DE DATOS LEGADOS ---');
 
-        // Verificación de Roles (Crítico para escuela_usuario)
+        // Verificación de Roles (Crítico para escuela_persona)
         $spatieRoles = \Spatie\Permission\Models\Role::all();
         if ($spatieRoles->count() <= 2) { // 'superuser' y 'supervisor_curricular' suelen ser los únicos por defecto
             $this->warn('⚠️ La tabla de roles parece estar incompleta. Se recomienda ejecutar:');
@@ -86,7 +86,6 @@ class MigrateLegacyData extends Command
             'escuelas',
             'personas',
             'usuarios',
-            'escuela_usuario',
             'escuela_persona',
             'domicilios',
             'contactos',
@@ -149,9 +148,6 @@ class MigrateLegacyData extends Command
 
         // Mapeo de nombres de columnas (Destino => Origen Legacy)
         $columnMappings = [
-            'escuela_usuario' => [
-                'role_id' => 'usuario_tipo_id'
-            ],
             'escuela_persona' => [
                 'role_id' => 'usuario_tipo_id'
             ],
@@ -181,23 +177,6 @@ class MigrateLegacyData extends Command
 
             $migratedEmails = [];
 
-            // Cargar mapeo de roles solo una vez cuando se migre escuela_usuario
-            if ($tableName === 'escuela_usuario') {
-                $legacyRoles = DB::connection('legacy')->table('usuario_tipos')->get();
-                $spatieRoles = \Spatie\Permission\Models\Role::all();
-
-                foreach ($legacyRoles as $lr) {
-                    $nameMatch = strtolower($lr->nombre);
-                    if ($nameMatch === 'administrador') $nameMatch = 'director';
-                    if ($nameMatch === 'personal') $nameMatch = 'profesor';
-
-                    $role = $spatieRoles->firstWhere('name', $nameMatch);
-                    if ($role) {
-                        $this->roleMap[$lr->id] = $role->id;
-                    }
-                }
-            }
-
             // Convertir y filtrar datos
             $dataToInsert = $legacyData->map(function ($item) use ($tableName, $destinationColumns, $columnMappings, &$migratedEmails) {
                 $legacyArray = (array) $item;
@@ -210,7 +189,7 @@ class MigrateLegacyData extends Command
                         $value = $legacyArray[$legacyColumnName];
 
                         // Lógica Especial: Mapeo de Roles
-                        if (($tableName === 'escuela_usuario' || $tableName === 'escuela_persona') && $column === 'role_id') {
+                        if ($tableName === 'escuela_persona' && $column === 'role_id') {
                             $value = $this->roleMap[$value] ?? null;
                             if (!$value) return null;
                         }

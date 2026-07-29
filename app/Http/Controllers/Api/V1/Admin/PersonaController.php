@@ -212,6 +212,13 @@ class PersonaController extends Controller
                 'code' => 403
             ], 403);
         }
+        
+        if ($persona->usuario && ($persona->usuario->es_administrador || $persona->usuario->hasRole('superuser'))) {
+            return response()->json([
+                'error' => 'Acceso Denegado: No se puede reenviar la activación a un superusuario.',
+                'code' => 403
+            ], 403);
+        }
 
         try {
             $this->personaService->resendActivation($persona);

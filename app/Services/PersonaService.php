@@ -220,7 +220,7 @@ class PersonaService
             $user->update([
                 'verification_token' => Str::random(60),
                 'verification_token_created_at' => now(),
-                'estado' => 'esperando_activacion'
+                //'estado' => 'esperando_activacion'
             ]);
 
             $user->notify(new AccountInvitationNotification($user->verification_token));

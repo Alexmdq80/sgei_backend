@@ -25,6 +25,7 @@
 ## Convenciones de Código
 
 - **Lógica de Negocio:** Prohibido escribir lógica compleja en Controladores. Toda la lógica debe residir en app/Services. Los controladores solo deben orquestar la entrada y salida de datos.
+- **DTOs (Data Transfer Objects):** Utilizar DTOs cuando sea necesario para estructurar, tipar y transferir datos entre capas (controladores, servicios, etc.).
 - **Convenciones generales:** seguir las convenciones de Laravel 13.
 - **Nomenclatura:** camelCase para variables/funciones, PascalCase para clases/modelos.
 - **Tipado:** Declarar tipos de retorno y tipos de argumentos en todos los métodos de controladores y servicios (Strict Typing).

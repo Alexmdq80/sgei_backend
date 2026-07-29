@@ -31,12 +31,19 @@ class UsuarioController extends Controller
     {
         $this->authorize('manageScoped', $usuario);
 
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'Acceso Denegado: No se puede reenviar la activación a un superusuario.',
+                'code' => 403
+            ], 403);
+        }
+
         DB::transaction(function () use ($usuario) {
             $usuario->verification_token = Str::random(60);
             $usuario->verification_token_created_at = now();
             // Si el usuario estaba activo, lo volvemos a poner en espera para forzar el flujo
-            $usuario->estado = 'esperando_activacion';
-            $usuario->email_verified_at = null; 
+            // $usuario->estado = 'esperando_activacion';
+            // $usuario->email_verified_at = null; 
             $usuario->save();
 
             $usuario->notify(new AccountInvitationNotification($usuario->verification_token));
