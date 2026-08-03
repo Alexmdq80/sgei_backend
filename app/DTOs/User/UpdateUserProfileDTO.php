@@ -1,18 +1,52 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs\User;
 
+use App\ValueObjects\DocumentoIdentidad;
 use Illuminate\Foundation\Http\FormRequest;
 
 readonly class UpdateUserProfileDTO
 {
+    public ?int $documentoTipoId;
+    public ?string $documentoNumero;
+    public ?DocumentoIdentidad $documentoIdentidad;
+
     public function __construct(
         public ?string $nombre = null,
         public ?string $email = null,
-        public ?int $documentoTipoId = null,
-        public ?string $documentoNumero = null,
+        ?int $documentoTipoId = null,
+        ?string $documentoNumero = null,
+        ?DocumentoIdentidad $documentoIdentidad = null,
         public ?string $password = null,
-    ) {}
+    ) {
+        if ($documentoIdentidad !== null) {
+            $this->documentoIdentidad = $documentoIdentidad;
+            $this->documentoTipoId = $documentoIdentidad->tipoId();
+            $this->documentoNumero = $documentoIdentidad->numero();
+        } else {
+            $this->documentoTipoId = $documentoTipoId;
+            $this->documentoNumero = $documentoNumero;
+            if ($documentoTipoId !== null && $documentoNumero !== null && $documentoTipoId > 0 && $documentoNumero !== '') {
+                $this->documentoIdentidad = new DocumentoIdentidad($documentoTipoId, $documentoNumero);
+            } else {
+                $this->documentoIdentidad = null;
+            }
+        }
+    }
+
+    /** Shortcut: tipo de documento como int. */
+    public function documentoTipoId(): ?int
+    {
+        return $this->documentoTipoId;
+    }
+
+    /** Shortcut: número de documento como string crudo. */
+    public function documentoNumero(): ?string
+    {
+        return $this->documentoNumero;
+    }
 
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {

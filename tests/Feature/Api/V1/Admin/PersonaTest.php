@@ -211,7 +211,7 @@ test('admin puede actualizar datos básicos de una persona', function () {
                          'apellido' => $persona->apellido,
                          'nombre' => 'CARLOS',
                          'documento_tipo_id' => $persona->documento_tipo_id,
-                         'documento_numero' => $persona->documento_numero,
+                         'documento_numero' => $persona->getRawOriginal('documento_numero'),
                      ]);
 
     $response->assertStatus(200)

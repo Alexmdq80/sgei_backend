@@ -29,7 +29,7 @@ class AsignaturaPolicy
             ->whereHas('role', function($q) use ($restrictedRoles) {
                 $q->whereIn('name', $restrictedRoles);
             })
-            ->exists();
+            ->exists() ?? false;
     }
 
     /**

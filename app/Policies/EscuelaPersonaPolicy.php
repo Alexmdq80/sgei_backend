@@ -24,7 +24,7 @@ class EscuelaPersonaPolicy
                 $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
             })
             ->whereNotNull('verified_at')
-            ->exists();
+            ->exists() ?? false;
     }
 
     /**
@@ -42,6 +42,6 @@ class EscuelaPersonaPolicy
                 $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
             })
             ->whereNotNull('verified_at')
-            ->exists();
+            ->exists() ?? false;
     }
 }

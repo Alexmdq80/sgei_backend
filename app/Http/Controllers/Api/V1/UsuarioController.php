@@ -87,10 +87,32 @@ class UsuarioController extends Controller
     /**
      * Display the specified user.
      */
-    public function show(Usuario $usuario)
+    /*public function show(Usuario $usuario)
     {
         $this->authorize('view', $usuario);
         return new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'roles']));
+    }*/
+    public function show(Usuario $usuario)
+    {
+
+        // 1. Cargar TODAS las relaciones necesarias
+        $usuario->load([
+            'persona',
+            'persona.contacto',
+            'persona.documentoTipo',
+            'persona.escuelasPersonas.escuela',
+            'persona.escuelasPersonas.role',
+            'documentoTipo',
+            'roles',
+            'provinciaUsuario.provincia',
+            'regionUsuario.region',
+            'distritoUsuario.distrito'
+        ]);
+
+        // 2. Autorizar DESPUÉS de cargar (la policy usa relaciones ya cargadas → sin N+1)
+         $this->authorize('view', $usuario);
+         
+         return new UsuarioResource($usuario);
     }
 
     /**
@@ -191,5 +213,200 @@ class UsuarioController extends Controller
         return response()->json([
             'message' => 'Usuario eliminado con éxito.'
         ]);
+    }
+
+    /**
+     * Busca personas candidatas a vincularse con un usuario (mismo DNI + Email).
+     * Filtra por jurisdicción del usuario logueado.
+     */
+    public function candidatosPersona(Usuario $usuario): JsonResponse
+    {
+        $performer = auth()->user();
+
+        // Autorización: Solo Superuser y Jefaturas pueden buscar candidatos
+        if (!$performer->hasRole('superuser') && !$performer->es_administrador
+            && !$performer->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+            return response()->json(['error' => 'Acceso Denegado: No tienes permisos para buscar candidatos del padrón.'], 403);
+        }
+
+        // No permitir vincular superusuarios/administradores
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json(['error' => 'Acceso Denegado: No se puede vincular un superusuario con el padrón.'], 403);
+        }
+
+        // Verificar que el usuario no tenga ya una persona vinculada
+        if ($usuario->persona) {
+            return response()->json(['error' => 'Este usuario ya tiene una persona vinculada.'], 422);
+        }
+
+        $candidatos = $this->userService->getCandidatosPersona($usuario, $performer);
+
+        return response()->json([
+            'data' => $candidatos->map(fn ($p) => [
+                'id' => $p->id,
+                'nombre_completo' => "{$p->apellido}, {$p->nombre}",
+                'documento_tipo' => $p->documentoTipo?->nombre,
+                'documento_numero' => $p->documento_numero,
+                'email' => $p->contacto?->email,
+                'relaciones' => $this->getRelacionesCandidato($p),
+            ])
+        ]);
+    }
+
+    /**
+     * Vincula una persona candidata a un usuario.
+     */
+    public function vincularPersona(Usuario $usuario, \App\Models\Persona $persona): JsonResponse
+    {
+        $performer = auth()->user();
+
+        // Autorización: Solo Superuser y Jefaturas pueden vincular
+        if (!$performer->hasRole('superuser') && !$performer->es_administrador
+            && !$performer->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+            return response()->json(['error' => 'Acceso Denegado: No tienes permisos para vincular personas del padrón.'], 403);
+        }
+
+        // No permitir vincular superusuarios/administradores
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json(['error' => 'Acceso Denegado: No se puede vincular un superusuario con el padrón.'], 403);
+        }
+
+        // Verificar que el usuario no tenga ya una persona vinculada
+        if ($usuario->persona) {
+            return response()->json(['error' => 'Este usuario ya tiene una persona vinculada.'], 422);
+        }
+
+        // Verificar que la persona no esté vinculada a otro usuario
+        if ($persona->usuario_id) {
+            return response()->json(['error' => 'Esta persona ya está vinculada a otro usuario.'], 422);
+        }
+
+        // Verificar coincidencia de identidad (DNI + Email)
+        $documentoNumeroRaw = $persona->getRawOriginal('documento_numero');
+        $emailCoincide = $persona->contacto?->email === $usuario->email;
+        $dniCoincide = $persona->documento_tipo_id == $usuario->documento_tipo_id
+            && $documentoNumeroRaw == $usuario->documento_numero;
+
+        if (!$emailCoincide || !$dniCoincide) {
+            return response()->json(['error' => 'La persona no coincide con el documento y email del usuario.'], 422);
+        }
+
+        // Verificar jurisdicción: la persona debe estar bajo la órbita del performer
+        $candidatos = $this->userService->getCandidatosPersona($usuario, $performer);
+        if (!$candidatos->contains('id', $persona->id)) {
+            return response()->json(['error' => 'Acceso Denegado: La persona no se encuentra bajo tu jurisdicción.'], 403);
+        }
+
+        // Vincular
+        $persona->update(['usuario_id' => $usuario->id]);
+        $usuario->update(['estado' => 'activo']);
+
+        // Sincronizar roles CUPOF
+        app(\App\Services\CupofService::class)->syncAllRolesFromCupof($usuario);
+
+        return response()->json([
+            'message' => 'Persona vinculada con éxito al usuario.',
+            'user' => new UsuarioResource($usuario->fresh(['persona', 'persona.contacto', 'persona.escuelasPersonas.role']))
+        ]);
+    }
+
+    /**
+     * Desvincula la persona del usuario.
+     */
+    public function desvincularPersona(Usuario $usuario): JsonResponse
+    {
+        $performer = auth()->user();
+
+        // Autorización: Solo Superuser y Jefaturas pueden desvincular
+        if (!$performer->hasRole('superuser') && !$performer->es_administrador
+            && !$performer->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+            return response()->json(['error' => 'Acceso Denegado: No tienes permisos para desvincular personas del padrón.'], 403);
+        }
+        // No permitir desvincular superusuarios/administradores
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json(['error' => 'Acceso Denegado: No se puede desvincular un superusuario del padrón.'], 403);
+        }
+
+        if (!$usuario->persona) {
+            return response()->json(['error' => 'Este usuario no tiene una persona vinculada.'], 422);
+        }
+
+        $persona = $usuario->persona;
+
+        // Verificar jurisdicción: la persona debe estar bajo la órbita del performer
+        $candidatos = $this->userService->getCandidatosPersona($usuario, $performer);
+        // Si no está en candidatos (porque ya está vinculada), verificamos por jurisdicción directa
+        $enJurisdiccion = $candidatos->contains('id', $persona->id);
+
+        if (!$enJurisdiccion && !$performer->hasRole('superuser') && !$performer->es_administrador) {
+            // Verificar jurisdicción de la persona vinculada
+            $enJurisdiccion = $this->personaEnJurisdiccion($persona, $performer);
+            if (!$enJurisdiccion) {
+                return response()->json(['error' => 'Acceso Denegado: La persona no se encuentra bajo tu jurisdicción.'], 403);
+            }
+        }
+
+        // Desvincular
+        app(\App\Services\PersonaService::class)->unlinkUser($persona);
+
+        return response()->json([
+            'message' => 'Persona desvinculada con éxito del usuario.',
+            'user' => new UsuarioResource($usuario->fresh(['persona', 'persona.contacto', 'persona.escuelasPersonas.role']))
+        ]);
+    }
+
+    /**
+     * Helper: Verifica si una persona está bajo la jurisdicción del performer.
+     */
+    private function personaEnJurisdiccion(\App\Models\Persona $persona, Usuario $performer): bool
+    {
+        if ($performer->hasRole('jefe_provincial')) {
+            $provId = $performer->provinciaUsuario?->provincia_id;
+            return $persona->movimientosCupofActivos()
+                ->whereHas('cupof.escuela.localidad.departamento', fn ($q) => $q->where('provincia_id', $provId))
+                ->exists()
+                || $persona->inscripcion()
+                ->whereHas('escuelaProcedencia.localidad.departamento', fn ($q) => $q->where('provincia_id', $provId))
+                ->exists();
+        }
+        if ($performer->hasRole('jefe_regional')) {
+            $regId = $performer->regionUsuario?->region_id;
+            return $persona->movimientosCupofActivos()
+                ->whereHas('cupof.escuela.localidad.departamento', fn ($q) => $q->where('region_id', $regId))
+                ->exists()
+                || $persona->inscripcion()
+                ->whereHas('escuelaProcedencia.localidad.departamento', fn ($q) => $q->where('region_id', $regId))
+                ->exists();
+        }
+        if ($performer->hasRole('jefe_distrital')) {
+            $distId = $performer->distritoUsuario?->departamento_id;
+            return $persona->movimientosCupofActivos()
+                ->whereHas('cupof.escuela.localidad', fn ($q) => $q->where('departamento_id', $distId))
+                ->exists()
+                || $persona->inscripcion()
+                ->whereHas('escuelaProcedencia.localidad', fn ($q) => $q->where('departamento_id', $distId))
+                ->exists();
+        }
+        return false;
+    }
+
+    /**
+     * Helper: Obtiene las relaciones institucionales de un candidato.
+     */
+    private function getRelacionesCandidato(\App\Models\Persona $persona): array
+    {
+        $relaciones = [];
+
+        foreach ($persona->movimientosCupofActivos as $mov) {
+            $relaciones[] = "CUPOF: " . ($mov->cupof?->nombre_cargo ?? 'Cargo');
+        }
+        if ($persona->inscripcion) {
+            $relaciones[] = "ESTUDIANTE";
+        }
+        foreach ($persona->vinculosComoAdulto as $v) {
+            $relaciones[] = "VÍNCULO FAMILIAR";
+        }
+
+        return array_values(array_unique($relaciones));
     }
 }

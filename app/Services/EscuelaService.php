@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Escuela;
 use App\Models\Usuario;
+use App\Models\Persona;
 use App\Models\EscuelaPersona;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -244,12 +245,12 @@ class EscuelaService
      * Direct assign a role to a user in a school (verified).
      * This method is now intended for administrative overrides or CUPOF syncing.
      */
-    public function assignDirect(Usuario $targetUser, int $escuelaId, int $roleId): EscuelaPersona
+    public function assignDirect(Persona|Usuario $target, int $escuelaId, int $roleId): EscuelaPersona
     {
         $this->validateAssignmentPermissions($escuelaId, $roleId);
 
-        $persona = $targetUser->persona;
-        if (!$persona) throw new \Exception("El usuario no tiene una persona vinculada.", 422);
+        $persona = $target instanceof Persona ? $target : $target->persona;
+        if (!$persona) throw new \Exception("La persona o usuario no tiene un registro de persona válido.", 422);
 
         $link = EscuelaPersona::updateOrCreate(
             [
@@ -263,8 +264,9 @@ class EscuelaService
             ]
         );
 
-        if ($targetUser->estado !== 'activo') {
-            $targetUser->update(['estado' => 'activo']);
+        $user = $persona->usuario;
+        if ($user && $user->estado !== 'activo') {
+            $user->update(['estado' => 'activo']);
         }
 
         return $link->load(['persona.usuario', 'escuela', 'role']);

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Casts\DocumentoIdentidadCast;
 
 class Persona extends Model
 {
@@ -22,7 +23,7 @@ class Persona extends Model
      */
     protected $auditGroup = 'entities';
 
-    /**
+   /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -56,8 +57,10 @@ class Persona extends Model
      *
      * @var array<string, string>
      */
+    
     protected $casts = [
-        'nacimiento_fecha' => 'datetime'
+        'documento_numero' => DocumentoIdentidadCast::class,
+        'nacimiento_fecha' => 'datetime',
     ];
 
     /**
@@ -113,6 +116,16 @@ class Persona extends Model
     public function escuelasPersonas(): HasMany
     {
         return $this->hasMany(EscuelaPersona::class);
+    }
+
+    /**
+     * Returns the raw documento_numero string from the database,
+     * bypassing the DocumentoIdentidadCast Value Object.
+     * Use this whenever you need to query or compare against the raw column value.
+     */
+    public function documentoNumeroRaw(): ?string
+    {
+        return $this->getRawOriginal('documento_numero');
     }
     /**
      * Relationship to the document type.

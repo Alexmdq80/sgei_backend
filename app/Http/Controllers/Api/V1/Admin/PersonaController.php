@@ -11,6 +11,9 @@ use App\Services\UserService;
 use App\Services\PersonaService;
 use App\Services\CupofService;
 use App\Http\Requests\Api\V1\Admin\PersonaRequest;
+use App\DTOs\Persona\CreatePersonaDTO;
+use App\DTOs\Persona\UpdatePersonaDTO;
+use App\DTOs\Persona\PersonaFilterDTO;
 
 class PersonaController extends Controller
 {
@@ -34,40 +37,9 @@ class PersonaController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Persona::class);
-        
-        $query = Persona::with([
-            'documentoTipo', 
-            'usuario.roles', 
-            'usuario.provinciaUsuario.provincia', 
-            'usuario.regionUsuario.region', 
-            'usuario.distritoUsuario.distrito',
-            'nacionalidad', 
-            'genero'
-        ]);
 
-        // 1. Búsqueda por nombre, apellido o documento
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('nombre', 'like', "%{$search}%")
-                  ->orWhere('apellido', 'like', "%{$search}%")
-                  ->orWhere('documento_numero', 'like', "%{$search}%");
-            });
-        }
-
-        // 2. Filtro: Solo Agentes (personas con movimientos de CUPOF)
-        if ($request->boolean('only_agents')) {
-            $query->whereHas('movimientosCupof', function($q) use ($request) {
-                // Filtro por escuela específica si se solicita
-                if ($request->filled('escuela_id')) {
-                    $q->whereHas('cupof', function($sq) use ($request) {
-                        $sq->where('escuela_id', $request->escuela_id);
-                    });
-                }
-            });
-        }
-
-        $personas = $query->orderBy('apellido')->orderBy('nombre')->paginate($request->per_page ?? 15);
+        $filters = PersonaFilterDTO::fromRequest($request);
+        $personas = $this->personaService->getFilteredPaginated($filters);
 
         return PersonaResource::collection($personas);
     }
@@ -101,29 +73,16 @@ class PersonaController extends Controller
     {
         $this->authorize('create', Persona::class);
 
-        $validated = $request->validated();
-        $personaData = \Illuminate\Support\Arr::except($validated, ['email']);
-
-        if (!empty($personaData['cuil'])) {
-            $parts = explode('-', str_replace([' ', '.'], '', $personaData['cuil']));
-            if (count($parts) === 3) {
-                $personaData['CUIL_prefijo'] = $parts[0];
-                $personaData['CUIL_sufijo'] = $parts[2];
-            }
-        }
-
-        $persona = Persona::create($personaData);
-
-        // Crear contacto si se proporcionó email
-        if (!empty($validated['email'])) {
-            $persona->contacto()->create([
-                'email' => $validated['email']
-            ]);
-        }
+        $dto = CreatePersonaDTO::fromRequest($request);
+        $persona = $this->personaService->createPersona(
+            $dto, 
+            $request->input('cuil'), 
+            $request->input('email')
+        );
 
         return response()->json([
             'message' => 'Persona registrada con éxito en el padrón.',
-            'data' => new PersonaResource($persona->fresh(['contacto', 'usuario']))
+            'data' => new PersonaResource($persona)
         ], 201);
     }
 
@@ -134,49 +93,25 @@ class PersonaController extends Controller
     {
         $this->authorize('update', $persona);
 
-        $validated = $request->validated();
+        $dto = UpdatePersonaDTO::fromRequest($request);
 
-        // REGLA DE SEGURIDAD: Controlar cambios de identidad (DNI o Email)
-        $emailChanged = isset($validated['email']) && $validated['email'] !== ($persona->contacto?->email ?? null);
-        $dniChanged = $validated['documento_tipo_id'] != $persona->documento_tipo_id || 
-                     $validated['documento_numero'] != $persona->documento_numero;
-
-        if ($persona->usuario_id) {
-            // No permitir cambio de email si está vinculado (regla previa mantenida)
-            if ($emailChanged) {
-                return response()->json([
-                    'error' => 'Seguridad: No se puede modificar el correo electrónico de una persona que ya tiene un usuario vinculado. Debe desvincular el usuario primero para realizar este cambio.',
-                    'code' => 403
-                ], 403);
-            }
-
-            // Si cambia el DNI, desvincular automáticamente al usuario y limpiar roles/contextos
-            if ($dniChanged) {
-                $this->personaService->unlinkUser($persona);
-            }
-        }
-
-        $personaData = \Illuminate\Support\Arr::except($validated, ['email']);
-        $persona->update($personaData);
-
-        // Actualizar o Limpiar email de contacto
-        if (array_key_exists('email', $validated)) {
-            $newEmail = !empty($validated['email']) ? $validated['email'] : null;
-            $persona->contacto()->updateOrCreate(
-                ['persona_id' => $persona->id],
-                ['email' => $newEmail]
+        try {
+            $updatedPersona = $this->personaService->updatePersona(
+                $persona, 
+                $dto, 
+                array_key_exists('email', $request->validated())
             );
-        }
-
-        // Si cambió el DNI, intentar buscar un nuevo usuario coincidente
-        if ($dniChanged) {
-            $persona->refresh();
-            $this->userService->linkPersonaToUser($persona);
+        } catch (\Exception $e) {
+            $code = $e->getCode() === 403 ? 403 : 422;
+            return response()->json([
+                'error' => $e->getMessage(),
+                'code' => $code
+            ], $code);
         }
 
         return response()->json([
             'message' => 'Registro de persona actualizado con éxito.',
-            'data' => new PersonaResource($persona->fresh(['contacto', 'usuario']))
+            'data' => new PersonaResource($updatedPersona)
         ]);
     }
 
@@ -184,7 +119,7 @@ class PersonaController extends Controller
     {
         $this->authorize('delete', $persona);
 
-        $persona->delete();
+        $this->personaService->deletePersona($persona);
 
         return response()->json([
             'message' => 'Registro de persona eliminado con éxito.'
@@ -253,9 +188,12 @@ class PersonaController extends Controller
             // Si el usuario existe y está pendiente, permitimos que el flujo continúe para validación jerárquica y activación
             $matchingUser = $existingUser;
         } else {
+            $documentoNumeroRaw = $persona->getRawOriginal('documento_numero');
+            $contactoEmail = $persona->contacto?->email;
+
             $matchingUser = \App\Models\Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
-                ->where('documento_numero', $persona->documento_numero)
-                ->where('email', $persona->contacto->email)
+                ->where('documento_numero', $documentoNumeroRaw)
+                ->where('email', $contactoEmail)
                 ->with(['roles', 'provinciaUsuario', 'regionUsuario.region', 'distritoUsuario'])
                 ->first();
         }

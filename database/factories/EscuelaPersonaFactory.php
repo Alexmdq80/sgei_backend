@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\EscuelaPersona>
  */
-class EscuelaUsuarioFactory extends Factory
+class EscuelaPersonaFactory extends Factory
 {
     protected $model = EscuelaPersona::class;
 

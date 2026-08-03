@@ -15,7 +15,7 @@ class EscuelaPersonaRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'persona_id' => ['required', 'uuid', Rule::exists('personas', 'id')],
+            'persona_id' => ['required', 'integer', Rule::exists('personas', 'id')],
             'escuela_id' => ['required', 'integer', Rule::exists('escuelas', 'id')],
             'role_id' => ['required', 'integer', Rule::exists('roles', 'id')]
         ];

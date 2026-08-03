@@ -2,7 +2,7 @@
 
 use App\Models\Usuario;
 use App\Models\Escuela;
-use App\Models\EscuelaUsuario;
+use App\Models\EscuelaPersona;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use App\Models\Provincia;
@@ -35,9 +35,10 @@ beforeEach(function () {
     
     // User 1: Vinculated to Escuela A (Verified)
     $user1 = Usuario::factory()->create(['nombre' => 'User One']);
-    EscuelaUsuario::create([
+    $persona1 = \App\Models\Persona::factory()->create(['usuario_id' => $user1->id]);
+    \App\Models\EscuelaPersona::create([
         'id' => Str::uuid(),
-        'usuario_id' => $user1->id,
+        'persona_id' => $persona1->id,
         'escuela_id' => $this->escuelaA->id,
         'role_id' => $rol->id,
         'verified_at' => now()
@@ -45,9 +46,10 @@ beforeEach(function () {
 
     // User 2: Vinculated to Escuela A (Pending)
     $user2 = Usuario::factory()->create(['nombre' => 'User Two']);
-    EscuelaUsuario::create([
+    $persona2 = \App\Models\Persona::factory()->create(['usuario_id' => $user2->id]);
+    \App\Models\EscuelaPersona::create([
         'id' => Str::uuid(),
-        'usuario_id' => $user2->id,
+        'persona_id' => $persona2->id,
         'escuela_id' => $this->escuelaA->id,
         'role_id' => $rol->id,
         'verified_at' => null
@@ -55,9 +57,10 @@ beforeEach(function () {
 
     // User 3: Vinculated to Escuela B (Verified)
     $user3 = Usuario::factory()->create(['nombre' => 'User Three']);
-    EscuelaUsuario::create([
+    $persona3 = \App\Models\Persona::factory()->create(['usuario_id' => $user3->id]);
+    \App\Models\EscuelaPersona::create([
         'id' => Str::uuid(),
-        'usuario_id' => $user3->id,
+        'persona_id' => $persona3->id,
         'escuela_id' => $this->escuelaB->id,
         'role_id' => $rol->id,
         'verified_at' => now()
@@ -104,9 +107,10 @@ beforeEach(function () {
 
     // User 5: Vinculado a Escuela C (Provincia A)
     $user5 = Usuario::factory()->create(['nombre' => 'User Five']);
-    EscuelaUsuario::create([
+    $persona5 = \App\Models\Persona::factory()->create(['usuario_id' => $user5->id]);
+    \App\Models\EscuelaPersona::create([
         'id' => Str::uuid(),
-        'usuario_id' => $user5->id,
+        'persona_id' => $persona5->id,
         'escuela_id' => $this->escuelaC->id,
         'role_id' => $rol->id,
         'verified_at' => now()
@@ -114,9 +118,10 @@ beforeEach(function () {
 
     // User 6: Vinculado a Escuela D (Provincia B)
     $user6 = Usuario::factory()->create(['nombre' => 'User Six']);
-    EscuelaUsuario::create([
+    $persona6 = \App\Models\Persona::factory()->create(['usuario_id' => $user6->id]);
+    \App\Models\EscuelaPersona::create([
         'id' => Str::uuid(),
-        'usuario_id' => $user6->id,
+        'persona_id' => $persona6->id,
         'escuela_id' => $this->escuelaD->id,
         'role_id' => $rol->id,
         'verified_at' => now()
@@ -166,8 +171,8 @@ test('la respuesta de usuarios incluye el CUE y el nombre del rol escolar', func
         ->getJson("/api/v1/admin/usuarios?search=User One");
 
     $response->assertStatus(200)
-        ->assertJsonPath('data.0.escuela_usuarios.0.escuela.cue_anexo', '111111100')
-        ->assertJsonPath('data.0.escuela_usuarios.0.role.name', 'director');
+        ->assertJsonPath('data.0.escuelas_personas.0.escuela.cue_anexo', '111111100')
+        ->assertJsonPath('data.0.escuelas_personas.0.role.name', 'director');
 });
 
 test('el administrador puede filtrar usuarios por provincia', function () {
