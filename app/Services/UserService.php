@@ -261,6 +261,24 @@ class UserService
             }
         }
 
+        // Filtro por Rol / Cargo
+        if (!empty($filters['role'])) {
+            $role = $filters['role'];
+            $query->where(function ($q) use ($role) {
+                if ($role === 'superuser') {
+                    $q->where('es_administrador', true)
+                    ->orWhereHas('roles', fn ($sq) => $sq->where('name', 'superuser'));
+                } elseif ($role === 'equipo_directivo') {
+                    $leadershipRoles = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+                    $q->whereHas('persona.escuelasPersonas.role', fn ($sq) => $sq->whereIn('name', $leadershipRoles))
+                    ->orWhereHas('roles', fn ($sq) => $sq->whereIn('name', $leadershipRoles));
+                } else {
+                    $q->whereHas('roles', fn ($sq) => $sq->where('name', $role))
+                    ->orWhereHas('persona.escuelasPersonas.role', fn ($sq) => $sq->where('name', $role));
+                }
+            });
+        }
+
         return $query->orderBy('created_at', 'desc')->paginate($filters['per_page'] ?? 15);
     }
 

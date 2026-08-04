@@ -202,3 +202,73 @@ test('el administrador puede filtrar usuarios por búsqueda combinada con provin
         ->assertJsonFragment(['nombre' => 'User Six'])
         ->assertJsonMissing(['nombre' => 'User Five']);
 });
+
+test('el administrador puede filtrar usuarios por rol superuser', function () {
+    // Crear un superusuario adicional
+    $superUser = Usuario::factory()->create([
+        'nombre' => 'Super User Extra',
+        'es_administrador' => true,
+        'email_verified_at' => now(),
+    ]);
+    $superUser->assignRole('superuser');
+
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?role=superuser');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'Super User Extra'])
+        ->assertJsonMissing(['nombre' => 'User Four']);
+});
+
+test('el administrador puede filtrar usuarios por rol jefe_provincial', function () {
+    // Crear un usuario con rol global jefe_provincial
+    $jefeProvincial = Usuario::factory()->create([
+        'nombre' => 'Jefe Provincial Test',
+        'email_verified_at' => now(),
+    ]);
+    $jefeProvincial->assignRole('jefe_provincial');
+
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?role=jefe_provincial');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'Jefe Provincial Test'])
+        ->assertJsonMissing(['nombre' => 'User Four']);
+});
+
+test('el administrador puede filtrar usuarios por rol equipo_directivo', function () {
+    // User One, Two, Three, Five y Six tienen rol 'director' en escuela_persona
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?role=equipo_directivo');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'User One'])
+        ->assertJsonFragment(['nombre' => 'User Two'])
+        ->assertJsonFragment(['nombre' => 'User Three'])
+        ->assertJsonFragment(['nombre' => 'User Five'])
+        ->assertJsonFragment(['nombre' => 'User Six'])
+        ->assertJsonMissing(['nombre' => 'User Four']);
+});
+
+test('el administrador puede filtrar usuarios por rol profesor', function () {
+    // Obtener el rol profesor del seeder
+    $rolProfesor = \Spatie\Permission\Models\Role::where('name', 'profesor')->first();
+
+    // Crear un usuario vinculado a una escuela con rol profesor
+    $profesor = Usuario::factory()->create(['nombre' => 'Profesor Test']);
+    $personaProfesor = \App\Models\Persona::factory()->create(['usuario_id' => $profesor->id]);
+    \App\Models\EscuelaPersona::create([
+        'id' => Str::uuid(),
+        'persona_id' => $personaProfesor->id,
+        'escuela_id' => $this->escuelaA->id,
+        'role_id' => $rolProfesor->id,
+        'verified_at' => now()
+    ]);
+
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?role=profesor');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'Profesor Test'])
+        ->assertJsonMissing(['nombre' => 'User Four']);
+});
