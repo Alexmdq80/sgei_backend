@@ -274,4 +274,59 @@ class Persona extends Model
                     ->using(PersonaVinculoPersona::class)
                     ->withPivot(['vinculo_id', 'vencimiento_fecha', 'detalle']);
     }
+
+    /**
+     * Scope: Personas dentro de una provincia (vía CUPOF, inscripción o vínculos).
+     */
+    public function scopeInProvincia($query, int $provinciaId): void
+    {
+        $query->where(function ($q) use ($provinciaId) {
+            $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($provinciaId) {
+                $sq->where('provincia_id', $provinciaId);
+            })
+            ->orWhereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                $sq->where('provincia_id', $provinciaId);
+            })
+            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                $sq->where('provincia_id', $provinciaId);
+            });
+        });
+    }
+
+    /**
+     * Scope: Personas dentro de una región (vía CUPOF, inscripción o vínculos).
+     */
+    public function scopeInRegion($query, int $regionId): void
+    {
+        $query->where(function ($q) use ($regionId) {
+            $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($regionId) {
+                $sq->where('region_id', $regionId);
+            })
+            ->orWhereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                $sq->where('region_id', $regionId);
+            })
+            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                $sq->where('region_id', $regionId);
+            });
+        });
+    }
+
+    /**
+     * Scope: Personas dentro de un departamento (vía CUPOF, inscripción o vínculos).
+     */
+    public function scopeInDepartamento($query, int $departamentoId): void
+    {
+        $query->where(function ($q) use ($departamentoId) {
+            $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad', function ($sq) use ($departamentoId) {
+                $sq->where('departamento_id', $departamentoId);
+            })
+            ->orWhereHas('inscripcion.escuelaProcedencia.localidad', function ($sq) use ($departamentoId) {
+                $sq->where('departamento_id', $departamentoId);
+            })
+            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad', function ($sq) use ($departamentoId) {
+                $sq->where('departamento_id', $departamentoId);
+            });
+        });
+    }
+
 }

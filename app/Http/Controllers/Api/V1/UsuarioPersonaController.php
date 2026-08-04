@@ -107,7 +107,7 @@ class UsuarioPersonaController extends Controller
                 'id' => $p->id,
                 'nombre_completo' => "{$p->apellido}, {$p->nombre}",
                 'documento_tipo' => $p->documentoTipo?->nombre,
-                'documento_numero' => $p->documento_numero,
+                'documento_numero' => $p->documentoNumeroRaw(),
                 'email' => $p->contacto?->email,
                 'relaciones' => $this->getRelacionesCandidato($p),
             ])

@@ -14,8 +14,7 @@ use App\DTOs\Escuela\UpdateEscuelaDTO;
 
 class EscuelaService
 {
-    public const HIERARCHICAL_ROLES = ['director', 'vicedirector', 'secretario', 'prosecretario'];
-
+    public const HIERARCHICAL_ROLES = Usuario::ROLES_EQUIPO_CONDUCCION;
     /**
      * Get schools with search and filters.
      */

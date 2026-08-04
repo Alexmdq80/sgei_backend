@@ -36,18 +36,6 @@ readonly class UpdateUserProfileDTO
         }
     }
 
-    /** Shortcut: tipo de documento como int. */
-    public function documentoTipoId(): ?int
-    {
-        return $this->documentoTipoId;
-    }
-
-    /** Shortcut: número de documento como string crudo. */
-    public function documentoNumero(): ?string
-    {
-        return $this->documentoNumero;
-    }
-
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
         $data = array_merge($request->validated(), $overrides);

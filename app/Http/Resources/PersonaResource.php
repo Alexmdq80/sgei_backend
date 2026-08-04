@@ -44,7 +44,7 @@ class PersonaResource extends JsonResource
                 'id' => $this->documentoTipo->id,
                 'nombre' => $this->documentoTipo->nombre,
             ]),
-            'documento_numero' => $this->documento_numero,
+            'documento_numero' => $this->documentoNumeroRaw(),
             'CUIL_prefijo' => $this->CUIL_prefijo,
             'CUIL_sufijo' => $this->CUIL_sufijo,
             'cuil' => ($this->CUIL_prefijo && $this->CUIL_sufijo) 

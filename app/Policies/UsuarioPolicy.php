@@ -57,16 +57,13 @@ class UsuarioPolicy
 
             if ($isInJurisdiction) return true;
 
-            // Check matching persona for pending vinculation
+            // Check matching persona for pending vinculation using scope
             if ($model->estado === 'vinculacion_pendiente') {
                 return Persona::where('documento_tipo_id', $model->documento_tipo_id)
                     ->where('documento_numero', $model->documento_numero)
-                    ->whereHas('contacto', function ($q) use ($model) {
-                        $q->where('email', $model->email);
-                    })
-                    ->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($q) use ($userProvId) {
-                        $q->where('provincia_id', $userProvId);
-                    })->exists();
+                    ->whereHas('contacto', fn ($q) => $q->where('email', $model->email))
+                    ->inProvincia($userProvId)
+                    ->exists();
             }
 
             return false;
@@ -85,16 +82,13 @@ class UsuarioPolicy
 
             if ($isInJurisdiction) return true;
 
-            // Check matching persona for pending vinculation
+            // Check matching persona for pending vinculation using scope
             if ($model->estado === 'vinculacion_pendiente') {
                 return Persona::where('documento_tipo_id', $model->documento_tipo_id)
                     ->where('documento_numero', $model->documento_numero)
-                    ->whereHas('contacto', function ($q) use ($model) {
-                        $q->where('email', $model->email);
-                    })
-                    ->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($q) use ($userRegId) {
-                        $q->where('region_id', $userRegId);
-                    })->exists();
+                    ->whereHas('contacto', fn ($q) => $q->where('email', $model->email))
+                    ->inRegion($userRegId)
+                    ->exists();
             }
 
             return false;
@@ -112,23 +106,20 @@ class UsuarioPolicy
 
             if ($isInJurisdiction) return true;
 
-            // Check matching persona for pending vinculation
+            // Check matching persona for pending vinculation using scope
             if ($model->estado === 'vinculacion_pendiente') {
                 return Persona::where('documento_tipo_id', $model->documento_tipo_id)
                     ->where('documento_numero', $model->documento_numero)
-                    ->whereHas('contacto', function ($q) use ($model) {
-                        $q->where('email', $model->email);
-                    })
-                    ->whereHas('movimientosCupofActivos.cupof.escuela.localidad', function ($q) use ($userDistId) {
-                        $q->where('departamento_id', $userDistId);
-                    })->exists();
+                    ->whereHas('contacto', fn ($q) => $q->where('email', $model->email))
+                    ->inDepartamento($userDistId)
+                    ->exists();
             }
 
             return false;
         }
 
         // 4. Equipo de Conducción
-        if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
+        if ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
             $userEscuelas = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id');
             $modelEscuelas = $model->persona?->escuelasPersonas()->pluck('escuela_id');
 
@@ -189,7 +180,7 @@ class UsuarioPolicy
             return true;
         }
 
-        if ($user->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario'])) {
+        if ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
             $userEscuelas = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id');
             $modelEscuelas = $model->persona?->escuelasPersonas()->pluck('escuela_id');
 
@@ -309,31 +300,19 @@ class UsuarioPolicy
     {
         if ($performer->hasRole('jefe_provincial')) {
             $provId = $performer->provinciaUsuario?->provincia_id;
-            return $persona->movimientosCupofActivos()
-                ->whereHas('cupof.escuela.localidad.departamento', fn ($q) => $q->where('provincia_id', $provId))
-                ->exists()
-                || $persona->inscripcion()
-                ->whereHas('escuelaProcedencia.localidad.departamento', fn ($q) => $q->where('provincia_id', $provId))
-                ->exists();
+            return $provId && Persona::where('id', $persona->id)->inProvincia($provId)->exists();
         }
+
         if ($performer->hasRole('jefe_regional')) {
             $regId = $performer->regionUsuario?->region_id;
-            return $persona->movimientosCupofActivos()
-                ->whereHas('cupof.escuela.localidad.departamento', fn ($q) => $q->where('region_id', $regId))
-                ->exists()
-                || $persona->inscripcion()
-                ->whereHas('escuelaProcedencia.localidad.departamento', fn ($q) => $q->where('region_id', $regId))
-                ->exists();
+            return $regId && Persona::where('id', $persona->id)->inRegion($regId)->exists();
         }
+
         if ($performer->hasRole('jefe_distrital')) {
             $distId = $performer->distritoUsuario?->departamento_id;
-            return $persona->movimientosCupofActivos()
-                ->whereHas('cupof.escuela.localidad', fn ($q) => $q->where('departamento_id', $distId))
-                ->exists()
-                || $persona->inscripcion()
-                ->whereHas('escuelaProcedencia.localidad', fn ($q) => $q->where('departamento_id', $distId))
-                ->exists();
+            return $distId && Persona::where('id', $persona->id)->inDepartamento($distId)->exists();
         }
+
         return false;
     }
 
