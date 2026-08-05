@@ -165,6 +165,60 @@ class UsuarioController extends Controller
         ]);
     }
 
+    /**
+     * Busca personas candidatas del padrón que coincidan con el usuario (DNI + Email).
+     */
+    public function candidatosPersona(Usuario $usuario)
+    {
+        $this->authorize('view', $usuario);
+
+        $candidatos = $this->userService->getCandidatosPersona($usuario);
+
+        return \App\Http\Resources\PersonaResource::collection($candidatos);
+    }
+
+    /**
+     * Vincula manualmente una persona del padrón a un usuario.
+     */
+    public function vincularPersona(Usuario $usuario, \App\Models\Persona $persona): JsonResponse
+    {
+        // Validaciones de seguridad (espejo de confirmPersona)
+        if ($usuario->persona) {
+            return response()->json(['error' => 'El usuario ya tiene una persona vinculada.'], 422);
+        }
+        if ($persona->usuario_id) {
+            return response()->json(['error' => 'Esta persona ya está vinculada a otro usuario.'], 422);
+        }
+
+        $persona->update(['usuario_id' => $usuario->id]);
+        $usuario->update(['estado' => 'activo']);
+
+        // Sincronizar roles basados en CUPOF
+        app(\App\Services\CupofService::class)->syncAllRolesFromCupof($usuario);
+
+        return response()->json([
+            'message' => 'Persona vinculada con éxito al usuario.',
+            'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role']))
+        ]);
+    }
+
+    /**
+     * Desvincula la persona del usuario.
+     */
+    public function desvincularPersona(Usuario $usuario): JsonResponse
+    {
+        if (!$usuario->persona) {
+            return response()->json(['error' => 'El usuario no tiene una persona vinculada.'], 422);
+        }
+
+        app(\App\Services\PersonaService::class)->unlinkUser($usuario->persona);
+
+        return response()->json([
+            'message' => 'Persona desvinculada con éxito.',
+            'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role']))
+        ]);
+    }
+
     public function destroy(Usuario $usuario): JsonResponse
     {
         $this->authorize('delete', $usuario);

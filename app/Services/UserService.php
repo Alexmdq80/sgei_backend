@@ -323,6 +323,28 @@ class UserService
     }
 
     /**
+     * Busca personas candidatas del padrón que coincidan con el usuario (mismo DNI y Email),
+     * y que no estén vinculadas a otro usuario.
+     */
+    public function getCandidatosPersona(Usuario $user)
+    {
+        return Persona::where('documento_tipo_id', $user->documento_tipo_id)
+            ->where('documento_numero', $user->documento_numero)
+            ->whereHas('contacto', function ($query) use ($user) {
+                $query->where('email', $user->email);
+            })
+            ->whereNull('usuario_id')
+            ->with([
+                'contacto',
+                'documentoTipo',
+                'movimientosCupofActivos.cupof.escalafon',
+                'inscripcion',
+                'vinculosComoAdulto',
+            ])
+            ->get();
+    }
+
+    /**
      * Resend the verification notification to the user.
      */
     public function resendVerification(Usuario $user): void

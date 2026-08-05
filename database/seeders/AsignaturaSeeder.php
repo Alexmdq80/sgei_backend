@@ -14,7 +14,7 @@ class AsignaturaSeeder extends Seeder
      */
     public function run(): void
     {
-        $csvFile = fopen(base_path('../asignaturas.csv'), 'r');
+        $csvFile = fopen(base_path('asignaturas.csv'), 'r');
         
         // Skip header
         $header = fgetcsv($csvFile);
