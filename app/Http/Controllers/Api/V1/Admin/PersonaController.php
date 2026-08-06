@@ -14,6 +14,7 @@ use App\Http\Requests\Api\V1\Admin\PersonaRequest;
 use App\DTOs\Persona\CreatePersonaDTO;
 use App\DTOs\Persona\UpdatePersonaDTO;
 use App\DTOs\Persona\PersonaFilterDTO;
+use App\Exceptions\ConfirmationRequiredException;
 
 class PersonaController extends Controller
 {
@@ -101,6 +102,8 @@ class PersonaController extends Controller
                 $dto, 
                 array_key_exists('email', $request->validated())
             );
+        } catch (ConfirmationRequiredException $e) {
+            throw $e; // Dejar que Laravel invoque render() y devuelva HTTP 409
         } catch (\Exception $e) {
             $code = $e->getCode() === 403 ? 403 : 422;
             return response()->json([

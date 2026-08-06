@@ -46,6 +46,7 @@ class PersonaRequest extends FormRequest
                 'max:255', 
                 Rule::unique('contactos', 'email')->ignore($contactoId)
             ],
+            'confirmed' => ['sometimes', 'boolean'],
             'cuil' => ['nullable', 'string', 'max:15'],
             'fecha_nacimiento' => ['nullable', 'date'],
             'genero_id' => ['nullable', 'integer', Rule::exists('generos', 'id')],

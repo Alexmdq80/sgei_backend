@@ -18,6 +18,7 @@ readonly class UpdatePersonaDTO
         public ?string $nombre = null,
         public ?DocumentoIdentidad $documentoIdentidad = null,
         public ?string $email = null,
+        public ?bool $confirmed = false,
         public ?string $nombreAlternativo = null,
         public ?int $sexoId = null,
         public ?int $generoId = null,
@@ -71,6 +72,7 @@ readonly class UpdatePersonaDTO
             poseeCpiSi: isset($data['posee_cpi_si']) ? (bool) $data['posee_cpi_si'] : null,
             poseeDocExtSi: isset($data['posee_docExt_si']) ? (bool) $data['posee_docExt_si'] : null,
             viveSi: isset($data['vive_si']) ? (bool) $data['vive_si'] : null,
+            confirmed: (bool) ($data['confirmed'] ?? false),
         );
     }
 

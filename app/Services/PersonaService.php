@@ -13,7 +13,7 @@ use App\DTOs\Persona\PersonaFilterDTO;
 use App\DTOs\Persona\CreatePersonaDTO;
 use App\DTOs\Persona\UpdatePersonaDTO;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Validation\ValidationException;
+use App\Exceptions\ConfirmationRequiredException;
 
 class PersonaService
 {
@@ -61,16 +61,21 @@ class PersonaService
                     || $dto->documentoIdentidad->numero() !== $persona->documentoNumeroRaw());
 
             if ($persona->usuario_id) {
-                // Cannot change email if already linked to a user
                 if ($emailChanged) {
-                    throw new \Exception(
-                        'Seguridad: No se puede modificar el correo electrónico de una persona que ya tiene un usuario vinculado. Debe desvincular el usuario primero para realizar este cambio.',
-                        403
-                    );
-                }
-
-                // If DNI changes, automatically unlink user
-                if ($dniChanged) {
+                    // Confirmación explícita requerida (HTTP 409)
+                    if (!$dto->confirmed) {
+                        throw new ConfirmationRequiredException(
+                            action: 'CONFIRM_UNLINK_USER',
+                            message: 'Cambiar el email desvinculará al usuario vinculado y revocará todos sus roles. ¿Confirmás la acción?',
+                            context: [
+                                'usuario_id'    => $persona->usuario_id,
+                                'usuario_email' => $persona->usuario->email ?? null,
+                                'nuevo_email'   => $dto->email,
+                            ]
+                        );
+                    }
+                    $this->unlinkUser($persona);
+                } elseif ($dniChanged) {
                     $this->unlinkUser($persona);
                 }
             }
@@ -88,7 +93,7 @@ class PersonaService
             }
 
             // If DNI changed, attempt to link matching user
-            if ($dniChanged) {
+            if ($dniChanged || $emailChanged) {
                 $persona->refresh();
                 app(UserService::class)->linkPersonaToUser($persona);
             }
