@@ -2,11 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\EscuelaUsuario;
+use App\Models\EscuelaPersona;
 use App\Models\Usuario;
 use Illuminate\Auth\Access\Response;
 
-class EscuelaUsuarioPolicy
+class EscuelaPersonaPolicy
 {
     /**
      * Determine whether the user can view any models.
@@ -19,29 +19,29 @@ class EscuelaUsuarioPolicy
         }
 
         // 2. Equipo de Conducción puede ver vinculaciones (para filtrar por su escuela)
-        return $user->escuelaUsuarios()
+        return $user->persona?->escuelasPersonas()
             ->whereHas('role', function($q) {
                 $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
             })
             ->whereNotNull('verified_at')
-            ->exists();
+            ->exists() ?? false;
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(Usuario $user, EscuelaUsuario $escuelaUsuario): bool
+    public function view(Usuario $user, EscuelaPersona $escuelaPersona): bool
     {
         if ($user->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return true;
         }
 
-        return $user->escuelaUsuarios()
-            ->where('escuela_id', $escuelaUsuario->escuela_id)
+        return $user->persona?->escuelasPersonas()
+            ->where('escuela_id', $escuelaPersona->escuela_id)
             ->whereHas('role', function($q) {
                 $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
             })
             ->whereNotNull('verified_at')
-            ->exists();
+            ->exists() ?? false;
     }
 }

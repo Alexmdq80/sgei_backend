@@ -18,17 +18,12 @@ test('user is created with verification token and notification is sent', functio
         'nombre' => 'Test User',
         'email' => 'test@example.com',
         'password' => 'Password123!',
+        'password_confirmation' => 'Password123!',
         'documento_tipo_id' => 1,
         'documento_numero' => '12345678',
     ];
 
-    // We need to be an admin to create a user
-    $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
-    $admin = Usuario::factory()->create(['es_administrador' => true]);
-    $admin->assignRole('superuser');
-    $this->actingAs($admin, 'sanctum');
-
-    $response = $this->postJson('/api/v1/admin/usuarios', $userData);
+    $response = $this->postJson('/api/v1/auth/register', $userData);
 
     $response->assertStatus(201);
     

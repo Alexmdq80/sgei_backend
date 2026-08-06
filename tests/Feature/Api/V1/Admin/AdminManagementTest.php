@@ -48,7 +48,7 @@ test('el administrador puede listar todos los usuarios del sistema', function ()
          ->assertJsonStructure(['data', 'meta', 'links']);
 });
 
-test('el administrador puede crear un nuevo usuario mediante la API', function () {
+test('la creación directa de usuarios en /api/v1/admin/usuarios no está disponible (405)', function () {
     $userData = [
         'nombre' => 'Admin User Created',
         'email' => 'admin_created@sgei.local',
@@ -59,10 +59,7 @@ test('el administrador puede crear un nuevo usuario mediante la API', function (
 
     $this->actingAs($this->admin, 'sanctum')
          ->postJson('/api/v1/admin/usuarios', $userData)
-         ->assertStatus(201)
-         ->assertJsonPath('message', 'Usuario creado con éxito.');
-
-    $this->assertDatabaseHas('usuarios', ['email' => 'admin_created@sgei.local']);
+         ->assertStatus(405);
 });
 
 test('el administrador puede ver el detalle de un usuario específico', function () {
@@ -80,10 +77,10 @@ test('el administrador puede ver el detalle de un usuario específico', function
 
 test('el administrador puede listar todos los vínculos institucionales', function () {
     $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    EscuelaUsuario::factory()->count(5)->create(['verified_at' => now(), 'role_id' => $roleId]);
+    \App\Models\EscuelaPersona::factory()->count(5)->create(['verified_at' => now(), 'role_id' => $roleId]);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-        ->getJson('/api/v1/admin/escuela-usuarios');
+        ->getJson('/api/v1/admin/escuela-personas');
 
     $response->assertStatus(200)
         ->assertJsonCount(5, 'data');
@@ -93,15 +90,15 @@ test('el administrador superuser no puede actualizar el rol institucional de un 
     $roleDirector = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
     $roleSecretario = \Spatie\Permission\Models\Role::where('name', 'secretario')->first()->id;
     
-    $user = Usuario::factory()->create();
-    $link = EscuelaUsuario::factory()->create([
-        'usuario_id' => $user->id,
+    $persona = \App\Models\Persona::factory()->create();
+    $link = \App\Models\EscuelaPersona::factory()->create([
+        'persona_id' => $persona->id,
         'role_id' => $roleDirector,
         'verified_at' => now()
     ]);
 
     $this->actingAs($this->admin, 'sanctum')
-         ->putJson("/api/v1/admin/escuela-usuarios/{$link->id}", [
+         ->putJson("/api/v1/admin/escuela-personas/{$link->id}", [
               'role_id' => $roleSecretario
          ])
          ->assertStatus(403)

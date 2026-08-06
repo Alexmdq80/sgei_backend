@@ -39,7 +39,7 @@ class BlockPanelGeneralAccess
         
         if (!$hasRestrictedRole) {
             // Verificar conducción institucional en escuela_usuarios
-            $hasRestrictedRole = $user->escuelaUsuarios()
+            $hasRestrictedRole = $user->persona?->escuelasPersonas()
                 ->whereNotNull('verified_at')
                 ->whereHas('role', function($q) use ($restrictedRoles) {
                     $q->whereIn('name', $restrictedRoles);

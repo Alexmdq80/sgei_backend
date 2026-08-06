@@ -118,21 +118,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Renombrado a singular 'escuela_usuario' para coincidir con el respaldo
-        Schema::create('escuela_usuario', function (Blueprint $table) {
-            $table->charset = 'utf8mb4';
-            $table->collation = 'utf8mb4_unicode_ci';
-            $table->uuid('id')->primary();
-            $table->unsignedMediumInteger('escuela_id');
-            $table->foreignUuid('usuario_id')->constrained('usuarios');
-            $table->unsignedTinyInteger('usuario_tipo_id');
-            $table->timestamp('verified_at')->nullable();
-            $table->softDeletes();
-            $table->timestamps();
-
-            $table->foreign('escuela_id')->references('id')->on('escuelas');
-            $table->foreign('usuario_tipo_id')->references('id')->on('usuario_tipos');
-        });
     }
 
     /**
@@ -140,7 +125,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('escuela_usuario');
         Schema::dropIfExists('escuelas');
         Schema::dropIfExists('modalidad_nivels');
         Schema::dropIfExists('ofertas');

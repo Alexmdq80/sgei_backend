@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Casts\DocumentoIdentidadCast;
 
 class Persona extends Model
 {
@@ -22,7 +23,7 @@ class Persona extends Model
      */
     protected $auditGroup = 'entities';
 
-    /**
+   /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -56,8 +57,10 @@ class Persona extends Model
      *
      * @var array<string, string>
      */
+    
     protected $casts = [
-        'nacimiento_fecha' => 'datetime'
+        'documento_numero' => DocumentoIdentidadCast::class,
+        'nacimiento_fecha' => 'datetime',
     ];
 
     /**
@@ -107,7 +110,23 @@ class Persona extends Model
     {
         return $this->belongsTo(Usuario::class);
     }
+    /**
+     * Relationship to school associations via the pivot model.
+     */
+    public function escuelasPersonas(): HasMany
+    {
+        return $this->hasMany(EscuelaPersona::class);
+    }
 
+    /**
+     * Returns the raw documento_numero string from the database,
+     * bypassing the DocumentoIdentidadCast Value Object.
+     * Use this whenever you need to query or compare against the raw column value.
+     */
+    public function documentoNumeroRaw(): ?string
+    {
+        return $this->getRawOriginal('documento_numero');
+    }
     /**
      * Relationship to the document type.
      */
@@ -255,4 +274,59 @@ class Persona extends Model
                     ->using(PersonaVinculoPersona::class)
                     ->withPivot(['vinculo_id', 'vencimiento_fecha', 'detalle']);
     }
+
+    /**
+     * Scope: Personas dentro de una provincia (vía CUPOF, inscripción o vínculos).
+     */
+    public function scopeInProvincia($query, int $provinciaId): void
+    {
+        $query->where(function ($q) use ($provinciaId) {
+            $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($provinciaId) {
+                $sq->where('provincia_id', $provinciaId);
+            })
+            ->orWhereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                $sq->where('provincia_id', $provinciaId);
+            })
+            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                $sq->where('provincia_id', $provinciaId);
+            });
+        });
+    }
+
+    /**
+     * Scope: Personas dentro de una región (vía CUPOF, inscripción o vínculos).
+     */
+    public function scopeInRegion($query, int $regionId): void
+    {
+        $query->where(function ($q) use ($regionId) {
+            $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($regionId) {
+                $sq->where('region_id', $regionId);
+            })
+            ->orWhereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                $sq->where('region_id', $regionId);
+            })
+            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                $sq->where('region_id', $regionId);
+            });
+        });
+    }
+
+    /**
+     * Scope: Personas dentro de un departamento (vía CUPOF, inscripción o vínculos).
+     */
+    public function scopeInDepartamento($query, int $departamentoId): void
+    {
+        $query->where(function ($q) use ($departamentoId) {
+            $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad', function ($sq) use ($departamentoId) {
+                $sq->where('departamento_id', $departamentoId);
+            })
+            ->orWhereHas('inscripcion.escuelaProcedencia.localidad', function ($sq) use ($departamentoId) {
+                $sq->where('departamento_id', $departamentoId);
+            })
+            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad', function ($sq) use ($departamentoId) {
+                $sq->where('departamento_id', $departamentoId);
+            });
+        });
+    }
+
 }

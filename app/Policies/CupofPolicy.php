@@ -97,7 +97,7 @@ class CupofPolicy
      */
     private function isConduccion(Usuario $user, ?int $escuelaId = null): bool
     {
-        $query = $user->escuelaUsuarios()
+        $query = $user->persona?->escuelasPersonas()
             ->whereHas('role', function($q) {
                 $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
             })

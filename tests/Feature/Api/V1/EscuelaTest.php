@@ -60,6 +60,7 @@ test('can get sectores', function () {
 
 test('authenticated user can request to join a school', function () {
     $user = Usuario::factory()->create();
+    $persona = \App\Models\Persona::factory()->create(['usuario_id' => $user->id]);
     $escuela = Escuela::factory()->create();
     $rol = Role::where('name', 'profesor')->first();
 
@@ -72,8 +73,8 @@ test('authenticated user can request to join a school', function () {
     $response->assertStatus(200)
         ->assertJsonFragment(['message' => 'Solicitud enviada con éxito. Espere la aprobación del administrador.']);
 
-    $this->assertDatabaseHas('escuela_usuario', [
-        'usuario_id' => $user->id,
+    $this->assertDatabaseHas('escuela_persona', [
+        'persona_id' => $persona->id,
         'escuela_id' => $escuela->id,
         'role_id' => $rol->id,
         'verified_at' => null
@@ -82,13 +83,14 @@ test('authenticated user can request to join a school', function () {
 
 test('authenticated user can cancel join request', function () {
     $user = Usuario::factory()->create();
+    $persona = \App\Models\Persona::factory()->create(['usuario_id' => $user->id]);
     $escuela = Escuela::factory()->create();
     $rol = Role::where('name', 'profesor')->first();
 
-    // Crear la solicitud previa usando el modelo EscuelaUsuario
-    \App\Models\EscuelaUsuario::create([
+    // Crear la solicitud previa usando el modelo EscuelaPersona
+    \App\Models\EscuelaPersona::create([
         'id' => \Illuminate\Support\Str::uuid(),
-        'usuario_id' => $user->id,
+        'persona_id' => $persona->id,
         'escuela_id' => $escuela->id,
         'role_id' => $rol->id,
         'verified_at' => null
@@ -102,8 +104,9 @@ test('authenticated user can cancel join request', function () {
     $response->assertStatus(200)
         ->assertJsonFragment(['message' => 'Solicitud cancelada.']);
 
-    $this->assertSoftDeleted('escuela_usuario', [
-        'usuario_id' => $user->id,
-        'escuela_id' => $escuela->id
+    $this->assertSoftDeleted('escuela_persona', [
+        'persona_id' => $persona->id,
+        'escuela_id' => $escuela->id,
+        'role_id' => $rol->id
     ]);
 });

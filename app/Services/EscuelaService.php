@@ -4,15 +4,17 @@ namespace App\Services;
 
 use App\Models\Escuela;
 use App\Models\Usuario;
-use App\Models\EscuelaUsuario;
+use App\Models\Persona;
+use App\Models\EscuelaPersona;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\DTOs\Escuela\CreateEscuelaDTO;
+use App\DTOs\Escuela\UpdateEscuelaDTO;
 
 class EscuelaService
 {
-    public const HIERARCHICAL_ROLES = ['director', 'vicedirector', 'secretario', 'prosecretario'];
-
+    public const HIERARCHICAL_ROLES = Usuario::ROLES_EQUIPO_CONDUCCION;
     /**
      * Get schools with search and filters.
      */
@@ -113,28 +115,30 @@ class EscuelaService
     /**
      * Create a new school.
      */
-    public function create(array $data): Escuela
+    public function create(CreateEscuelaDTO|array $data): Escuela
     {
-        return DB::transaction(function () use ($data) {
+        $dto = $data instanceof CreateEscuelaDTO ? $data : CreateEscuelaDTO::fromArray($data);
+
+        return DB::transaction(function () use ($dto) {
             $escuela = Escuela::create([
-                'nombre' => $data['nombre'],
-                'numero' => $data['numero'],
-                'cue_anexo' => $data['cue_anexo'],
-                'clave_provincial' => $data['clave_provincial'] ?? null,
-                'localidad_id' => $data['localidad_id'],
-                'ambito_id' => $data['ambito_id'] ?? null,
-                'dependencia_id' => $data['dependencia_id'] ?? null,
-                'sector_id' => $data['sector_id'] ?? null,
-                'domicilio' => $data['domicilio'] ?? null,
-                'telefono' => $data['telefono'] ?? null,
-                'email' => $data['email'] ?? null,
-                'codigo_postal' => $data['codigo_postal'] ?? null,
+                'nombre' => $dto->nombre,
+                'numero' => $dto->numero,
+                'cue_anexo' => $dto->cueAnexo,
+                'clave_provincial' => $dto->claveProvincial,
+                'localidad_id' => $dto->localidadId,
+                'ambito_id' => $dto->ambitoId,
+                'dependencia_id' => $dto->dependenciaId,
+                'sector_id' => $dto->sectorId,
+                'domicilio' => $dto->domicilio,
+                'telefono' => $dto->telefono,
+                'email' => $dto->email,
+                'codigo_postal' => $dto->codigoPostal,
                 'created_by' => auth()->id(),
             ]);
 
             // Manejo opcional de niveles/modalidades via pivot si se envían
-            if (isset($data['modalidades_niveles_ids'])) {
-                $escuela->modalidadesNiveles()->sync($data['modalidades_niveles_ids']);
+            if (!empty($dto->modalidadesNivelesIds)) {
+                $escuela->modalidadesNiveles()->sync($dto->modalidadesNivelesIds);
             }
 
             return $escuela;
@@ -144,27 +148,32 @@ class EscuelaService
     /**
      * Update an existing school.
      */
-    public function update(Escuela $escuela, array $data): Escuela
+    public function update(Escuela $escuela, UpdateEscuelaDTO|array $data): Escuela
     {
-        return DB::transaction(function () use ($escuela, $data) {
-            $escuela->update([
-                'nombre' => $data['nombre'],
-                'numero' => $data['numero'],
-                'cue_anexo' => $data['cue_anexo'],
-                'clave_provincial' => $data['clave_provincial'] ?? $escuela->clave_provincial,
-                'localidad_id' => $data['localidad_id'],
-                'ambito_id' => $data['ambito_id'] ?? $escuela->ambito_id,
-                'dependencia_id' => $data['dependencia_id'] ?? $escuela->dependencia_id,
-                'sector_id' => $data['sector_id'] ?? $escuela->sector_id,
-                'domicilio' => $data['domicilio'] ?? $escuela->domicilio,
-                'telefono' => $data['telefono'] ?? $escuela->telefono,
-                'email' => $data['email'] ?? $escuela->email,
-                'codigo_postal' => $data['codigo_postal'] ?? $escuela->codigo_postal,
-                'updated_by' => auth()->id(),
-            ]);
+        $dto = $data instanceof UpdateEscuelaDTO ? $data : UpdateEscuelaDTO::fromArray($data);
 
-            if (isset($data['modalidades_niveles_ids'])) {
-                $escuela->modalidadesNiveles()->sync($data['modalidades_niveles_ids']);
+        return DB::transaction(function () use ($escuela, $dto) {
+            $updateData = [];
+
+            if ($dto->nombre !== null) $updateData['nombre'] = $dto->nombre;
+            if ($dto->numero !== null) $updateData['numero'] = $dto->numero;
+            if ($dto->cueAnexo !== null) $updateData['cue_anexo'] = $dto->cueAnexo;
+            if ($dto->claveProvincial !== null) $updateData['clave_provincial'] = $dto->claveProvincial;
+            if ($dto->localidadId !== null) $updateData['localidad_id'] = $dto->localidadId;
+            if ($dto->ambitoId !== null) $updateData['ambito_id'] = $dto->ambitoId;
+            if ($dto->dependenciaId !== null) $updateData['dependencia_id'] = $dto->dependenciaId;
+            if ($dto->sectorId !== null) $updateData['sector_id'] = $dto->sectorId;
+            if ($dto->domicilio !== null) $updateData['domicilio'] = $dto->domicilio;
+            if ($dto->telefono !== null) $updateData['telefono'] = $dto->telefono;
+            if ($dto->email !== null) $updateData['email'] = $dto->email;
+            if ($dto->codigoPostal !== null) $updateData['codigo_postal'] = $dto->codigoPostal;
+
+            $updateData['updated_by'] = auth()->id();
+
+            $escuela->update($updateData);
+
+            if ($dto->modalidadesNivelesIds !== null) {
+                $escuela->modalidadesNiveles()->sync($dto->modalidadesNivelesIds);
             }
 
             return $escuela;
@@ -216,7 +225,9 @@ class EscuelaService
         }
 
         // 3. Verificar si el admin tiene rol jerárquico en la escuela destino
-        $isAdminHierarchicalInSchool = EscuelaUsuario::where('usuario_id', $admin->id)
+        $isAdminHierarchicalInSchool = EscuelaPersona::whereHas('persona', function($q) use ($admin) {
+                $q->where('usuario_id', $admin->id);
+            })
             ->where('escuela_id', $escuelaId)
             ->whereHas('role', function($q) {
                 $q->whereIn('name', self::HIERARCHICAL_ROLES);
@@ -233,13 +244,16 @@ class EscuelaService
      * Direct assign a role to a user in a school (verified).
      * This method is now intended for administrative overrides or CUPOF syncing.
      */
-    public function assignDirect(Usuario $targetUser, int $escuelaId, int $roleId): EscuelaUsuario
+    public function assignDirect(Persona|Usuario $target, int $escuelaId, int $roleId): EscuelaPersona
     {
         $this->validateAssignmentPermissions($escuelaId, $roleId);
 
-        $link = EscuelaUsuario::updateOrCreate(
+        $persona = $target instanceof Persona ? $target : $target->persona;
+        if (!$persona) throw new \Exception("La persona o usuario no tiene un registro de persona válido.", 422);
+
+        $link = EscuelaPersona::updateOrCreate(
             [
-                'usuario_id' => $targetUser->id,
+                'persona_id' => $persona->id,
                 'escuela_id' => $escuelaId,
                 'role_id' => $roleId
             ],
@@ -249,20 +263,24 @@ class EscuelaService
             ]
         );
 
-        if ($targetUser->estado !== 'activo') {
-            $targetUser->update(['estado' => 'activo']);
+        $user = $persona->usuario;
+        if ($user && $user->estado !== 'activo') {
+            $user->update(['estado' => 'activo']);
         }
 
-        return $link->load(['usuario.persona', 'escuela', 'role']);
+        return $link->load(['persona.usuario', 'escuela', 'role']);
     }
 
     /**
      * User requests to join a school.
      */
-    public function joinSchool(Usuario $user, int $escuelaId, int $roleId): EscuelaUsuario
+    public function joinSchool(Usuario $user, int $escuelaId, int $roleId): EscuelaPersona
     {
+        $persona = $user->persona;
+        if (!$persona) throw new \Exception("El usuario no tiene una persona vinculada.", 422);
+
         // Check if already linked or pending
-        $existing = EscuelaUsuario::where('usuario_id', $user->id)
+        $existing = EscuelaPersona::where('persona_id', $persona->id)
             ->where('escuela_id', $escuelaId)
             ->first();
 
@@ -270,9 +288,9 @@ class EscuelaService
             throw new \Exception("Ya tienes una solicitud activa o vinculación con esta institución.", 422);
         }
 
-        return EscuelaUsuario::create([
+        return EscuelaPersona::create([
             'id' => Str::uuid(),
-            'usuario_id' => $user->id,
+            'persona_id' => $persona->id,
             'escuela_id' => $escuelaId,
             'role_id' => $roleId,
             'verified_at' => null // Pending admin confirmation
@@ -284,7 +302,10 @@ class EscuelaService
      */
     public function cancelJoinRequest(Usuario $user, int $escuelaId): bool
     {
-        $link = EscuelaUsuario::where('usuario_id', $user->id)
+        $persona = $user->persona;
+        if (!$persona) throw new \Exception("El usuario no tiene una persona vinculada.", 404);
+
+        $link = EscuelaPersona::where('persona_id', $persona->id)
             ->where('escuela_id', $escuelaId)
             ->whereNull('verified_at')
             ->firstOrFail();

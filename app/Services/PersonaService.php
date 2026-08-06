@@ -9,9 +9,179 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Notifications\AccountInvitationNotification;
+use App\DTOs\Persona\PersonaFilterDTO;
+use App\DTOs\Persona\CreatePersonaDTO;
+use App\DTOs\Persona\UpdatePersonaDTO;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 class PersonaService
 {
+    /**
+     * Create a new Persona in the database and handle initial contact details.
+     */
+    public function createPersona(CreatePersonaDTO $dto, ?string $cuilRaw = null, ?string $requestEmail = null): Persona
+    {
+        return DB::transaction(function () use ($dto, $cuilRaw, $requestEmail) {
+            $personaData = $dto->toArray();
+
+            // Handle raw CUIL string if formatted as XX-XXXXXXXX-X
+            if (!empty($cuilRaw)) {
+                $parts = explode('-', str_replace([' ', '.'], '', $cuilRaw));
+                if (count($parts) === 3) {
+                    $personaData['CUIL_prefijo'] = $parts[0];
+                    $personaData['CUIL_sufijo'] = $parts[2];
+                }
+            }
+
+            $persona = Persona::create($personaData);
+
+            $emailToSave = $dto->email ?? $requestEmail;
+            if (!empty($emailToSave)) {
+                $persona->contacto()->create([
+                    'email' => $emailToSave,
+                ]);
+            }
+
+            return $persona->fresh(['contacto', 'usuario']);
+        });
+    }
+
+    /**
+     * Update an existing Persona record and manage security rules for identity changes.
+     */
+    public function updatePersona(Persona $persona, UpdatePersonaDTO $dto, bool $hasEmailInPayload = false): Persona
+    {
+        return DB::transaction(function () use ($persona, $dto, $hasEmailInPayload) {
+            // Security check: control identity changes (DNI or Email)
+            $emailChanged = $hasEmailInPayload && $dto->email !== ($persona->contacto?->email ?? null);
+
+            $dniChanged = $dto->documentoIdentidad !== null
+                && ($dto->documentoIdentidad->tipoId() !== (int) $persona->documento_tipo_id
+                    || $dto->documentoIdentidad->numero() !== $persona->documentoNumeroRaw());
+
+            if ($persona->usuario_id) {
+                // Cannot change email if already linked to a user
+                if ($emailChanged) {
+                    throw new \Exception(
+                        'Seguridad: No se puede modificar el correo electrónico de una persona que ya tiene un usuario vinculado. Debe desvincular el usuario primero para realizar este cambio.',
+                        403
+                    );
+                }
+
+                // If DNI changes, automatically unlink user
+                if ($dniChanged) {
+                    $this->unlinkUser($persona);
+                }
+            }
+
+            // Update persona model with non-null attributes from DTO
+            $persona->update($dto->toPersonaArray());
+
+            // Update or clear contact email
+            if ($hasEmailInPayload) {
+                $newEmail = !empty($dto->email) ? $dto->email : null;
+                $persona->contacto()->updateOrCreate(
+                    ['persona_id' => $persona->id],
+                    ['email' => $newEmail]
+                );
+            }
+
+            // If DNI changed, attempt to link matching user
+            if ($dniChanged) {
+                $persona->refresh();
+                app(UserService::class)->linkPersonaToUser($persona);
+            }
+
+            return $persona->fresh(['contacto', 'usuario']);
+        });
+    }
+
+    /**
+     * Safely delete a Persona record.
+     */
+    public function deletePersona(Persona $persona): bool
+    {
+        return DB::transaction(function () use ($persona) {
+            return (bool) $persona->delete();
+        });
+    }
+    /**
+     * Get paginated list of Personas filtered by PersonaFilterDTO criteria.
+     */
+    public function getFilteredPaginated(PersonaFilterDTO $filters): LengthAwarePaginator
+    {
+        $query = Persona::with([
+            'documentoTipo', 
+            'usuario.roles', 
+            'usuario.provinciaUsuario.provincia', 
+            'usuario.regionUsuario.region', 
+            'usuario.distritoUsuario.distrito',
+            'nacionalidad', 
+            'genero'
+        ]);
+
+        // 1. Search term (nombre, apellido, documento)
+        if ($filters->search) {
+            $search = $filters->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nombre', 'like', "%{$search}%")
+                  ->orWhere('apellido', 'like', "%{$search}%")
+                  ->orWhere('documento_numero', 'like', "%{$search}%");
+            });
+        }
+
+        // 2. Only agents (people with CUPOF movements)
+        if ($filters->onlyAgents) {
+            $query->whereHas('movimientosCupof', function ($q) use ($filters) {
+                if ($filters->escuelaId) {
+                    $q->whereHas('cupof', function ($sq) use ($filters) {
+                        $sq->where('escuela_id', $filters->escuelaId);
+                    });
+                }
+            });
+        }
+
+        // 3. Geographic & Demographic filters
+        if ($filters->provinciaId) {
+            $query->where('provincia_id', $filters->provinciaId);
+        }
+
+        if ($filters->departamentoId) {
+            $query->where('departamento_id', $filters->departamentoId);
+        }
+
+        if ($filters->localidadId) {
+            $query->where('localidad_id', $filters->localidadId);
+        }
+
+        if ($filters->nacionalidadNacionId) {
+            $query->where('nacionalidad_nacion_id', $filters->nacionalidadNacionId);
+        }
+
+        if ($filters->sexoId) {
+            $query->where('sexo_id', $filters->sexoId);
+        }
+
+        if ($filters->generoId) {
+            $query->where('genero_id', $filters->generoId);
+        }
+
+        if ($filters->documentoTipoId) {
+            $query->where('documento_tipo_id', $filters->documentoTipoId);
+        }
+
+        // 4. Linked user filter
+        if ($filters->hasUser !== null) {
+            if ($filters->hasUser) {
+                $query->whereNotNull('usuario_id');
+            } else {
+                $query->whereNull('usuario_id');
+            }
+        }
+
+        return $query->orderBy('apellido')->orderBy('nombre')->paginate($filters->perPage ?? 15);
+    }
     /**
      * Ensures that a Persona has an associated Usuario account.
      * If not, it creates one based on Persona's data.
@@ -181,7 +351,7 @@ class PersonaService
 
             if ($linkedUser) {
                 // 2. Eliminar vinculaciones institucionales (escuelas)
-                \App\Models\EscuelaUsuario::where('usuario_id', $linkedUser->id)->delete();
+                \App\Models\EscuelaPersona::where('persona_id', $persona->id)->delete();
 
                 // 3. Eliminar vinculaciones geográficas de roles de jefatura
                 \App\Models\ProvinciaUsuario::where('usuario_id', $linkedUser->id)->delete();
@@ -220,7 +390,7 @@ class PersonaService
             $user->update([
                 'verification_token' => Str::random(60),
                 'verification_token_created_at' => now(),
-                'estado' => 'esperando_activacion'
+                //'estado' => 'esperando_activacion'
             ]);
 
             $user->notify(new AccountInvitationNotification($user->verification_token));

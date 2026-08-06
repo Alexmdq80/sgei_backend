@@ -55,7 +55,7 @@ class EscuelaPolicy
         }
 
         // 4. Equipo de Conducción: Solo su propia escuela (Autogestión)
-        $isConduccionInThisSchool = $usuario->escuelaUsuarios()
+        $isConduccionInThisSchool = $usuario->persona?->escuelasPersonas()
             ->where('escuela_id', $escuela->id)
             ->whereHas('role', function($q) {
                 $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);

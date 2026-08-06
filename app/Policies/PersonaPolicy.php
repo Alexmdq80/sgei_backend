@@ -53,7 +53,7 @@ class PersonaPolicy
     {
         return $this->canManageGlobalPadron($usuario)
             || $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])
-            || $usuario->escuelaUsuarios()
+            || $usuario->persona?->escuelasPersonas()
                 ->whereHas('role', function($q) {
                     $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
                 })

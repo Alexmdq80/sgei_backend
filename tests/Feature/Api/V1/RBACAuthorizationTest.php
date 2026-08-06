@@ -39,7 +39,7 @@ beforeEach(function () {
 
 // ... (rest of the tests)
 
-test('superuser can create user', function () {
+test('superuser cannot create user via admin route (store was removed)', function () {
     $this->actingAs($this->superUser, 'sanctum');
     $userData = [
         'nombre' => 'Creator',
@@ -49,7 +49,7 @@ test('superuser can create user', function () {
         'password' => 'Sgei!2026_Test',
     ];
     $response = $this->postJson('/api/v1/admin/usuarios', $userData);
-    $response->assertStatus(201);
+    $response->assertStatus(405);
 });
 
 test('superuser can update user', function () {

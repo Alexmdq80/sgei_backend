@@ -125,7 +125,7 @@ Route::prefix('v1')->group(function () {
         
         // --- RUTAS DE ACCESO INSTITUCIONAL (Accesibles por Directivos y Jefaturas) ---
         // Protegidas individualmente por Policies
-        Route::apiResource('escuela-usuarios', App\Http\Controllers\Api\V1\Admin\EscuelaUsuarioController::class);
+        Route::apiResource('escuela-personas', App\Http\Controllers\Api\V1\Admin\EscuelaPersonaController::class);
         Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class);
         Route::post('personas/{persona}/resend-activation', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'resendActivation']);
         Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);
@@ -141,8 +141,11 @@ Route::prefix('v1')->group(function () {
 
         // --- RUTAS DE ADMINISTRACIÓN GLOBAL (Requieren permiso sistema.usuarios) ---
         Route::middleware('permission:sistema.usuarios')->group(function() {
-            Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class);
-            Route::post('/usuarios/{usuario}/confirm-persona', [App\Http\Controllers\Api\V1\UsuarioController::class, 'confirmPersona']);
+            Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class)->except([ 'store' ]);
+            Route::post('/usuarios/{usuario}/confirm-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'confirmPersona']);
+            Route::get('/usuarios/{usuario}/candidatos-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'candidatosPersona']);
+            Route::post('/usuarios/{usuario}/vincular-persona/{persona}', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'vincularPersona']);
+            Route::post('/usuarios/{usuario}/desvincular-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'desvincularPersona']);
             Route::post('/usuarios/{usuario}/resend-activation', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendActivation']);
             Route::get('/usuarios/{usuario}/candidatos-persona', [\App\Http\Controllers\Api\V1\UsuarioController::class, 'candidatosPersona']);
             Route::post('/usuarios/{usuario}/vincular-persona/{persona}', [\App\Http\Controllers\Api\V1\UsuarioController::class, 'vincularPersona']);

@@ -47,7 +47,8 @@ class EscuelaController extends Controller
     public function store(EscuelaRequest $request): JsonResponse
     {
         $this->authorize('create', Escuela::class);
-        $escuela = $this->escuelaService->create($request->validated());
+        $dto = \App\DTOs\Escuela\CreateEscuelaDTO::fromRequest($request);
+        $escuela = $this->escuelaService->create($dto);
         return response()->json($escuela, 201);
     }
 
@@ -71,7 +72,8 @@ class EscuelaController extends Controller
     public function update(EscuelaRequest $request, Escuela $escuela): JsonResponse
     {
         $this->authorize('update', $escuela);
-        $escuela = $this->escuelaService->update($escuela, $request->validated());
+        $dto = \App\DTOs\Escuela\UpdateEscuelaDTO::fromRequest($request);
+        $escuela = $this->escuelaService->update($escuela, $dto);
         return response()->json($escuela);
     }
 

@@ -8,9 +8,8 @@ use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\UsuarioResource;
-use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\Api\V1\UsuarioRequest;
-
+use App\DTOs\User\UpdateUserProfileDTO;
 use App\Notifications\AccountInvitationNotification;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -31,12 +30,16 @@ class UsuarioController extends Controller
     {
         $this->authorize('manageScoped', $usuario);
 
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'Acceso Denegado: No se puede reenviar la activación a un superusuario.',
+                'code' => 403
+            ], 403);
+        }
+
         DB::transaction(function () use ($usuario) {
             $usuario->verification_token = Str::random(60);
             $usuario->verification_token_created_at = now();
-            // Si el usuario estaba activo, lo volvemos a poner en espera para forzar el flujo
-            $usuario->estado = 'esperando_activacion';
-            $usuario->email_verified_at = null; 
             $usuario->save();
 
             $usuario->notify(new AccountInvitationNotification($usuario->verification_token));
@@ -53,8 +56,7 @@ class UsuarioController extends Controller
     public function index(Request $request)
     {
         $this->authorize('viewAny', Usuario::class);
-        
-        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page']);
+        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page', 'provincia_id', 'region_id', 'departamento_id', 'role']);
 
         $users = $this->userService->getAll($filters);
 
@@ -62,27 +64,29 @@ class UsuarioController extends Controller
     }
 
     /**
-     * Store a newly created user in storage.
-     */
-    public function store(UsuarioRequest $request): JsonResponse
-    {
-        $this->authorize('create', Usuario::class);
-
-        $user = $this->userService->create($request->validated());
-
-        return response()->json([
-            'message' => 'Usuario creado con éxito.',
-            'user' => new UsuarioResource($user)
-        ], 201);
-    }
-
-    /**
      * Display the specified user.
      */
+
     public function show(Usuario $usuario)
     {
+
+        // 1. Cargar TODAS las relaciones necesarias
+        $usuario->load([
+            'persona',
+            'persona.contacto',
+            'persona.documentoTipo',
+            'persona.escuelasPersonas.escuela',
+            'persona.escuelasPersonas.role',
+            'documentoTipo',
+            'roles',
+            'provinciaUsuario.provincia',
+            'regionUsuario.region',
+            'distritoUsuario.distrito'
+        ]);
+
+        // 2. Autorizar DESPUÉS de cargar (la policy usa relaciones ya cargadas → sin N+1)
         $this->authorize('view', $usuario);
-        return new UsuarioResource($usuario->load(['persona', 'documentoTipo', 'roles']));
+        return new UsuarioResource($usuario);
     }
 
     /**
@@ -92,7 +96,8 @@ class UsuarioController extends Controller
     {
         $this->authorize('update', $usuario);
 
-        $user = $this->userService->updateProfile($usuario, $request->validated());
+        $dto = UpdateUserProfileDTO::fromRequest($request);
+        $user = $this->userService->updateProfile($usuario, $dto);
 
         return response()->json([
             'message' => 'Usuario actualizado con éxito.',
@@ -237,4 +242,5 @@ class UsuarioController extends Controller
             'message' => 'Usuario eliminado con éxito.'
         ]);
     }
+
 }

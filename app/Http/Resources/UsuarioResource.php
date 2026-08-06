@@ -2,9 +2,13 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin Usuario
+ */
 class UsuarioResource extends JsonResource
 {
     /**
@@ -14,6 +18,19 @@ class UsuarioResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        if ($this->resource instanceof Usuario) {
+            $loads = [];
+            if ($this->relationLoaded('persona') && $this->persona) {
+                if ($this->persona->relationLoaded('escuelasPersonas')) {
+                    $loads[] = 'persona.escuelasPersonas.escuela';
+                    $loads[] = 'persona.escuelasPersonas.role';
+                }
+            }
+            if (!empty($loads)) {
+                $this->resource->loadMissing($loads);
+            }
+        }
+
         return [
             'id' => $this->id,
             'nombre' => $this->nombre,
@@ -23,18 +40,23 @@ class UsuarioResource extends JsonResource
             'email' => $this->email,
             'email_verified_at' => $this->email_verified_at,
             'estado' => $this->estado,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
             'avatar_url' => $this->avatar_url,
             'roles' => RoleResource::collection($this->whenLoaded('roles')),
-            'permissions' => $this->getAllPermissions()->pluck('name'),
+            'permissions' => $this->when(
+                $this->relationLoaded('permissions') || $this->relationLoaded('roles'),
+                fn () => $this->getAllPermissions()->pluck('name')
+            ),
             'documento_tipo' => $this->whenLoaded('documentoTipo'),
-            'persona' => $this->whenLoaded('persona'),
-            'escuela_usuarios' => EscuelaUsuarioResource::collection($this->whenLoaded('escuelaUsuarios')),
-            'provincia_usuario' => $this->provinciaUsuario?->loadMissing('provincia'),
-            'region_usuario' => $this->regionUsuario?->loadMissing('region'),
-            'distrito_usuario' => $this->distritoUsuario?->loadMissing('distrito')
-            // 'distrito_usuario' => $this->distritoUsuario?->loadMissing(['distrito', 'distrito.departamento']),
+            'persona' => new PersonaResource($this->whenLoaded('persona')),
+            'escuelas_personas' => $this->when(
+                $this->relationLoaded('persona') && $this->persona?->relationLoaded('escuelasPersonas'),
+                fn () => EscuelaPersonaResource::collection($this->persona->escuelasPersonas)
+            ),
+            'provincia_usuario' => $this->whenLoaded('provinciaUsuario'),
+            'region_usuario' => $this->whenLoaded('regionUsuario'),
+            'distrito_usuario' => $this->whenLoaded('distritoUsuario'),
         ];
     }
 }

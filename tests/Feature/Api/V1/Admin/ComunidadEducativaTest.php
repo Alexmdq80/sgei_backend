@@ -65,8 +65,9 @@ beforeEach(function () {
     $directorRole = \Spatie\Permission\Models\Role::where('name', 'director')->first();
     $this->director = Usuario::factory()->create(['email_verified_at' => now()]);
     $this->director->assignRole('director');
-    EscuelaUsuario::create([
-        'usuario_id'  => $this->director->id,
+    $personaDirector = \App\Models\Persona::factory()->create(['usuario_id' => $this->director->id]);
+    \App\Models\EscuelaPersona::create([
+        'persona_id'  => $personaDirector->id,
         'escuela_id'  => $this->escuelaA->id,
         'role_id'     => $directorRole->id,
         'verified_at' => now(),

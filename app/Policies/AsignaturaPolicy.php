@@ -24,12 +24,12 @@ class AsignaturaPolicy
             return true;
         }
 
-        return $user->escuelaUsuarios()
+        return $user->persona?->escuelasPersonas()
             ->whereNotNull('verified_at')
             ->whereHas('role', function($q) use ($restrictedRoles) {
                 $q->whereIn('name', $restrictedRoles);
             })
-            ->exists();
+            ->exists() ?? false;
     }
 
     /**

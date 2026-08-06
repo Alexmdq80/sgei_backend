@@ -14,7 +14,7 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Añadir la columna role_id si no existe
-        if (!Schema::hasColumn('escuela_usuario', 'role_id')) {
+        /*if (!Schema::hasColumn('escuela_usuario', 'role_id')) {
             Schema::table('escuela_usuario', function (Blueprint $table) {
                 $table->unsignedBigInteger('role_id')->nullable()->after('usuario_id');
                 $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
@@ -67,11 +67,11 @@ return new class extends Migration
                     $table->dropColumn('rol_escolar_id');
                 });
             } catch (\Exception $e) {}
-        }
+        }*/
 
         Schema::dropIfExists('roles_escolares');
         
-        Schema::enableForeignKeyConstraints();
+        //Schema::enableForeignKeyConstraints();
     }
 
     public function down(): void {}

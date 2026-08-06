@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::rename('usuario_tipos', 'roles_escolares');
         
-        Schema::table('escuela_usuario', function (Blueprint $table) {
+        /*Schema::table('escuela_usuario', function (Blueprint $table) {
             $table->renameColumn('usuario_tipo_id', 'rol_escolar_id');
-        });
+        });*/
     }
 
     /**
@@ -23,9 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('escuela_usuario', function (Blueprint $table) {
+        /*Schema::table('escuela_usuario', function (Blueprint $table) {
             $table->renameColumn('rol_escolar_id', 'usuario_tipo_id');
-        });
+        });*/
 
         Schema::rename('roles_escolares', 'usuario_tipos');
     }

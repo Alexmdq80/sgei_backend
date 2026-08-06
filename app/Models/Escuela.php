@@ -136,9 +136,9 @@ class Escuela extends Model
     /**
      * Relationship to the users associated with the school via the pivot model.
      */
-    public function escuelaUsuarios(): HasMany
+    public function escuelasPersonas(): HasMany
     {
-        return $this->hasMany(EscuelaUsuario::class);
+        return $this->hasMany(EscuelaPersona::class);
     }
 
     /**

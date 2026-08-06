@@ -41,8 +41,8 @@ class LoginController extends Controller
                     'persona', 
                     'documentoTipo', 
                     'roles', 
-                    'escuelaUsuarios.escuela', 
-                    'escuelaUsuarios.role',
+                    'persona.escuelasPersonas.escuela', 
+                    'persona.escuelasPersonas.role',
                     'provinciaUsuario',
                     'regionUsuario',
                     'distritoUsuario'

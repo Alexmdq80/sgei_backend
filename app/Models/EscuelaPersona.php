@@ -9,32 +9,31 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Models\Role;
 
-class EscuelaUsuario extends Model
+class EscuelaPersona extends Model
 {
-    use SoftDeletes, HasUuids, HasFactory;
+    use SoftDeletes, HasUuids, HasFactory, AuditableTrait;
 
-    protected $table = 'escuela_usuario';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
+    protected $table = 'escuela_persona';
 
     /**
-     * The "type" of the primary key ID.
+     * Group for segmented auditing.
      *
      * @var string
      */
+    protected $auditGroup = 'entities';
+
+    public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
         "id",
         "escuela_id",
-        "usuario_id",
+        "persona_id",
         "verified_at",
-        "role_id"
+        "role_id",
+        "created_by",
+        "updated_by"
     ];
 
     protected $casts = [
@@ -46,14 +45,11 @@ class EscuelaUsuario extends Model
         return $this->belongsTo(Escuela::class);
     }
 
-    public function usuario(): BelongsTo
+    public function persona(): BelongsTo
     {
-        return $this->belongsTo(Usuario::class);
+        return $this->belongsTo(Persona::class);
     }
 
-    /**
-     * Relationship to the Spatie role.
-     */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
