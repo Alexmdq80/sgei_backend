@@ -369,3 +369,66 @@ test('unlinking user from persona revokes all roles except superuser and removes
     $this->assertTrue($user->hasRole('superuser'), 'Role superuser should be kept');
     $this->assertSoftDeleted('region_usuario', ['usuario_id' => $user->id]);
 });
+
+// =========================================================================
+// CONFIRMACIÓN DE VINCULACIÓN CON FORCE (EMAIL NO VERIFICADO)
+// =========================================================================
+
+test('confirm vinculation is blocked for unverified user without force', function () {
+    // 1. Setup persona sin usuario vinculado
+    $persona = Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678'
+    ]);
+    Contacto::create(['persona_id' => $persona->id, 'email' => 'test@example.com']);
+
+    // 2. Setup usuario sin email verificado
+    $user = Usuario::factory()->unverified()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678',
+        'email' => 'test@example.com',
+        'estado' => 'vinculacion_pendiente'
+    ]);
+
+    $admin = Usuario::factory()->create(['es_administrador' => true]);
+    $admin->assignRole('superuser');
+
+    // 3. Intentar confirmar sin force
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->postJson("/api/v1/admin/usuarios/{$user->id}/confirm-persona");
+
+    $response->assertStatus(422);
+    $this->assertNull($persona->fresh()->usuario_id, 'Persona should NOT be linked');
+    $this->assertNull($user->fresh()->email_verified_at, 'Email should remain unverified');
+});
+
+test('confirm vinculation succeeds for unverified user with force', function () {
+    // 1. Setup persona sin usuario vinculado
+    $persona = Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678'
+    ]);
+    Contacto::create(['persona_id' => $persona->id, 'email' => 'test@example.com']);
+
+    // 2. Setup usuario sin email verificado
+    $user = Usuario::factory()->unverified()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678',
+        'email' => 'test@example.com',
+        'estado' => 'vinculacion_pendiente'
+    ]);
+
+    $admin = Usuario::factory()->create(['es_administrador' => true]);
+    $admin->assignRole('superuser');
+
+    // 3. Confirmar con force: true
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->postJson("/api/v1/admin/usuarios/{$user->id}/confirm-persona", [
+                        'force' => true
+                     ]);
+
+    $response->assertOk();
+    $this->assertEquals($user->id, $persona->fresh()->usuario_id, 'Persona should be linked');
+    $this->assertEquals('activo', $user->fresh()->estado, 'User should be active');
+    $this->assertNull($user->fresh()->email_verified_at, 'Email should remain unverified even after force link');
+});

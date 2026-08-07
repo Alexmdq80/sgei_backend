@@ -140,7 +140,7 @@ test('user is unlinked and set to vinculacion_pendiente when changing DNI to one
     $this->assertEquals('vinculacion_pendiente', $user->fresh()->estado, 'User status should be vinculacion_pendiente');
 });
 
-test('persona is unlinked from user when persona DNI is modified', function () {
+test('persona DNI change is blocked when persona has linked user', function () {
     // 1. Setup linked user and persona
     $user = Usuario::factory()->create([
         'documento_tipo_id' => 1,
@@ -157,7 +157,7 @@ test('persona is unlinked from user when persona DNI is modified', function () {
     ]);
     Contacto::create(['persona_id' => $persona->id, 'email' => 'pedro@example.com']);
 
-    // 2. Modify Persona DNI via Controller
+    // 2. Attempt to modify Persona DNI via Controller
     $admin = Usuario::factory()->create(['es_administrador' => true])->assignRole('superuser');
     
     $response = $this->actingAs($admin, 'sanctum')
@@ -169,9 +169,43 @@ test('persona is unlinked from user when persona DNI is modified', function () {
                         'email' => 'pedro@example.com'
                      ]);
 
-    $response->assertOk();
+    // 3. Verify the change is blocked and link is preserved
+    $response->assertStatus(422);
+    $this->assertNotNull($persona->fresh()->usuario_id, 'Persona should remain linked because DNI change is blocked');
+    $this->assertEquals('33333333', $persona->fresh()->documentoNumeroRaw(), 'DNI should not have changed');
+});
 
-    // 3. Verify unlinking
-    $this->assertNull($persona->fresh()->usuario_id, 'Persona should be unlinked from user because DNI changed');
-    $this->assertEquals('email_verificado', $user->fresh()->estado, 'User should return to email_verificado status (no longer active link)');
+test('persona email change is blocked when persona has linked user', function () {
+    // 1. Setup linked user and persona
+    $user = Usuario::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '55555555',
+        'email' => 'maria@example.com',
+        'email_verified_at' => now(),
+        'estado' => 'activo'
+    ]);
+
+    $persona = Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '55555555',
+        'usuario_id' => $user->id
+    ]);
+    Contacto::create(['persona_id' => $persona->id, 'email' => 'maria@example.com']);
+
+    // 2. Attempt to modify Persona email via Controller
+    $admin = Usuario::factory()->create(['es_administrador' => true])->assignRole('superuser');
+    
+    $response = $this->actingAs($admin, 'sanctum')
+                     ->putJson("/api/v1/admin/personas/{$persona->id}", [
+                        'apellido' => $persona->apellido,
+                        'nombre' => $persona->nombre,
+                        'documento_tipo_id' => 1,
+                        'documento_numero' => '55555555',
+                        'email' => 'nuevo-email@example.com' // Changed
+                     ]);
+
+    // 3. Verify the change is blocked and link is preserved
+    $response->assertStatus(422);
+    $this->assertNotNull($persona->fresh()->usuario_id, 'Persona should remain linked because email change is blocked');
+    $this->assertEquals('maria@example.com', $persona->fresh()->contacto->email, 'Email should not have changed');
 });

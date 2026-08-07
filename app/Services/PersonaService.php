@@ -14,6 +14,8 @@ use App\DTOs\Persona\CreatePersonaDTO;
 use App\DTOs\Persona\UpdatePersonaDTO;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Exceptions\ConfirmationRequiredException;
+use Illuminate\Validation\ValidationException;
+
 
 class PersonaService
 {
@@ -61,22 +63,10 @@ class PersonaService
                     || $dto->documentoIdentidad->numero() !== $persona->documentoNumeroRaw());
 
             if ($persona->usuario_id) {
-                if ($emailChanged) {
-                    // Confirmación explícita requerida (HTTP 409)
-                    if (!$dto->confirmed) {
-                        throw new ConfirmationRequiredException(
-                            action: 'CONFIRM_UNLINK_USER',
-                            message: 'Cambiar el email desvinculará al usuario vinculado y revocará todos sus roles. ¿Confirmás la acción?',
-                            context: [
-                                'usuario_id'    => $persona->usuario_id,
-                                'usuario_email' => $persona->usuario->email ?? null,
-                                'nuevo_email'   => $dto->email,
-                            ]
-                        );
-                    }
-                    $this->unlinkUser($persona);
-                } elseif ($dniChanged) {
-                    $this->unlinkUser($persona);
+                if ($emailChanged || $dniChanged) {
+                    throw ValidationException::withMessages([
+                        'documento' => ['Operación Inválida: Esta persona tiene un usuario vinculado. No se permite modificar el DNI o el Email para preservar la integridad del vínculo.'],
+                    ]);
                 }
             }
 
@@ -117,12 +107,13 @@ class PersonaService
     public function getFilteredPaginated(PersonaFilterDTO $filters): LengthAwarePaginator
     {
         $query = Persona::with([
-            'documentoTipo', 
-            'usuario.roles', 
-            'usuario.provinciaUsuario.provincia', 
-            'usuario.regionUsuario.region', 
+            'documentoTipo',
+            'contacto',
+            'usuario.roles',
+            'usuario.provinciaUsuario.provincia',
+            'usuario.regionUsuario.region',
             'usuario.distritoUsuario.distrito',
-            'nacionalidad', 
+            'nacionalidad',
             'genero'
         ]);
 
@@ -131,8 +122,8 @@ class PersonaService
             $search = $filters->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
-                  ->orWhere('apellido', 'like', "%{$search}%")
-                  ->orWhere('documento_numero', 'like', "%{$search}%");
+                    ->orWhere('apellido', 'like', "%{$search}%")
+                    ->orWhere('documento_numero', 'like', "%{$search}%");
             });
         }
 
@@ -199,7 +190,7 @@ class PersonaService
 
         return DB::transaction(function () use ($persona) {
             $persona->loadMissing('contacto');
-            
+
             if (!$persona->contacto || !$persona->contacto->email) {
                 throw new \Exception("La persona debe tener un email de contacto registrado para crear una cuenta de usuario.");
             }
@@ -226,12 +217,12 @@ class PersonaService
 
             // Link persona to user
             $persona->update(['usuario_id' => $user->id]);
-            
+
             // Sincronizar roles basados en CUPOF
             app(\App\Services\CupofService::class)->syncAllRolesFromCupof($user);
-            
+
             // Importante: No ponemos 'activo' todavía, el estado final lo pondrá el flujo de activación
-            
+
             return $user->fresh();
         });
     }
@@ -321,7 +312,8 @@ class PersonaService
     public function removeAdministrativeRole(Persona $persona, string $roleName): void
     {
         $user = $persona->usuario;
-        if (!$user) return;
+        if (!$user)
+            return;
 
         DB::transaction(function () use ($user, $roleName) {
             if ($user->hasRole($roleName)) {

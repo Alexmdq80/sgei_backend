@@ -10,7 +10,9 @@ use App\Services\CupofService;
 use App\Services\PersonaService;
 use App\Http\Resources\UsuarioResource;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
 
 class UsuarioPersonaController extends Controller
 {
@@ -31,11 +33,13 @@ class UsuarioPersonaController extends Controller
     /**
      * Confirma la vinculación de un usuario con un registro del padrón.
      */
-    public function confirmPersona(Usuario $usuario): JsonResponse
+        public function confirmPersona(Request $request, Usuario $usuario): JsonResponse
     {
         $this->authorize('confirmPersona', $usuario);
 
-        if (!$usuario->hasVerifiedEmail()) {
+        $force = $request->boolean('force');
+
+        if (!$usuario->hasVerifiedEmail() && !$force) {
             return response()->json([
                 'error' => 'Operación Inválida: El usuario debe haber verificado su correo electrónico antes de que se pueda confirmar su vinculación con el padrón.',
                 'code' => 422

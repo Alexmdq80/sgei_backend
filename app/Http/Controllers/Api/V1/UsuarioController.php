@@ -96,6 +96,21 @@ class UsuarioController extends Controller
     {
         $this->authorize('update', $usuario);
 
+        // Proteger integridad del vínculo con el padrón
+        $usuario->load('persona');
+        if ($usuario->persona) {
+            $emailChanged = $request->filled('email') && $request->input('email') !== $usuario->email;
+            $dniChanged = ($request->filled('documento_tipo_id') && $request->input('documento_tipo_id') != $usuario->documento_tipo_id)
+                || ($request->filled('documento_numero') && $request->input('documento_numero') != $usuario->documento_numero);
+
+            if ($emailChanged || $dniChanged) {
+                return response()->json([
+                    'error' => 'Operación Inválida: Este usuario está vinculado a una persona del padrón. No se permite modificar el DNI o el Email para preservar la integridad del vínculo.',
+                    'code' => 422
+                ], 422);
+            }
+        }
+
         $dto = UpdateUserProfileDTO::fromRequest($request);
         $user = $this->userService->updateProfile($usuario, $dto);
 

@@ -104,3 +104,103 @@ test('el administrador superuser no puede actualizar el rol institucional de un 
          ->assertStatus(403)
          ->assertJsonPath('error', 'Acceso Denegado: Como Superusuario, no puedes asignar roles institucionales directamente. Esta acción está reservada para el Jefe Distrital o el Equipo de Conducción.');
 });
+
+// =========================================================================
+// PROTECCIÓN DE IDENTIDAD EN USUARIOS VINCULADOS
+// =========================================================================
+
+test('el cambio de DNI de un usuario vinculado a persona es bloqueado', function () {
+    // 1. Setup usuario con persona vinculada
+    $user = \App\Models\Usuario::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678',
+        'email' => 'vinculado@example.com',
+        'email_verified_at' => now(),
+        'estado' => 'activo'
+    ]);
+
+    $persona = \App\Models\Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '12345678',
+        'usuario_id' => $user->id
+    ]);
+    \App\Models\Contacto::create(['persona_id' => $persona->id, 'email' => 'vinculado@example.com']);
+
+    // 2. Intentar cambiar el DNI del usuario
+    $response = $this->actingAs($this->admin, 'sanctum')
+                     ->putJson("/api/v1/admin/usuarios/{$user->id}", [
+                        'nombre' => $user->nombre,
+                        'documento_tipo_id' => 1,
+                        'documento_numero' => '99999999', // Cambiado
+                        'email' => 'vinculado@example.com'
+                     ]);
+
+    // 3. Verificar que se bloquea y el vínculo se mantiene
+    $response->assertStatus(422);
+    $this->assertNotNull($persona->fresh()->usuario_id, 'El vínculo debe mantenerse');
+    $this->assertEquals('12345678', $user->fresh()->documento_numero, 'El DNI no debe haber cambiado');
+});
+
+test('el cambio de email de un usuario vinculado a persona es bloqueado', function () {
+    // 1. Setup usuario con persona vinculada
+    $user = \App\Models\Usuario::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '87654321',
+        'email' => 'original@example.com',
+        'email_verified_at' => now(),
+        'estado' => 'activo'
+    ]);
+
+    $persona = \App\Models\Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '87654321',
+        'usuario_id' => $user->id
+    ]);
+    \App\Models\Contacto::create(['persona_id' => $persona->id, 'email' => 'original@example.com']);
+
+    // 2. Intentar cambiar el email del usuario
+    $response = $this->actingAs($this->admin, 'sanctum')
+                     ->putJson("/api/v1/admin/usuarios/{$user->id}", [
+                        'nombre' => $user->nombre,
+                        'documento_tipo_id' => 1,
+                        'documento_numero' => '87654321',
+                        'email' => 'nuevo@example.com' // Cambiado
+                     ]);
+
+    // 3. Verificar que se bloquea y el vínculo se mantiene
+    $response->assertStatus(422);
+    $this->assertNotNull($persona->fresh()->usuario_id, 'El vínculo debe mantenerse');
+    $this->assertEquals('original@example.com', $user->fresh()->email, 'El email no debe haber cambiado');
+});
+
+test('el cambio de nombre de un usuario vinculado a persona es permitido', function () {
+    // 1. Setup usuario con persona vinculada
+    $user = \App\Models\Usuario::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '11223344',
+        'email' => 'permitido@example.com',
+        'email_verified_at' => now(),
+        'estado' => 'activo'
+    ]);
+
+    $persona = \App\Models\Persona::factory()->create([
+        'documento_tipo_id' => 1,
+        'documento_numero' => '11223344',
+        'usuario_id' => $user->id
+    ]);
+    \App\Models\Contacto::create(['persona_id' => $persona->id, 'email' => 'permitido@example.com']);
+
+    // 2. Cambiar solo el nombre
+    $response = $this->actingAs($this->admin, 'sanctum')
+                     ->putJson("/api/v1/admin/usuarios/{$user->id}", [
+                        'nombre' => 'Nuevo Nombre',
+                        'documento_tipo_id' => 1,
+                        'documento_numero' => '11223344',
+                        'email' => 'permitido@example.com'
+                     ]);
+
+    // 3. Verificar que se permite y el vínculo se mantiene
+    $response->assertOk();
+    $this->assertNotNull($persona->fresh()->usuario_id, 'El vínculo debe mantenerse');
+    $this->assertEquals('Nuevo Nombre', $user->fresh()->nombre, 'El nombre debe haber cambiado');
+});
