@@ -16,6 +16,7 @@ use App\Notifications\AccountInvitationNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Notifications\VerifyEmailNotification;
 
 class VerificationController extends Controller
 {
@@ -45,7 +46,11 @@ class VerificationController extends Controller
             $user->verification_token_created_at = now();
             $user->save();
 
-            $user->notify(new AccountInvitationNotification($user->verification_token));
+            if ($user->estado === 'esperando_activacion') {
+                $user->notify(new AccountInvitationNotification($user->verification_token));
+            } else {
+                $user->notify(new VerifyEmailNotification($user->verification_token));
+            }
         });
 
         return response()->json([

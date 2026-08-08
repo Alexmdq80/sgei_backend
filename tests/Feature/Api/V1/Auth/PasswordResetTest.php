@@ -24,7 +24,7 @@ test('user can request a password reset link', function () {
     ]);
 
     $response->assertStatus(200)
-             ->assertJson(['message' => __('passwords.sent')]);
+        ->assertJson(['message' => __('passwords.sent')]);
 
     Notification::assertSentTo($user, \Illuminate\Auth\Notifications\ResetPassword::class);
 });
@@ -54,7 +54,7 @@ test('user can reset password with a valid token', function () {
     ]);
 
     $response->assertStatus(200)
-             ->assertJson(['message' => __('passwords.reset')]);
+        ->assertJson(['message' => __('passwords.reset')]);
 
     expect(Hash::check($newPassword, $user->fresh()->password))->toBeTrue();
 });
@@ -65,10 +65,36 @@ test('user cannot request password reset more than 3 times per hour', function (
 
     // First request should pass
     $this->postJson('/api/v1/auth/forgot-password', ['email' => 'throttled@example.com'])
-         ->assertOk();
+        ->assertOk();
 
     // Second request immediately should fail with either 422 (Broker throttle) or 429 (Rate limiter)
     $response = $this->postJson('/api/v1/auth/forgot-password', ['email' => 'throttled@example.com']);
-    
+
     expect(in_array($response->getStatusCode(), [422, 429]))->toBeTrue();
 });
+
+test('password reset auto-verifies email and updates estado for unverified user', function () {
+    $user = Usuario::factory()->unverified()->create([
+        'email' => 'unverified@example.com',
+        'estado' => 'email_pendiente',
+    ]);
+
+    $token = Password::broker()->createToken($user);
+
+    $newPassword = 'Sgei!2026_NewPass';
+    $response = $this->postJson('/api/v1/auth/reset-password', [
+        'token' => $token,
+        'email' => 'unverified@example.com',
+        'password' => $newPassword,
+        'password_confirmation' => $newPassword,
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJson(['message' => __('passwords.reset')]);
+
+    $user->refresh();
+    expect($user->email_verified_at)->not->toBeNull()
+        ->and($user->verification_token)->toBeNull()
+        ->and($user->estado)->toBe('email_verificado');
+});
+

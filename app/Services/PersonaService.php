@@ -13,8 +13,9 @@ use App\DTOs\Persona\PersonaFilterDTO;
 use App\DTOs\Persona\CreatePersonaDTO;
 use App\DTOs\Persona\UpdatePersonaDTO;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use App\Exceptions\ConfirmationRequiredException;
 use Illuminate\Validation\ValidationException;
+use App\Notifications\UserUnlinkedNotification;
+use App\Notifications\VerifyEmailNotification;
 
 
 class PersonaService
@@ -345,8 +346,9 @@ class PersonaService
         DB::transaction(function () use ($persona, $linkedUser) {
             // 1. Desvincular técnicamente a la persona del usuario
             $persona->update(['usuario_id' => null]);
-
             if ($linkedUser) {
+                $linkedUser->notify(new UserUnlinkedNotification($persona->nombre, $persona->apellido));
+
                 // 2. Eliminar vinculaciones institucionales (escuelas)
                 \App\Models\EscuelaPersona::where('persona_id', $persona->id)->delete();
 
@@ -390,7 +392,11 @@ class PersonaService
                 //'estado' => 'esperando_activacion'
             ]);
 
-            $user->notify(new AccountInvitationNotification($user->verification_token));
+            if ($user->estado === 'esperando_activacion') {
+                $user->notify(new AccountInvitationNotification($user->verification_token));
+            } else {
+                $user->notify(new VerifyEmailNotification($user->verification_token));
+            }
         });
 
         return $user->fresh();

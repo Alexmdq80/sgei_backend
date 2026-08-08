@@ -11,16 +11,19 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Notifications\VerifyEmailNotification;
+use App\Notifications\AdminEmailChangeNotification;
 use Illuminate\Support\Str;
 use App\DTOs\User\CreateUserDTO;
 use App\DTOs\User\UpdateUserProfileDTO;
+
 
 class UserService
 {
     public function __construct(
         protected PersonaService $personaService,
         protected CupofService $cupofService
-    ) {}
+    ) {
+    }
 
     /**
      * Get a paginated list of users with optional filters.
@@ -52,7 +55,7 @@ class UserService
             } elseif ($isJefeDistrital && $user->distritoUsuario) {
                 $filters['departamento_id'] = $user->distritoUsuario->departamento_id;
             } elseif ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
-                $filters['escuela_ids'] = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? []; 
+                $filters['escuela_ids'] = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
             }
         }
 
@@ -66,12 +69,12 @@ class UserService
                 $q->whereHas('persona.escuelasPersonas.role', function ($sq) use ($hierarchicalRoles) {
                     $sq->whereIn('name', $hierarchicalRoles);
                 })
-                // O Roles Globales de Jefatura
-                ->orWhereHas('roles', function ($sq) use ($globalHierarchicalRoles) {
-                    $sq->whereIn('name', $globalHierarchicalRoles);
-                })
-                // También ver usuarios que están esperando vinculación (pueden ser sus futuros directivos)
-                ->orWhere('estado', 'vinculacion_pendiente');
+                    // O Roles Globales de Jefatura
+                    ->orWhereHas('roles', function ($sq) use ($globalHierarchicalRoles) {
+                        $sq->whereIn('name', $globalHierarchicalRoles);
+                    })
+                    // También ver usuarios que están esperando vinculación (pueden ser sus futuros directivos)
+                    ->orWhere('estado', 'vinculacion_pendiente');
             });
         }
 
@@ -87,12 +90,12 @@ class UserService
         if (!empty($filters['departamento_id'])) {
             $query->inDepartamento($filters['departamento_id']);
         }
-        
+
         if (!empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
                 $q->where('nombre', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('documento_numero', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('email', 'like', '%' . $filters['search'] . '%');
+                    ->orWhere('documento_numero', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('email', 'like', '%' . $filters['search'] . '%');
             });
         }
 
@@ -134,14 +137,14 @@ class UserService
             $query->where(function ($q) use ($role) {
                 if ($role === 'superuser') {
                     $q->where('es_administrador', true)
-                    ->orWhereHas('roles', fn ($sq) => $sq->where('name', 'superuser'));
+                        ->orWhereHas('roles', fn($sq) => $sq->where('name', 'superuser'));
                 } elseif ($role === 'equipo_directivo') {
                     $leadershipRoles = Usuario::ROLES_EQUIPO_CONDUCCION;
-                    $q->whereHas('persona.escuelasPersonas.role', fn ($sq) => $sq->whereIn('name', $leadershipRoles))
-                    ->orWhereHas('roles', fn ($sq) => $sq->whereIn('name', $leadershipRoles));
+                    $q->whereHas('persona.escuelasPersonas.role', fn($sq) => $sq->whereIn('name', $leadershipRoles))
+                        ->orWhereHas('roles', fn($sq) => $sq->whereIn('name', $leadershipRoles));
                 } else {
-                    $q->whereHas('roles', fn ($sq) => $sq->where('name', $role))
-                    ->orWhereHas('persona.escuelasPersonas.role', fn ($sq) => $sq->where('name', $role));
+                    $q->whereHas('roles', fn($sq) => $sq->where('name', $role))
+                        ->orWhereHas('persona.escuelasPersonas.role', fn($sq) => $sq->where('name', $role));
                 }
             });
         }
@@ -155,11 +158,11 @@ class UserService
     public function create(CreateUserDTO|array $data): Usuario
     {
         $dto = $data instanceof CreateUserDTO ? $data : CreateUserDTO::fromArray($data);
-        
+
         $arrayData = $dto->toArray();
         $password = !empty($dto->password) ? $dto->password : 'Sgei!2026_Admin';
         $arrayData['password'] = Hash::make($password);
-        
+
         $arrayData['verification_token'] = $dto->verificationToken ?? Str::random(60);
         $arrayData['verification_token_created_at'] = $dto->verificationTokenCreatedAt ?? now();
 
@@ -195,12 +198,12 @@ class UserService
 
         // Search for a persona with matching documents and matching email in contact info
         $persona = Persona::where('documento_tipo_id', $user->documento_tipo_id)
-                          ->where('documento_numero', $user->documento_numero)
-                          ->whereHas('contacto', function ($query) use ($user) {
-                              $query->where('email', $user->email);
-                          })
-                          ->whereNull('usuario_id') // Only link if not already linked
-                          ->first();
+            ->where('documento_numero', $user->documento_numero)
+            ->whereHas('contacto', function ($query) use ($user) {
+                $query->where('email', $user->email);
+            })
+            ->whereNull('usuario_id') // Only link if not already linked
+            ->first();
 
         if ($persona) {
             // Match found: set to pending confirmation. 
@@ -240,9 +243,9 @@ class UserService
 
         // Search for a user with matching documents AND matching email
         $user = Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
-                    ->where('documento_numero', $documentoNumeroRaw)
-                    ->where('email', $persona->contacto->email)
-                    ->first();
+            ->where('documento_numero', $documentoNumeroRaw)
+            ->where('email', $persona->contacto->email)
+            ->first();
 
         // If user found and NOT already linked to ANY persona, set to pending confirmation.
         if ($user && !$user->persona) {
@@ -322,8 +325,8 @@ class UserService
 
                 // 2. Data for matching
                 $newDniTipo = $dto->documentoTipoId ?? $user->documento_tipo_id;
-                $newDniNum  = $dto->documentoNumero  ?? $user->documento_numero;
-                $newEmail   = $data['email'] ?? $user->email;
+                $newDniNum = $dto->documentoNumero ?? $user->documento_numero;
+                $newEmail = $data['email'] ?? $user->email;
 
                 // 3. Check for coincidence with the NEW identity data
                 $matchingPersona = Persona::where('documento_tipo_id', $newDniTipo)
@@ -341,7 +344,7 @@ class UserService
                     $data['verification_token_created_at'] = now();
                     $data['email_set_at'] = now();
                     $data['email_correction_attempts'] = $user->email_correction_attempts + 1;
-                    
+
                     // If matches a persona, it stays pending confirmation. Otherwise, pending verification.
                     $data['estado'] = $matchingPersona ? 'vinculacion_pendiente' : 'email_pendiente';
                 } else if ($dniChanged) {
@@ -354,12 +357,17 @@ class UserService
                         $data['estado'] = $user->hasVerifiedEmail() ? 'email_verificado' : 'email_pendiente';
                     }
                 }
-                
+
                 $user->update($data);
-                
+
                 // If email changed, notify for re-verification
                 if ($emailChanged) {
-                    $user->notify(new VerifyEmailNotification($user->verification_token));
+                    $oldEmail = $user->getOriginal('email');
+                    if ($isAdmin) {
+                        $user->notify(new AdminEmailChangeNotification($user->verification_token, $oldEmail));
+                    } else {
+                        $user->notify(new VerifyEmailNotification($user->verification_token));
+                    }
                 }
             } else {
                 $user->update($data);
@@ -412,7 +420,7 @@ class UserService
 
         // Store new avatar in 'public/avatars' with the custom filename
         $path = $avatar->storeAs('avatars', $filename, 'public');
-        
+
         $user->update(['avatar_path' => $path]);
 
         return asset('storage/' . $path);
@@ -439,13 +447,13 @@ class UserService
         $leadershipRoles = Usuario::ROLES_EQUIPO_CONDUCCION;
 
         return Escuela::whereHas('escuelasPersonas', function ($query) use ($user, $leadershipRoles) {
-            $query->whereHas('persona', function($q) use ($user) {
+            $query->whereHas('persona', function ($q) use ($user) {
                 $q->where('usuario_id', $user->id);
             })
-            ->whereNotNull('verified_at')
-            ->whereHas('role', function ($q) use ($leadershipRoles) {
-                $q->whereIn('name', $leadershipRoles);
-            });
+                ->whereNotNull('verified_at')
+                ->whereHas('role', function ($q) use ($leadershipRoles) {
+                    $q->whereIn('name', $leadershipRoles);
+                });
         })->get();
     }
 
@@ -484,7 +492,8 @@ class UserService
                 $q->whereIn('escuela_id', $performerSchoolIds);
             })->exists();
 
-        if ($hasCupof) return true;
+        if ($hasCupof)
+            return true;
 
         // 3. Check Enrollment (Inscripcion) in those schools
         $hasInscripcion = $persona->inscripcion()
@@ -492,7 +501,8 @@ class UserService
                 $q->whereIn('escuela_id', $performerSchoolIds);
             })->exists();
 
-        if ($hasInscripcion) return true;
+        if ($hasInscripcion)
+            return true;
 
         // 4. Check Relationships with enrolled students (Vinculos)
         // Check if any student vinculated to this persona has an inscription in performer's schools
@@ -511,8 +521,9 @@ class UserService
      */
     public function getCandidatosPersona(Usuario $usuario, Usuario $performer): \Illuminate\Database\Eloquent\Collection
     {
+
         if (!$usuario->documento_tipo_id || !$usuario->documento_numero || !$usuario->email) {
-            return collect();
+            return new \Illuminate\Database\Eloquent\Collection();
         }
 
         $query = Persona::where('documento_tipo_id', $usuario->documento_tipo_id)
@@ -529,7 +540,7 @@ class UserService
                 'vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento'
             ]);
 
-                // Filtro jurisdiccional (solo para no-superusers)
+        // Filtro jurisdiccional (solo para no-superusers)
         if (!$performer->hasRole('superuser') && !$performer->es_administrador) {
             if ($performer->hasRole('jefe_provincial')) {
                 $provId = $performer->provinciaUsuario?->provincia_id;
@@ -542,17 +553,18 @@ class UserService
                 $query->inDepartamento($distId);
             } elseif ($performer->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
                 $escuelaIds = $performer->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
-                if (empty($escuelaIds)) return collect();
+                if (empty($escuelaIds))
+                    return collect();
                 $query->where(function ($q) use ($escuelaIds) {
                     $q->whereHas('movimientosCupofActivos.cupof', function ($sq) use ($escuelaIds) {
                         $sq->whereIn('escuela_id', $escuelaIds);
                     })
-                    ->orWhereHas('inscripcion.escuelaProcedencia', function ($sq) use ($escuelaIds) {
-                        $sq->whereIn('escuela_id', $escuelaIds);
-                    })
-                    ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia', function ($sq) use ($escuelaIds) {
-                        $sq->whereIn('escuela_id', $escuelaIds);
-                    });
+                        ->orWhereHas('inscripcion.escuelaProcedencia', function ($sq) use ($escuelaIds) {
+                            $sq->whereIn('escuela_id', $escuelaIds);
+                        })
+                        ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia', function ($sq) use ($escuelaIds) {
+                            $sq->whereIn('escuela_id', $escuelaIds);
+                        });
                 });
             } else {
                 return collect();

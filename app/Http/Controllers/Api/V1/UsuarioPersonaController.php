@@ -12,6 +12,7 @@ use App\Http\Resources\UsuarioResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\UserLinkedNotification;
 
 
 class UsuarioPersonaController extends Controller
@@ -33,7 +34,7 @@ class UsuarioPersonaController extends Controller
     /**
      * Confirma la vinculación de un usuario con un registro del padrón.
      */
-        public function confirmPersona(Request $request, Usuario $usuario): JsonResponse
+    public function confirmPersona(Request $request, Usuario $usuario): JsonResponse
     {
         $this->authorize('confirmPersona', $usuario);
 
@@ -78,6 +79,7 @@ class UsuarioPersonaController extends Controller
 
         $usuarioActualizado = DB::transaction(function () use ($usuario, $persona) {
             $persona->update(['usuario_id' => $usuario->id]);
+            $usuario->notify(new UserLinkedNotification($persona->nombre, $persona->apellido));
             $usuario->update(['estado' => 'activo']);
 
             $this->cupofService->syncAllRolesFromCupof($usuario);
@@ -107,7 +109,7 @@ class UsuarioPersonaController extends Controller
         $candidatos = $this->userService->getCandidatosPersona($usuario, $performer);
 
         return response()->json([
-            'data' => $candidatos->map(fn ($p) => [
+            'data' => $candidatos->map(fn($p) => [
                 'id' => $p->id,
                 'nombre_completo' => "{$p->apellido}, {$p->nombre}",
                 'documento_tipo' => $p->documentoTipo?->nombre,
@@ -127,6 +129,7 @@ class UsuarioPersonaController extends Controller
 
         $usuarioActualizado = DB::transaction(function () use ($usuario, $persona) {
             $persona->update(['usuario_id' => $usuario->id]);
+            $usuario->notify(new UserLinkedNotification($persona->nombre, $persona->apellido));
             $usuario->update(['estado' => 'activo']);
 
             $this->cupofService->syncAllRolesFromCupof($usuario);

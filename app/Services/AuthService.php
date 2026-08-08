@@ -22,6 +22,11 @@ class AuthService
      * @return array<string, mixed>
      * @throws ValidationException
      */
+    public function __construct(
+        protected UserService $userService
+    ) {
+    }
+
     public function login(array $credentials, Request $request): array
     {
         $identifier = $credentials['email'] ?? "Doc: {$credentials['documento_tipo_id']}-{$credentials['documento_numero']}";
@@ -35,7 +40,7 @@ class AuthService
 
         if (!Auth::guard('web')->attempt($credentials)) {
             $this->auditLogin($identifier, 'login_failed', $request);
-            
+
             \Illuminate\Support\Facades\Log::warning('Login fallido:', ['identifier' => $identifier]);
 
             throw ValidationException::withMessages([
@@ -61,7 +66,7 @@ class AuthService
                 'code' => 401
             ])->status(401);
         }
-        */        
+        */
         \Illuminate\Support\Facades\Log::info('Login exitoso:', [
             'identifier' => $identifier,
             'user_id' => $usuario->id,
@@ -119,7 +124,7 @@ class AuthService
         }
 
         $usuario = $refreshToken->usuario;
-        
+
         // Rotate the Refresh Token: Generate a new one and delete the old one
         $newRefreshToken = $this->createRefreshToken($usuario);
         $refreshToken->delete();
@@ -157,13 +162,27 @@ class AuthService
         $status = Password::broker()->reset(
             $credentials,
             function (Usuario $user, string $password) {
-                $user->forceFill([
+                $updates = [
                     'password' => Hash::make($password)
-                ])->setRememberToken(\Illuminate\Support\Str::random(60));
+                ];
 
+                // Si el email no estaba verificado, la recuperación por email sirve como verificación
+                if (!$user->hasVerifiedEmail()) {
+                    $updates['email_verified_at'] = now();
+                    $updates['verification_token'] = null;
+
+                    if (in_array($user->estado, ['email_pendiente', 'esperando_activacion'])) {
+                        $updates['estado'] = 'email_verificado';
+                    }
+                }
+
+                $user->forceFill($updates)->setRememberToken(\Illuminate\Support\Str::random(60));
                 $user->save();
-                
-                // Revocar todos los tokens actuales para forzar re-login
+
+                // Intentar vinculación con el padrón
+                $this->userService->linkToPersona($user);
+
+                // Revocar todos los tokens actuales para forzar re-login seguro
                 $user->tokens()->delete();
             }
         );
@@ -176,6 +195,7 @@ class AuthService
 
         return __($status);
     }
+
 
     /**
      * Log out and invalidate the session.
@@ -196,7 +216,7 @@ class AuthService
         }
 
         Auth::guard('web')->logout();
-        
+
         if ($request->hasSession()) {
             $request->session()->invalidate();
             $request->session()->regenerateToken();

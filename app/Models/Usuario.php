@@ -13,6 +13,14 @@ use Spatie\Permission\Traits\HasRoles;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Services\UserService;
+use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property string $id
+ * @property CarbonInterface|Carbon|null $verification_token_created_at
+ * @property CarbonInterface|Carbon|null $email_verified_at
+ */
 
 class Usuario extends Authenticatable implements MustVerifyEmail
 {
@@ -195,43 +203,43 @@ class Usuario extends Authenticatable implements MustVerifyEmail
             $q->whereHas('provinciaUsuario', function ($pq) use ($provinciaId) {
                 $pq->where('provincia_id', $provinciaId);
             })
-            ->orWhereHas('regionUsuario.region', function ($rq) use ($provinciaId) {
-                $rq->where('provincia_id', $provinciaId);
-            })
-            ->orWhereHas('distritoUsuario.distrito', function ($dq) use ($provinciaId) {
-                $dq->where('provincia_id', $provinciaId);
-            })
-            ->orWhereHas('persona.escuelasPersonas.escuela.localidad.departamento', function ($ld) use ($provinciaId) {
-                $ld->where('provincia_id', $provinciaId);
-            })
-            ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($provinciaId) {
-                $sq->where('provincia_id', $provinciaId);
-            })
-            ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
-                $sq->where('provincia_id', $provinciaId);
-            })
-            ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($provinciaId) {
-                $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                ->orWhereHas('regionUsuario.region', function ($rq) use ($provinciaId) {
+                    $rq->where('provincia_id', $provinciaId);
+                })
+                ->orWhereHas('distritoUsuario.distrito', function ($dq) use ($provinciaId) {
+                    $dq->where('provincia_id', $provinciaId);
+                })
+                ->orWhereHas('persona.escuelasPersonas.escuela.localidad.departamento', function ($ld) use ($provinciaId) {
+                    $ld->where('provincia_id', $provinciaId);
+                })
+                ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($provinciaId) {
                     $sq->where('provincia_id', $provinciaId);
+                })
+                ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                    $sq->where('provincia_id', $provinciaId);
+                })
+                ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($provinciaId) {
+                    $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                        $sq->where('provincia_id', $provinciaId);
+                    });
+                })
+                ->orWhere(function ($sq) use ($provinciaId) {
+                    $sq->where('estado', 'vinculacion_pendiente')
+                        ->whereExists(function ($ex) use ($provinciaId) {
+                            $ex->select(\DB::raw(1))
+                                ->from('personas')
+                                ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
+                                ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
+                                ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
+                                ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
+                                ->join('departamentos', 'localidads.departamento_id', '=', 'departamentos.id')
+                                ->join('regions', 'departamentos.region_id', '=', 'regions.id')
+                                ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
+                                ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
+                                ->where('cupof_movimientos.activo', true)
+                                ->where('regions.provincia_id', $provinciaId);
+                        });
                 });
-            })
-            ->orWhere(function ($sq) use ($provinciaId) {
-                $sq->where('estado', 'vinculacion_pendiente')
-                   ->whereExists(function ($ex) use ($provinciaId) {
-                       $ex->select(\DB::raw(1))
-                          ->from('personas')
-                          ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
-                          ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
-                          ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
-                          ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
-                          ->join('departamentos', 'localidads.departamento_id', '=', 'departamentos.id')
-                          ->join('regions', 'departamentos.region_id', '=', 'regions.id')
-                          ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
-                          ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
-                          ->where('cupof_movimientos.activo', true)
-                          ->where('regions.provincia_id', $provinciaId);
-                   });
-            });
         });
     }
 
@@ -244,39 +252,39 @@ class Usuario extends Authenticatable implements MustVerifyEmail
             $q->whereHas('regionUsuario', function ($rq) use ($regionId) {
                 $rq->where('region_id', $regionId);
             })
-            ->orWhereHas('distritoUsuario.distrito', function ($dq) use ($regionId) {
-                $dq->where('region_id', $regionId);
-            })
-            ->orWhereHas('persona.escuelasPersonas.escuela.localidad.departamento', function ($ld) use ($regionId) {
-                $ld->where('region_id', $regionId);
-            })
-            ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($regionId) {
-                $sq->where('region_id', $regionId);
-            })
-            ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
-                $sq->where('region_id', $regionId);
-            })
-            ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($regionId) {
-                $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                ->orWhereHas('distritoUsuario.distrito', function ($dq) use ($regionId) {
+                    $dq->where('region_id', $regionId);
+                })
+                ->orWhereHas('persona.escuelasPersonas.escuela.localidad.departamento', function ($ld) use ($regionId) {
+                    $ld->where('region_id', $regionId);
+                })
+                ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($regionId) {
                     $sq->where('region_id', $regionId);
+                })
+                ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                    $sq->where('region_id', $regionId);
+                })
+                ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($regionId) {
+                    $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                        $sq->where('region_id', $regionId);
+                    });
+                })
+                ->orWhere(function ($sq) use ($regionId) {
+                    $sq->where('estado', 'vinculacion_pendiente')
+                        ->whereExists(function ($ex) use ($regionId) {
+                            $ex->select(\DB::raw(1))
+                                ->from('personas')
+                                ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
+                                ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
+                                ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
+                                ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
+                                ->join('departamentos', 'localidads.departamento_id', '=', 'departamentos.id')
+                                ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
+                                ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
+                                ->where('cupof_movimientos.activo', true)
+                                ->where('departamentos.region_id', $regionId);
+                        });
                 });
-            })
-            ->orWhere(function ($sq) use ($regionId) {
-                $sq->where('estado', 'vinculacion_pendiente')
-                   ->whereExists(function ($ex) use ($regionId) {
-                       $ex->select(\DB::raw(1))
-                          ->from('personas')
-                          ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
-                          ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
-                          ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
-                          ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
-                          ->join('departamentos', 'localidads.departamento_id', '=', 'departamentos.id')
-                          ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
-                          ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
-                          ->where('cupof_movimientos.activo', true)
-                          ->where('departamentos.region_id', $regionId);
-                   });
-            });
         });
     }
 
@@ -289,35 +297,35 @@ class Usuario extends Authenticatable implements MustVerifyEmail
             $q->whereHas('distritoUsuario', function ($dq) use ($departamentoId) {
                 $dq->where('departamento_id', $departamentoId);
             })
-            ->orWhereHas('persona.escuelasPersonas.escuela.localidad', function ($l) use ($departamentoId) {
-                $l->where('departamento_id', $departamentoId);
-            })
-            ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($departamentoId) {
-                $sq->where('departamento_id', $departamentoId);
-            })
-            ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($departamentoId) {
-                $sq->where('departamento_id', $departamentoId);
-            })
-            ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($departamentoId) {
-                $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($departamentoId) {
+                ->orWhereHas('persona.escuelasPersonas.escuela.localidad', function ($l) use ($departamentoId) {
+                    $l->where('departamento_id', $departamentoId);
+                })
+                ->orWhereHas('persona.movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($departamentoId) {
                     $sq->where('departamento_id', $departamentoId);
+                })
+                ->orWhereHas('persona.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($departamentoId) {
+                    $sq->where('departamento_id', $departamentoId);
+                })
+                ->orWhereHas('persona.vinculosComoAdulto', function ($q) use ($departamentoId) {
+                    $q->whereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($departamentoId) {
+                        $sq->where('departamento_id', $departamentoId);
+                    });
+                })
+                ->orWhere(function ($sq) use ($departamentoId) {
+                    $sq->where('estado', 'vinculacion_pendiente')
+                        ->whereExists(function ($ex) use ($departamentoId) {
+                            $ex->select(\DB::raw(1))
+                                ->from('personas')
+                                ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
+                                ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
+                                ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
+                                ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
+                                ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
+                                ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
+                                ->where('cupof_movimientos.activo', true)
+                                ->where('localidads.departamento_id', $departamentoId);
+                        });
                 });
-            })
-            ->orWhere(function ($sq) use ($departamentoId) {
-                $sq->where('estado', 'vinculacion_pendiente')
-                   ->whereExists(function ($ex) use ($departamentoId) {
-                       $ex->select(\DB::raw(1))
-                          ->from('personas')
-                          ->join('cupof_movimientos', 'personas.id', '=', 'cupof_movimientos.persona_id')
-                          ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
-                          ->join('escuelas', 'cupofs.escuela_id', '=', 'escuelas.id')
-                          ->join('localidads', 'escuelas.localidad_id', '=', 'localidads.id')
-                          ->whereColumn('personas.documento_numero', 'usuarios.documento_numero')
-                          ->whereColumn('personas.documento_tipo_id', 'usuarios.documento_tipo_id')
-                          ->where('cupof_movimientos.activo', true)
-                          ->where('localidads.departamento_id', $departamentoId);
-                   });
-            });
         });
     }
 }

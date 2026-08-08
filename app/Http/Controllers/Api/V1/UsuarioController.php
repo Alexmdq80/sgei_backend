@@ -13,6 +13,7 @@ use App\DTOs\User\UpdateUserProfileDTO;
 use App\Notifications\AccountInvitationNotification;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\VerifyEmailNotification;
 
 class UsuarioController extends Controller
 {
@@ -37,12 +38,24 @@ class UsuarioController extends Controller
             ], 403);
         }
 
+        if ($usuario->estado === 'activo') {
+            return response()->json([
+                'error' => 'Este usuario ya está activo. No es necesario reenviar la invitación.',
+                'code' => 422
+            ], 422);
+        }
+
         DB::transaction(function () use ($usuario) {
             $usuario->verification_token = Str::random(60);
             $usuario->verification_token_created_at = now();
             $usuario->save();
 
-            $usuario->notify(new AccountInvitationNotification($usuario->verification_token));
+            if ($usuario->estado === 'esperando_activacion') {
+                $usuario->notify(new AccountInvitationNotification($usuario->verification_token));
+            } else {
+                $usuario->notify(new VerifyEmailNotification($usuario->verification_token));
+            }
+
         });
 
         return response()->json([
@@ -123,7 +136,7 @@ class UsuarioController extends Controller
     public function confirmPersona(Usuario $usuario): JsonResponse
     {
         $performer = auth()->user();
-        
+
         // Autorización basada en Jurisdicción
         if (!$performer->hasRole('superuser') && !$performer->es_administrador && !$performer->can('manageScoped', $usuario)) {
             return response()->json(['error' => 'Acceso Denegado: No tienes permisos para gestionar este usuario según tu jurisdicción.'], 403);
@@ -169,7 +182,7 @@ class UsuarioController extends Controller
         if ($performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']) && !$performer->hasRole('superuser')) {
             return response()->json([
                 'error' => 'Acceso Denegado: El Equipo de Conducción no tiene permisos para confirmar vinculaciones de identidad con el padrón.',
-                'code'  => 403
+                'code' => 403
             ], 403);
         }
 
