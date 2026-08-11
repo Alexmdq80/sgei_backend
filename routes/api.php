@@ -49,14 +49,14 @@ Route::prefix('v1')->group(function () {
         Route::post('/register', [RegisterController::class, 'register']);
         Route::post('/refresh', [LoginController::class, 'refresh']);
         Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:forgot-password');
-        
+
         // Esta ruta existe solo para que Laravel no de error al generar notificaciones (Route [password.reset] not defined)
         Route::get('/reset-password', function () {
             return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/reset-password?' . http_build_query(request()->all()));
         })->name('password.reset');
 
         Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('api.password.reset');
-        
+
         // Verificación de Email (Pública)
         Route::get('/verify', [VerificationController::class, 'verify']);
         Route::post('/complete-setup', [VerificationController::class, 'completeSetup']);
@@ -93,7 +93,7 @@ Route::prefix('v1')->group(function () {
     // Gestión Académica (Planes de Estudio)
     Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::apiResource('planes', App\Http\Controllers\Api\V1\PlanController::class);
-        
+
         // Gestión de Asignaturas
         Route::get('anio-plan/{id}/asignaturas', [App\Http\Controllers\Api\V1\AsignaturaController::class, 'indexByAnioPlan']);
         Route::apiResource('asignaturas', App\Http\Controllers\Api\V1\AsignaturaController::class)->except(['index']);
@@ -101,19 +101,19 @@ Route::prefix('v1')->group(function () {
         // Gestión de Propuestas Institucionales
         Route::get('propuestas/escuelas-autorizadas', [App\Http\Controllers\Api\V1\PropuestaController::class, 'getAuthorizedSchools']);
         Route::apiResource('propuestas', App\Http\Controllers\Api\V1\PropuestaController::class);
-        
+
         // Catálogos relacionados
-        Route::get('/planes-ciclos', function() {
+        Route::get('/planes-ciclos', function () {
             return response()->json(\App\Models\PlanCiclo::all());
         });
-        Route::get('/turnos', function() {
+        Route::get('/turnos', function () {
             return response()->json(\App\Models\Turno::all());
         });
-        Route::get('/jornadas', function() {
+        Route::get('/jornadas', function () {
             return response()->json(\App\Models\Jornada::all());
         });
         Route::get('/lectivos', [App\Http\Controllers\Api\V1\LectivoController::class, 'index']);
-        Route::get('/anio-planes', function() {
+        Route::get('/anio-planes', function () {
             return response()->json(\App\Models\AnioPlan::with(['plan', 'anio'])->get());
         });
         Route::get('/escalafones', [App\Http\Controllers\Api\V1\EscalafonController::class, 'index']);
@@ -122,7 +122,7 @@ Route::prefix('v1')->group(function () {
 
     // Gestión Administrativa
     Route::middleware(['auth:sanctum', 'verified', 'block_panel_general'])->prefix('admin')->group(function () {
-        
+
         // --- RUTAS DE ACCESO INSTITUCIONAL (Accesibles por Directivos y Jefaturas) ---
         // Protegidas individualmente por Policies
         Route::apiResource('escuela-personas', App\Http\Controllers\Api\V1\Admin\EscuelaPersonaController::class);
@@ -130,25 +130,26 @@ Route::prefix('v1')->group(function () {
         Route::post('personas/{persona}/resend-activation', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'resendActivation']);
         Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);
         Route::post('personas/{persona}/unlink-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'unlinkUser']);
-        
+
         Route::apiResource('cupofs', App\Http\Controllers\Api\V1\CupofController::class);
         Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);
         Route::apiResource('escuelas', App\Http\Controllers\Api\V1\Admin\EscuelaController::class);
         Route::post('cupofs/{cupof}/assign', [App\Http\Controllers\Api\V1\CupofController::class, 'assign']);
         Route::post('cupofs/{cupof}/release', [App\Http\Controllers\Api\V1\CupofController::class, 'release']);
-        
+
         Route::get('comunidad-educativa', [App\Http\Controllers\Api\V1\Admin\ComunidadEducativaController::class, 'index']);
 
         // --- RUTAS DE ADMINISTRACIÓN GLOBAL (Requieren permiso sistema.usuarios) ---
-        Route::middleware('permission:sistema.usuarios')->group(function() {
-            Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class)->except([ 'store' ]);
+        Route::middleware('permission:sistema.usuarios')->group(function () {
             Route::post('/usuarios/{usuario}/confirm-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'confirmPersona']);
             Route::get('/usuarios/{usuario}/candidatos-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'candidatosPersona']);
             Route::post('/usuarios/{usuario}/vincular-persona/{persona}', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'vincularPersona']);
             Route::post('/usuarios/{usuario}/desvincular-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'desvincularPersona']);
             Route::post('/usuarios/{usuario}/resend-activation', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendActivation']);
             Route::post('/usuarios/{usuario}/resend-verification', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendEmailVerification']);
-            
+
+            Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class)->except(['store']);
+
             Route::post('personas/{persona}/jefe-provincial', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeProvincial']);
             Route::post('personas/{persona}/jefe-regional', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeRegional']);
             Route::post('personas/{persona}/jefe-distrital', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeDistrital']);
