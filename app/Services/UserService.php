@@ -15,6 +15,7 @@ use App\Notifications\AdminEmailChangeNotification;
 use Illuminate\Support\Str;
 use App\DTOs\User\CreateUserDTO;
 use App\DTOs\User\UpdateUserProfileDTO;
+use App\Notifications\AccountInvitationNotification;
 
 
 class UserService
@@ -162,7 +163,8 @@ class UserService
         $arrayData = $dto->toArray();
         $password = !empty($dto->password) ? $dto->password : 'Sgei!2026_Admin';
         $arrayData['password'] = Hash::make($password);
-
+        $arrayData['password_set'] = true;
+        
         $arrayData['verification_token'] = $dto->verificationToken ?? Str::random(60);
         $arrayData['verification_token_created_at'] = $dto->verificationTokenCreatedAt ?? now();
 
@@ -573,6 +575,45 @@ class UserService
 
 
         return $query->limit(10)->get();
+    }
+
+    /**
+     * Resend the account activation invitation (pure invitation to set a password).
+     * Does NOT touch email_verified_at, estado, or the password itself.
+     */
+    public function resendActivation(Usuario $user): void
+    {
+        if ($user->password_set) {
+            throw ValidationException::withMessages([
+                'password' => ['Este usuario ya tiene una contraseña establecida.'],
+            ]);
+        }
+
+        $user->forceFill([
+            'verification_token' => Str::random(60),
+            'verification_token_created_at' => now(),
+        ])->save();
+
+        $user->notify(new AccountInvitationNotification($user->verification_token));
+    }
+    /**
+     * Resend the email verification notification.
+     * Does NOT touch the password or password_set.
+     */
+    public function resendEmailVerification(Usuario $user): void
+    {
+        if ($user->hasVerifiedEmail()) {
+            throw ValidationException::withMessages([
+                'email' => ['El email ya está verificado.'],
+            ]);
+        }
+
+        $user->forceFill([
+            'verification_token' => Str::random(60),
+            'verification_token_created_at' => now(),
+        ])->save();
+
+        $user->notify(new VerifyEmailNotification($user->verification_token));
     }
 
 }

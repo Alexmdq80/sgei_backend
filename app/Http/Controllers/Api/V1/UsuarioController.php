@@ -10,10 +10,6 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Resources\UsuarioResource;
 use App\Http\Requests\Api\V1\UsuarioRequest;
 use App\DTOs\User\UpdateUserProfileDTO;
-use App\Notifications\AccountInvitationNotification;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use App\Notifications\VerifyEmailNotification;
 
 class UsuarioController extends Controller
 {
@@ -24,8 +20,8 @@ class UsuarioController extends Controller
         $this->userService = $userService;
     }
 
-    /**
-     * Manually resend the activation invitation to a user.
+     /**
+     * Manually resend the activation invitation to a user (pure invitation to set a password).
      */
     public function resendActivation(Usuario $usuario): JsonResponse
     {
@@ -38,31 +34,46 @@ class UsuarioController extends Controller
             ], 403);
         }
 
-        if ($usuario->estado === 'activo') {
+        try {
+            $this->userService->resendActivation($usuario);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'error' => 'Este usuario ya está activo. No es necesario reenviar la invitación.',
+                'error' => $e->errors()['password'][0] ?? 'No se pudo reenviar la invitación.',
                 'code' => 422
             ], 422);
         }
-
-        DB::transaction(function () use ($usuario) {
-            $usuario->verification_token = Str::random(60);
-            $usuario->verification_token_created_at = now();
-            $usuario->save();
-
-            if ($usuario->estado === 'esperando_activacion') {
-                $usuario->notify(new AccountInvitationNotification($usuario->verification_token));
-            } else {
-                $usuario->notify(new VerifyEmailNotification($usuario->verification_token));
-            }
-
-        });
 
         return response()->json([
             'message' => 'Invitación de activación reenviada con éxito al correo del usuario.'
         ]);
     }
+/**
+     * Resend the email verification notification to a user.
+     */
+    public function resendEmailVerification(Usuario $usuario): JsonResponse
+    {
+        $this->authorize('manageScoped', $usuario);
 
+        if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
+            return response()->json([
+                'error' => 'Acceso Denegado: No se puede reenviar la verificación a un superusuario.',
+                'code' => 403
+            ], 403);
+        }
+
+        try {
+            $this->userService->resendEmailVerification($usuario);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => $e->errors()['email'][0] ?? 'No se pudo reenviar la verificación.',
+                'code' => 422
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Verificación de email reenviada con éxito al correo del usuario.'
+        ]);
+    }
     /**
      * Display a listing of the users.
      */

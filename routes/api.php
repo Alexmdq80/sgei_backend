@@ -147,6 +147,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/usuarios/{usuario}/vincular-persona/{persona}', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'vincularPersona']);
             Route::post('/usuarios/{usuario}/desvincular-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'desvincularPersona']);
             Route::post('/usuarios/{usuario}/resend-activation', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendActivation']);
+            Route::post('/usuarios/{usuario}/resend-verification', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendEmailVerification']);
             
             Route::post('personas/{persona}/jefe-provincial', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeProvincial']);
             Route::post('personas/{persona}/jefe-regional', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeRegional']);

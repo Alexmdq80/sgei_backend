@@ -207,6 +207,7 @@ class PersonaService
                     'email' => $persona->contacto->email,
                     // Usamos una contraseña aleatoria segura, el usuario la cambiará en la activación
                     'password' => Hash::make(Str::random(32)),
+                    'password_set' => false,
                     'verification_token' => Str::random(60),
                     'verification_token_created_at' => now(),
                     'estado' => 'esperando_activacion'

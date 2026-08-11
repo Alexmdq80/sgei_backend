@@ -39,6 +39,7 @@ class UsuarioResource extends JsonResource
             'es_administrador' => $this->es_administrador,
             'email' => $this->email,
             'email_verified_at' => $this->email_verified_at,
+            'has_password' => $this->has_password,
             'estado' => $this->estado,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

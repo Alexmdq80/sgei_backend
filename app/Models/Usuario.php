@@ -65,6 +65,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         'email_set_at',
         'email_correction_attempts',
         'password',
+        'password_set',
         'verification_token',
         'verification_token_created_at',
         'avatar_path',
@@ -101,7 +102,13 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     {
         return $this->avatar_path ? asset('storage/' . $this->avatar_path) : null;
     }
-
+    /**
+     * Check if the user has a real password set (not a temporary invitation password).
+     */
+    public function getHasPasswordAttribute(): bool
+    {
+        return (bool) $this->password_set;
+    }
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -122,6 +129,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         'email_set_at' => 'datetime',
         'verification_token_created_at' => 'datetime',
         'password' => 'hashed',
+        'password_set' => 'boolean',
         'es_administrador' => 'boolean',
         'email_correction_attempts' => 'integer',
     ];

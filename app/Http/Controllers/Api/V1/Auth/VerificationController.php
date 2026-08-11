@@ -84,10 +84,10 @@ class VerificationController extends Controller
 
         DB::transaction(function () use ($user, $request) {
             $user->password = Hash::make($request->password);
-            $user->email_verified_at = now();
+            $user->password_set = true;
             $user->verification_token = null;
             $user->verification_token_created_at = null;
-            $user->estado = 'activo';
+            $user->estado = $user->email_verified_at ? 'activo' : 'email_pendiente';
             $user->save();
         });
 
