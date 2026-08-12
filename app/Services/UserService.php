@@ -132,6 +132,30 @@ class UserService
             }
         }
 
+        // Filtro por Estado de Contraseña (password_set)
+        if (isset($filters['password_set']) && $filters['password_set'] !== '') {
+            $isSet = filter_var($filters['password_set'], FILTER_VALIDATE_BOOLEAN);
+            $query->where('password_set', $isSet);
+        }
+
+        // Filtro por Email Verificado
+        if (!empty($filters['email_verified'])) {
+            if ($filters['email_verified'] === 'verified') {
+                $query->whereNotNull('email_verified_at');
+            } elseif ($filters['email_verified'] === 'unverified') {
+                $query->whereNull('email_verified_at');
+            }
+        }
+
+        // Filtro por Vinculación a Persona en Padrón
+        if (!empty($filters['persona_linked'])) {
+            if ($filters['persona_linked'] === 'linked') {
+                $query->has('persona');
+            } elseif ($filters['persona_linked'] === 'unlinked') {
+                $query->doesntHave('persona');
+            }
+        }
+
         // Filtro por Rol / Cargo
         if (!empty($filters['role'])) {
             $role = $filters['role'];

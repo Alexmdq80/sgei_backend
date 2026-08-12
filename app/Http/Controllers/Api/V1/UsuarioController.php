@@ -80,7 +80,7 @@ class UsuarioController extends Controller
     public function index(Request $request)
     {
         $this->authorize('viewAny', Usuario::class);
-        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page', 'provincia_id', 'region_id', 'departamento_id', 'role']);
+        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page', 'provincia_id', 'region_id', 'departamento_id', 'role', 'password_set', 'email_verified', 'persona_linked']);
 
         $users = $this->userService->getAll($filters);
 

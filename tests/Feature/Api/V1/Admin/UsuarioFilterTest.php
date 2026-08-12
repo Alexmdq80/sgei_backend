@@ -272,3 +272,79 @@ test('el administrador puede filtrar usuarios por rol profesor', function () {
         ->assertJsonFragment(['nombre' => 'Profesor Test'])
         ->assertJsonMissing(['nombre' => 'User Four']);
 });
+
+test('el administrador puede filtrar usuarios con contraseña definida', function () {
+    // Usuario con contraseña definida (password_set = true)
+    $usuarioConClave = Usuario::factory()->create([
+        'nombre' => 'Usuario Con Clave',
+        'password_set' => true,
+    ]);
+
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?password_set=true');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'Usuario Con Clave'])
+        ->assertJsonMissing(['nombre' => 'User Four']);
+});
+
+test('el administrador puede filtrar usuarios con invitación pendiente (sin contraseña)', function () {
+    // Usuario con contraseña definida que NO debe aparecer
+    Usuario::factory()->create([
+        'nombre' => 'Usuario Con Clave',
+        'password_set' => true,
+    ]);
+
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?password_set=false');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'User Four'])
+        ->assertJsonMissing(['nombre' => 'Usuario Con Clave']);
+});
+
+test('el administrador puede filtrar usuarios con email verificado', function () {
+    // Usuario sin email verificado que NO debe aparecer
+    Usuario::factory()->unverified()->create([
+        'nombre' => 'Email Sin Verificar',
+    ]);
+
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?email_verified=verified');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'User One'])
+        ->assertJsonMissing(['nombre' => 'Email Sin Verificar']);
+});
+
+test('el administrador puede filtrar usuarios con email sin verificar', function () {
+    $usuarioSinVerificar = Usuario::factory()->unverified()->create([
+        'nombre' => 'Email Sin Verificar',
+    ]);
+
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?email_verified=unverified');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'Email Sin Verificar'])
+        ->assertJsonMissing(['nombre' => 'User One']);
+});
+
+test('el administrador puede filtrar usuarios vinculados al padrón', function () {
+    // User One a Six tienen persona vinculada; User Four no tiene
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?persona_linked=linked');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'User One'])
+        ->assertJsonMissing(['nombre' => 'User Four']);
+});
+
+test('el administrador puede filtrar usuarios sin vincular al padrón', function () {
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->getJson('/api/v1/admin/usuarios?persona_linked=unlinked');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['nombre' => 'User Four'])
+        ->assertJsonMissing(['nombre' => 'User One']);
+});
