@@ -20,7 +20,7 @@ class UsuarioController extends Controller
         $this->userService = $userService;
     }
 
-     /**
+    /**
      * Manually resend the activation invitation to a user (pure invitation to set a password).
      */
     public function resendActivation(Usuario $usuario): JsonResponse
@@ -47,7 +47,7 @@ class UsuarioController extends Controller
             'message' => 'Invitación de activación reenviada con éxito al correo del usuario.'
         ]);
     }
-/**
+    /**
      * Resend the email verification notification to a user.
      */
     public function resendEmailVerification(Usuario $usuario): JsonResponse
@@ -80,7 +80,7 @@ class UsuarioController extends Controller
     public function index(Request $request)
     {
         $this->authorize('viewAny', Usuario::class);
-        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page', 'provincia_id', 'region_id', 'departamento_id', 'role', 'password_set', 'email_verified', 'persona_linked']);
+        $filters = $request->only(['search', 'per_page', 'escuela_id', 'cue_anexo', 'vinculation', 'page', 'provincia_id', 'region_id', 'departamento_id', 'role', 'password_set', 'email_verified', 'persona_linked', 'sort_by', 'order']);
 
         $users = $this->userService->getAll($filters);
 

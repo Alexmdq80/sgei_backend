@@ -174,7 +174,27 @@ class UserService
             });
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate($filters['per_page'] ?? 15);
+        // --- Ordenamiento dinámico (con lista blanca para prevenir inyección SQL) ---
+        $allowedSortColumns = [
+            'nombre',
+            'email',
+            'documento_numero',
+            'documento_tipo_id',
+            'es_administrador',
+            'estado',
+            'email_verified_at',
+            'password_set',
+            'created_at',
+            'updated_at',
+        ];
+
+        $sortBy = in_array($filters['sort_by'] ?? null, $allowedSortColumns)
+            ? $filters['sort_by']
+            : 'created_at';
+
+        $order = ($filters['order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderBy($sortBy, $order)->paginate($filters['per_page'] ?? 15);
     }
 
     /**
@@ -188,7 +208,7 @@ class UserService
         $password = !empty($dto->password) ? $dto->password : 'Sgei!2026_Admin';
         $arrayData['password'] = Hash::make($password);
         $arrayData['password_set'] = true;
-        
+
         $arrayData['verification_token'] = $dto->verificationToken ?? Str::random(60);
         $arrayData['verification_token_created_at'] = $dto->verificationTokenCreatedAt ?? now();
 
