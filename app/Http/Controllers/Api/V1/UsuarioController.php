@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Usuario;
+use App\Models\Persona;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\UsuarioResource;
 use App\Http\Requests\Api\V1\UsuarioRequest;
 use App\DTOs\User\UpdateUserProfileDTO;
+use Illuminate\Support\Carbon;
+use \Illuminate\Validation\ValidationException;
+use \App\Services\CupofService;
+use \Illuminate\Database\QueryException;
 
 class UsuarioController extends Controller
 {
@@ -36,7 +41,7 @@ class UsuarioController extends Controller
 
         try {
             $this->userService->resendActivation($usuario);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'error' => $e->errors()['password'][0] ?? 'No se pudo reenviar la invitación.',
                 'code' => 422
@@ -63,7 +68,7 @@ class UsuarioController extends Controller
 
         try {
             $this->userService->resendEmailVerification($usuario);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'error' => $e->errors()['email'][0] ?? 'No se pudo reenviar la verificación.',
                 'code' => 422
@@ -120,6 +125,18 @@ class UsuarioController extends Controller
     {
         $this->authorize('update', $usuario);
 
+        // Verificación de concurrencia por Bloqueo Optimista (Unix Timestamp)
+        if ($request->filled('updated_at')) {
+            $clientTimestamp = Carbon::parse($request->input('updated_at'))->timestamp;
+            $dbTimestamp = $usuario->updated_at?->timestamp;
+
+            if ($dbTimestamp && $dbTimestamp !== $clientTimestamp) {
+                return response()->json([
+                    'error' => 'Conflicto de concurrencia: El registro fue modificado por otro administrador mientras lo editabas. Por favor, recarga los datos.',
+                    'code' => 409
+                ], 409);
+            }
+        }
         // Proteger integridad del vínculo con el padrón
         $usuario->load('persona');
         if ($usuario->persona) {
@@ -139,7 +156,7 @@ class UsuarioController extends Controller
 
         try {
             $user = $this->userService->updateProfile($usuario, $dto);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             if ($e->getCode() === '23000' || str_contains($e->getMessage(), 'Duplicate entry')) {
                 return response()->json([
                     'error' => 'Ya existe otro usuario con el mismo tipo y número de documento. No se pueden duplicar documentos entre usuarios.',
@@ -178,7 +195,7 @@ class UsuarioController extends Controller
             }
 
             // Sincronizar roles por si acaso quedó desfasado
-            app(\App\Services\CupofService::class)->syncAllRolesFromCupof($usuario);
+            app(CupofService::class)->syncAllRolesFromCupof($usuario);
 
             return response()->json([
                 'message' => 'El usuario ya se encontraba vinculado y ahora ha sido activado.',
@@ -187,7 +204,7 @@ class UsuarioController extends Controller
         }
 
         // Buscar la persona que coincida (DNI + Email)
-        $persona = \App\Models\Persona::where('documento_tipo_id', $usuario->documento_tipo_id)
+        $persona = Persona::where('documento_tipo_id', $usuario->documento_tipo_id)
             ->where('documento_numero', $usuario->documento_numero)
             ->whereHas('contacto', function ($query) use ($usuario) {
                 $query->where('email', $usuario->email);
@@ -212,7 +229,7 @@ class UsuarioController extends Controller
         $usuario->update(['estado' => 'activo']);
 
         // Sincronizar roles basados en CUPOF inmediatamente tras la vinculación
-        app(\App\Services\CupofService::class)->syncAllRolesFromCupof($usuario);
+        app(CupofService::class)->syncAllRolesFromCupof($usuario);
 
         return response()->json([
             'message' => 'Vinculación con el padrón confirmada con éxito.',

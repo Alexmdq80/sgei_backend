@@ -23,12 +23,13 @@ class UsuarioRequest extends FormRequest
             'documento_tipo_id' => ['nullable', 'integer', Rule::exists('documento_tipos', 'id')],
             'documento_numero' => ['nullable', 'string', 'max:20'],
             'email' => [
-                'required', 
-                'email', 
-                'max:255', 
+                'required',
+                'email',
+                'max:255',
                 Rule::unique('usuarios', 'email')->ignore($id)
             ],
             'password' => ['nullable', 'string', Password::defaults()],
+            'updated_at' => ['nullable', 'date'],
         ];
     }
 }
