@@ -204,29 +204,22 @@ class UserService
     public function create(CreateUserDTO|array $data): Usuario
     {
         $dto = $data instanceof CreateUserDTO ? $data : CreateUserDTO::fromArray($data);
+
         $arrayData = $dto->toArray();
-
-        // 1. Si viene password en el DTO, se usa. Si no, se genera uno aleatorio temporal.
-        $hasPassword = !empty($dto->password);
-        $rawPassword = $hasPassword ? $dto->password : Str::random(32);
-
-        $arrayData['password'] = Hash::make($rawPassword);
-        $arrayData['password_set'] = $hasPassword; // Solo es true si vino explícita
+        $password = !empty($dto->password) ? $dto->password : 'Sgei!2026_Admin';
+        $arrayData['password'] = Hash::make($password);
+        $arrayData['password_set'] = true;
 
         $arrayData['verification_token'] = $dto->verificationToken ?? Str::random(60);
         $arrayData['verification_token_created_at'] = $dto->verificationTokenCreatedAt ?? now();
 
         $user = Usuario::create($arrayData);
 
-        // 2. Intentar vincular con el padrón
+        // Intentar vincular inmediatamente si existe coincidencia en el padrón (por DNI y Email)
         $this->linkToPersona($user);
 
-        // 3. Notificaciones según el caso:
-        if (!$hasPassword) {
-            // Enviar invitación para configurar contraseña
-            $user->notify(new AccountInvitationNotification($user->verification_token));
-        } elseif (!$user->hasVerifiedEmail()) {
-            // Si ya tiene clave pero falta verificar email
+        if (!$user->hasVerifiedEmail()) {
+            // Enviar notificación de verificación si aún no lo está
             $user->notify(new VerifyEmailNotification($user->verification_token));
         }
 

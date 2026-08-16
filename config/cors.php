@@ -15,7 +15,14 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
+    'paths' => [
+        'api/*',
+        'sanctum/csrf-cookie',
+        'login',
+        'logout',
+        'broadcasting/auth',
+        'api/broadcasting/auth'
+    ],
 
     'allowed_methods' => ['*'],
 
@@ -24,7 +31,7 @@ return [
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
-    
+
     'exposed_headers' => ['X-XSRF-TOKEN'],
 
     'max_age' => 0,
