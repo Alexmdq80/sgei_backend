@@ -13,16 +13,21 @@ class PropuestaService
 {
     public function __construct(
         protected UserService $userService
-    ) {}
+    ) {
+    }
 
     /**
      * Get authorized schools for the user.
      */
     public function getAuthorizedSchools(Usuario $user): Collection
     {
+        // Superuser no tiene restricción: puede acceder a todas las escuelas.
+        if ($user->hasRole('superuser')) {
+            return Escuela::orderBy('nombre')->get(['id', 'nombre', 'numero']);
+        }
+
         return $this->userService->getAuthorizedSchoolsForProposals($user);
     }
-
     /**
      * Get all proposals with relations, filtered by authorized schools if not superuser.
      */
@@ -41,7 +46,7 @@ class PropuestaService
         // If not superuser, filter by authorized schools
         if (!$user->hasRole('superuser')) {
             $authorizedSchoolIds = $this->userService->getAuthorizedSchoolsForProposals($user)->pluck('id');
-            
+
             // If school_id filter is provided, check if it's authorized
             if (isset($filters['escuela_id'])) {
                 if (!$authorizedSchoolIds->contains($filters['escuela_id'])) {
@@ -117,8 +122,10 @@ class PropuestaService
     {
         if (!$user->hasRole('superuser')) {
             $authorizedSchoolIds = $this->userService->getAuthorizedSchoolsForProposals($user)->pluck('id');
-            if (!$authorizedSchoolIds->contains($propuesta->escuela_id) || 
-                (isset($data['escuela_id']) && !$authorizedSchoolIds->contains($data['escuela_id']))) {
+            if (
+                !$authorizedSchoolIds->contains($propuesta->escuela_id) ||
+                (isset($data['escuela_id']) && !$authorizedSchoolIds->contains($data['escuela_id']))
+            ) {
                 throw ValidationException::withMessages([
                     'escuela_id' => ['No tienes permisos para modificar propuestas de esta institución.']
                 ]);
