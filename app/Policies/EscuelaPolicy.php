@@ -4,10 +4,12 @@ namespace App\Policies;
 
 use App\Models\Escuela;
 use App\Models\Usuario;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\HasSuperUserAccess;
 
 class EscuelaPolicy
 {
+    use HasSuperUserAccess;
+
     /**
      * Determine whether the user can view any models.
      */
@@ -26,19 +28,21 @@ class EscuelaPolicy
 
     /**
      * Determine whether the user can create models.
+     * Superuser autorizado por before().
      */
     public function create(Usuario $usuario): bool
     {
-        return $usuario->hasAnyRole(['superuser', 'jefe_provincial']);
+        return $usuario->hasRole('jefe_provincial');
     }
 
     /**
      * Determine whether the user can update the model.
+     * Superuser autorizado por before().
      */
     public function update(Usuario $usuario, Escuela $escuela): bool
     {
-        // 1. Superuser y Jefe Provincial pueden todo
-        if ($usuario->hasAnyRole(['superuser', 'jefe_provincial'])) {
+        // 1. Jefe Provincial puede editar cualquier escuela
+        if ($usuario->hasRole('jefe_provincial')) {
             return true;
         }
 
@@ -55,22 +59,21 @@ class EscuelaPolicy
         }
 
         // 4. Equipo de Conducción: Solo su propia escuela (Autogestión)
-        $isConduccionInThisSchool = $usuario->persona?->escuelasPersonas()
-            ->where('escuela_id', $escuela->id)
-            ->whereHas('role', function($q) {
-                $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
-            })
-            ->whereNotNull('verified_at')
-            ->exists();
+        $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
-        return $isConduccionInThisSchool;
+        return $usuario->persona?->escuelasPersonas()
+            ->where('escuela_id', $escuela->id)
+            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
+            ->whereNotNull('verified_at')
+            ->exists() ?? false;
     }
 
     /**
      * Determine whether the user can delete the model.
+     * Superuser autorizado por before().
      */
     public function delete(Usuario $usuario, Escuela $escuela): bool
     {
-        return $usuario->hasAnyRole(['superuser', 'jefe_provincial']);
+        return $usuario->hasRole('jefe_provincial');
     }
 }

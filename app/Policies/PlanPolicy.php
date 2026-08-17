@@ -4,10 +4,12 @@ namespace App\Policies;
 
 use App\Models\Plan;
 use App\Models\Usuario;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\HasSuperUserAccess;
 
 class PlanPolicy
 {
+    use HasSuperUserAccess;
+
     private function isReadOnlyRole(Usuario $user): bool
     {
         $restrictedRoles = [
@@ -19,16 +21,21 @@ class PlanPolicy
             'secretario',
             'prosecretario'
         ];
-        
+
         if ($user->hasAnyRole($restrictedRoles)) {
             return true;
         }
 
+        // Si ya está cargada la relación en memoria, evitamos una query extra
+        if ($user->relationLoaded('persona') && $user->persona?->relationLoaded('escuelasPersonas')) {
+            return $user->persona->escuelasPersonas
+                ->whereNotNull('verified_at')
+                ->contains(fn($ep) => in_array($ep->role?->name, $restrictedRoles));
+        }
+
         return $user->persona?->escuelasPersonas()
             ->whereNotNull('verified_at')
-            ->whereHas('role', function($q) use ($restrictedRoles) {
-                $q->whereIn('name', $restrictedRoles);
-            })
+            ->whereHas('role', fn($q) => $q->whereIn('name', $restrictedRoles))
             ->exists() ?? false;
     }
 
@@ -40,6 +47,7 @@ class PlanPolicy
         if ($this->isReadOnlyRole($user)) {
             return true;
         }
+
         return $user->can('planes.ver') || $user->can('planes.gestionar');
     }
 
@@ -51,6 +59,7 @@ class PlanPolicy
         if ($this->isReadOnlyRole($user)) {
             return true;
         }
+
         return $user->can('planes.ver') || $user->can('planes.gestionar');
     }
 
@@ -62,7 +71,8 @@ class PlanPolicy
         if ($this->isReadOnlyRole($user)) {
             return false;
         }
-        return $user->hasPermissionTo('planes.crear');
+
+        return $user->can('planes.crear');
     }
 
     /**
@@ -73,7 +83,8 @@ class PlanPolicy
         if ($this->isReadOnlyRole($user)) {
             return false;
         }
-        return $user->hasPermissionTo('planes.editar');
+
+        return $user->can('planes.editar');
     }
 
     /**
@@ -84,7 +95,7 @@ class PlanPolicy
         if ($this->isReadOnlyRole($user)) {
             return false;
         }
-        return $user->hasPermissionTo('planes.eliminar');
-    }
 
+        return $user->can('planes.eliminar');
+    }
 }

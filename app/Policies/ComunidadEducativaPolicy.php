@@ -4,57 +4,61 @@ namespace App\Policies;
 
 use App\Models\Escuela;
 use App\Models\Usuario;
+use App\Policies\Concerns\HasSuperUserAccess;
 
 class ComunidadEducativaPolicy
 {
-    /**
-     * Determine whether the user can view the school community.
-     * Access is scoped to the user's jurisdictional boundaries.
-     */
-    public function view(Usuario $user, int $escuelaId): bool
-    {
-        // 1. Superusuario → acceso global sin restricciones
-        if ($user->hasRole('superuser')) {
-            return true;
-        }
+    use HasSuperUserAccess;
 
-        // 2. Jefe Provincial → solo escuelas dentro de SU provincia
+    /**
+     * Determina si el usuario puede ver la comunidad educativa de una escuela.
+     * El acceso está delimitado por las fronteras jurisdiccionales del usuario.
+     * Superuser autorizado automáticamente por before().
+     */
+    public function view(Usuario $user, Escuela|int $escuela): bool
+    {
+        $escuelaId = $escuela instanceof Escuela ? $escuela->id : $escuela;
+
+        // 1. Jefe Provincial → solo escuelas dentro de SU provincia
         if ($user->hasRole('jefe_provincial')) {
             $user->loadMissing('provinciaUsuario');
             if (!$user->provinciaUsuario) {
                 return false;
             }
-            $escuela = Escuela::with('localidad.departamento')->find($escuelaId);
-            return $escuela?->localidad?->departamento?->provincia_id === $user->provinciaUsuario->provincia_id;
+
+            $escuelaModel = $escuela instanceof Escuela ? $escuela : Escuela::with('localidad.departamento')->find($escuelaId);
+            return $escuelaModel?->localidad?->departamento?->provincia_id === $user->provinciaUsuario->provincia_id;
         }
 
-        // 3. Jefe Regional → solo escuelas dentro de SU región
+        // 2. Jefe Regional → solo escuelas dentro de SU región
         if ($user->hasRole('jefe_regional')) {
             $user->loadMissing('regionUsuario');
             if (!$user->regionUsuario) {
                 return false;
             }
-            $escuela = Escuela::with('localidad.departamento')->find($escuelaId);
-            return $escuela?->localidad?->departamento?->region_id === $user->regionUsuario->region_id;
+
+            $escuelaModel = $escuela instanceof Escuela ? $escuela : Escuela::with('localidad.departamento')->find($escuelaId);
+            return $escuelaModel?->localidad?->departamento?->region_id === $user->regionUsuario->region_id;
         }
 
-        // 4. Jefe Distrital → solo escuelas dentro de SU distrito (departamento)
+        // 3. Jefe Distrital → solo escuelas dentro de SU distrito (departamento)
         if ($user->hasRole('jefe_distrital')) {
             $user->loadMissing('distritoUsuario');
             if (!$user->distritoUsuario) {
                 return false;
             }
-            $escuela = Escuela::with('localidad')->find($escuelaId);
-            return $escuela?->localidad?->departamento_id === $user->distritoUsuario->departamento_id;
+
+            $escuelaModel = $escuela instanceof Escuela ? $escuela : Escuela::with('localidad')->find($escuelaId);
+            return $escuelaModel?->localidad?->departamento_id === $user->distritoUsuario->departamento_id;
         }
 
-        // 5. Equipo de Conducción → solo SU escuela (verificado)
+        // 4. Equipo de Conducción → solo SU escuela (verificado)
+        $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+
         return $user->persona?->escuelasPersonas()
             ->where('escuela_id', $escuelaId)
-            ->whereHas('role', function ($q) {
-                $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
-            })
+            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at')
-            ->exists();
+            ->exists() ?? false;
     }
 }

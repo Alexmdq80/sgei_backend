@@ -31,6 +31,6 @@ class Anio extends Model
      */
     public function planAnios(): HasMany
     {
-        return $this->hasMany(PlanAnio::class);
+        return $this->hasMany(AnioPlan::class);
     }
 }

@@ -4,27 +4,30 @@ namespace App\Policies;
 
 use App\Models\Agente;
 use App\Models\Usuario;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\HasSuperUserAccess;
 
 class AgentePolicy
 {
+    use HasSuperUserAccess;
+
     /**
-     * Determine whether the user can manage agents.
+     * Determina si el usuario tiene permisos generales para gestionar agentes.
+     * Superuser autorizado automáticamente por before().
      */
     private function canManageAgents(Usuario $usuario): bool
     {
-        // 1. Superusuarios y Jefaturas
-        if ($usuario->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+        // 1. Jefaturas Jerárquicas
+        if ($usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return true;
         }
 
-        // 2. Equipo de Conducción
+        // 2. Equipo de Conducción Escolar
+        $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+
         return $usuario->persona?->escuelasPersonas()
-            ->whereHas('role', function($q) {
-                $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
-            })
+            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at')
-            ->exists();
+            ->exists() ?? false;
     }
 
     /**

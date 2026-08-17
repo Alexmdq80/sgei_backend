@@ -4,91 +4,74 @@ namespace App\Policies;
 
 use App\Models\Persona;
 use App\Models\Usuario;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\HasSuperUserAccess;
 
 class PersonaPolicy
 {
-    /**
-     * Determine whether the user can manage the persona padron (CRUD Global).
-     * Applied to: create, update, delete.
-     */
-    private function canManageGlobalPadron(Usuario $usuario): bool
-    {
-        // Solo Superusuario/Administrador tiene acceso de escritura al padrón global.
-        return $usuario->hasRole('superuser') || $usuario->es_administrador;
-    }
-
-    /**
-     * Determine whether the user can search/read the persona padron.
-     * Jefaturas tienen acceso de lectura para buscar personas al asignar roles.
-     */
-    private function canReadPadron(Usuario $usuario): bool
-    {
-        return $this->canManageGlobalPadron($usuario)
-            || $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
-    }
+    use HasSuperUserAccess;
 
     /**
      * Determine whether the user can view any models.
-     * Jefaturas pueden buscar personas para asignar roles (solo lectura).
+     * Superuser autorizado por before(). Jefaturas tienen acceso de lectura.
      */
     public function viewAny(Usuario $usuario): bool
     {
-        return $this->canReadPadron($usuario);
+        return $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
     }
 
     /**
      * Determine whether the user can view the model.
-     * Jefaturas pueden ver el detalle de una persona para asignar roles.
      */
     public function view(Usuario $usuario, Persona $persona): bool
     {
-        return $this->canReadPadron($usuario);
+        return $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
     }
 
     /**
      * Determine whether the user can create models.
+     * Superuser autorizado por before(). Jefaturas y Equipo de Conducción pueden crear.
      */
     public function create(Usuario $usuario): bool
     {
-        return $this->canManageGlobalPadron($usuario)
-            || $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])
-            || $usuario->persona?->escuelasPersonas()
-                ->whereHas('role', function($q) {
-                    $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
-                })
-                ->whereNotNull('verified_at')
-                ->exists();
+        if ($usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+            return true;
+        }
+
+        $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+
+        return $usuario->persona?->escuelasPersonas()
+            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
+            ->whereNotNull('verified_at')
+            ->exists() ?? false;
     }
 
     /**
      * Determine whether the user can update the model.
+     * SEGÚN REGLA: Sólo Superusuario (manejado por before()).
      */
     public function update(Usuario $usuario, Persona $persona): bool
     {
-        return $this->canManageGlobalPadron($usuario);
+        return false;
     }
 
     /**
      * Determine whether the user can delete the model.
-     * SEGÚN REGLA: Sólo Superusuario, Provincial, Regional, Distrital y Conducción.
+     * SEGÚN REGLA: Sólo Superusuario (manejado por before()).
      */
     public function delete(Usuario $usuario, Persona $persona): bool
     {
-        return $this->canManageGlobalPadron($usuario);
+        return false;
     }
 
     /**
      * Determine whether the user can assign roles.
-     * La lógica específica de jerarquía está en PersonaController,
-     * pero este Gate general valida si el usuario puede siquiera abrir el modal.
+     * Superuser autorizado por before(). Jefaturas pueden abrir el modal.
      */
     public function assignRoles(Usuario $usuario): bool
     {
         return $usuario->hasAnyRole([
-            'superuser', 
-            'jefe_provincial', 
-            'jefe_regional', 
+            'jefe_provincial',
+            'jefe_regional',
             'jefe_distrital'
         ]);
     }

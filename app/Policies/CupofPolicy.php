@@ -4,82 +4,60 @@ namespace App\Policies;
 
 use App\Models\Cupof;
 use App\Models\Usuario;
+use App\Policies\Concerns\HasSuperUserAccess;
 use App\Services\EscuelaService;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Support\Str;
 
 class CupofPolicy
 {
+    use HasSuperUserAccess;
+
     /**
      * Determine whether the user can view any models.
+     * Superuser autorizado automáticamente por before().
      */
     public function viewAny(Usuario $user): bool
     {
-        // 0. Superusers have total access
-        if ($user->hasRole('superuser')) {
-            return true;
-        }
-
-        // 1. School conduction team always has access to their school's CUPOFs,
-        //    regardless of any other Spatie roles they may hold.
+        // 1. El Equipo de Conducción siempre tiene acceso a los CUPOF de su escuela
         if ($this->isConduccion($user)) {
             return true;
         }
 
-        // 2. Curricular Supervisors (non-conduction) are forbidden from CUPOF management
+        // 2. Supervisores curriculares no tienen acceso a gestión de CUPOF
         if ($user->hasRole('supervisor_curricular')) {
             return false;
         }
 
-        // 3. Administrative hierarchy: ONLY District Chief can view
-        if ($user->hasRole('jefe_distrital')) {
-            return true;
-        }
-
-        return false;
+        // 3. Jerarquía administrativa: Sólo Jefe Distrital
+        return $user->hasRole('jefe_distrital');
     }
 
     /**
      * Determine whether the user can create models.
+     * Superuser autorizado automáticamente por before().
      */
     public function create(Usuario $user): bool
     {
-        if ($user->hasRole('superuser')) return true;
-
-        // Conduction team always takes priority
-        if ($this->isConduccion($user)) {
-            return true;
-        }
-
-        // Hierarchical admins: ONLY District Chief
-        if ($user->hasRole('jefe_distrital')) {
-            return true;
-        }
-
-        return false;
+        return $this->isConduccion($user) || $user->hasRole('jefe_distrital');
     }
 
     /**
      * Determine whether the user can assign a persona to the CUPOF.
+     * Superuser autorizado automáticamente por before().
      */
     public function assign(Usuario $user, Cupof $cupof): bool
     {
-        if ($user->hasRole('superuser')) return true;
-
         $cargo = mb_strtolower($cupof->nombre_cargo ?? '', 'UTF-8');
-        $isHierarchical = false;
-        foreach (EscuelaService::HIERARCHICAL_ROLES as $role) {
-            if (str_contains($cargo, $role)) {
-                $isHierarchical = true;
-                break;
-            }
-        }
 
-        // Hierarchical admins: ONLY District Chief can assign hierarchical positions
+        // Str::contains evalúa automáticamente si el cargo contiene cualquiera de los roles del array
+        $isHierarchical = Str::contains($cargo, EscuelaService::HIERARCHICAL_ROLES);
+
+        // Jerarquía administrativa: SÓLO Jefe Distrital puede asignar cargos jerárquicos
         if ($user->hasRole('jefe_distrital')) {
             return $isHierarchical;
         }
 
-        // Conduccion: Can manage ALL positions (hierarchical and operational) in their school
+        // Conducción: Puede gestionar todos los cargos dentro de su escuela
         return $this->isConduccion($user, $cupof->escuela_id);
     }
 
@@ -88,7 +66,6 @@ class CupofPolicy
      */
     public function release(Usuario $user, Cupof $cupof): bool
     {
-        // Follows the same logic as assignment
         return $this->assign($user, $cupof);
     }
 
@@ -97,16 +74,16 @@ class CupofPolicy
      */
     private function isConduccion(Usuario $user, ?int $escuelaId = null): bool
     {
+        $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
+
         $query = $user->persona?->escuelasPersonas()
-            ->whereHas('role', function($q) {
-                $q->whereIn('name', ['director', 'vicedirector', 'secretario', 'prosecretario']);
-            })
+            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at');
 
         if ($escuelaId) {
             $query->where('escuela_id', $escuelaId);
         }
 
-        return $query->exists();
+        return $query->exists() ?? false;
     }
 }

@@ -4,17 +4,19 @@ namespace App\Policies;
 
 use App\Models\Usuario;
 use App\Models\Persona;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\HasSuperUserAccess;
 
 class UsuarioPolicy
 {
+    use HasSuperUserAccess;
+
     /**
      * Determina si el usuario puede gestionar usuarios globalmente.
-     * SEGÚN REGLA: Sólo Superusuario.
+     * SEGÚN REGLA: Sólo Superusuario (el Trait before() lo autoriza automáticamente).
      */
     public function manageGlobal(Usuario $user): bool
     {
-        return $user->hasRole('superuser') || $user->es_administrador;
+        return false; // Si no es superuser (que ya entró por before), nadie más puede.
     }
 
     /**
@@ -27,10 +29,8 @@ class UsuarioPolicy
 
     public function viewAny(Usuario $user): bool
     {
-        // Solo Superusuario y jefes jerárquicos tienen acceso a ver la nómina de usuarios.
-        return $user->hasRole('superuser') 
-            || $user->es_administrador 
-            || $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
+        // Superuser ya fue autorizado por el before()
+        return $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
     }
 
     /**
@@ -38,30 +38,26 @@ class UsuarioPolicy
      */
     public function view(Usuario $user, Usuario $model): bool
     {
-        if ($user->hasRole('superuser') || $user->es_administrador) {
-            return true;
-        }
-
         // 1. Jefe Provincial
         if ($user->hasRole('jefe_provincial')) {
             $userProvId = $user->provinciaUsuario?->provincia_id;
-            if (!$userProvId) return false;
+            if (!$userProvId)
+                return false;
 
-            // Directo, vía región, vía distrito o vía escuela
             $isInJurisdiction = $model->provinciaUsuario?->provincia_id === $userProvId ||
-                   $model->regionUsuario?->region?->provincia_id === $userProvId ||
-                   $model->distritoUsuario?->distrito?->provincia_id === $userProvId ||
-                   $model->persona?->escuelasPersonas()->whereHas('escuela.localidad.departamento', function($q) use ($userProvId) {
-                       $q->where('provincia_id', $userProvId);
-                   })->exists();
+                $model->regionUsuario?->region?->provincia_id === $userProvId ||
+                $model->distritoUsuario?->distrito?->provincia_id === $userProvId ||
+                $model->persona?->escuelasPersonas()->whereHas('escuela.localidad.departamento', function ($q) use ($userProvId) {
+                    $q->where('provincia_id', $userProvId);
+                })->exists();
 
-            if ($isInJurisdiction) return true;
+            if ($isInJurisdiction)
+                return true;
 
-            // Check matching persona for pending vinculation using scope
             if ($model->estado === 'vinculacion_pendiente') {
                 return Persona::where('documento_tipo_id', $model->documento_tipo_id)
                     ->where('documento_numero', $model->documento_numero)
-                    ->whereHas('contacto', fn ($q) => $q->where('email', $model->email))
+                    ->whereHas('contacto', fn($q) => $q->where('email', $model->email))
                     ->inProvincia($userProvId)
                     ->exists();
             }
@@ -72,21 +68,22 @@ class UsuarioPolicy
         // 2. Jefe Regional
         if ($user->hasRole('jefe_regional')) {
             $userRegId = $user->regionUsuario?->region_id;
-            if (!$userRegId) return false;
+            if (!$userRegId)
+                return false;
 
             $isInJurisdiction = $model->regionUsuario?->region_id === $userRegId ||
-                   $model->distritoUsuario?->distrito?->region_id === $userRegId ||
-                   $model->persona?->escuelasPersonas()->whereHas('escuela.localidad.departamento', function($q) use ($userRegId) {
-                       $q->where('region_id', $userRegId);
-                   })->exists();
+                $model->distritoUsuario?->distrito?->region_id === $userRegId ||
+                $model->persona?->escuelasPersonas()->whereHas('escuela.localidad.departamento', function ($q) use ($userRegId) {
+                    $q->where('region_id', $userRegId);
+                })->exists();
 
-            if ($isInJurisdiction) return true;
+            if ($isInJurisdiction)
+                return true;
 
-            // Check matching persona for pending vinculation using scope
             if ($model->estado === 'vinculacion_pendiente') {
                 return Persona::where('documento_tipo_id', $model->documento_tipo_id)
                     ->where('documento_numero', $model->documento_numero)
-                    ->whereHas('contacto', fn ($q) => $q->where('email', $model->email))
+                    ->whereHas('contacto', fn($q) => $q->where('email', $model->email))
                     ->inRegion($userRegId)
                     ->exists();
             }
@@ -97,20 +94,21 @@ class UsuarioPolicy
         // 3. Jefe Distrital
         if ($user->hasRole('jefe_distrital')) {
             $userDistId = $user->distritoUsuario?->departamento_id;
-            if (!$userDistId) return false;
+            if (!$userDistId)
+                return false;
 
             $isInJurisdiction = $model->distritoUsuario?->departamento_id === $userDistId ||
-                   $model->persona?->escuelasPersonas()->whereHas('escuela.localidad', function($q) use ($userDistId) {
-                       $q->where('departamento_id', $userDistId);
-                   })->exists();
+                $model->persona?->escuelasPersonas()->whereHas('escuela.localidad', function ($q) use ($userDistId) {
+                    $q->where('departamento_id', $userDistId);
+                })->exists();
 
-            if ($isInJurisdiction) return true;
+            if ($isInJurisdiction)
+                return true;
 
-            // Check matching persona for pending vinculation using scope
             if ($model->estado === 'vinculacion_pendiente') {
                 return Persona::where('documento_tipo_id', $model->documento_tipo_id)
                     ->where('documento_numero', $model->documento_numero)
-                    ->whereHas('contacto', fn ($q) => $q->where('email', $model->email))
+                    ->whereHas('contacto', fn($q) => $q->where('email', $model->email))
                     ->inDepartamento($userDistId)
                     ->exists();
             }
@@ -131,23 +129,18 @@ class UsuarioPolicy
 
     /**
      * Determine whether the user can create models.
-     * SEGÚN REGLA: Sólo Superusuario.
+     * SEGÚN REGLA: Sólo Superusuario (manejado por before()).
      */
     public function create(Usuario $user): bool
     {
-        return $user->hasRole('superuser') || $user->es_administrador;
+        return false;
     }
 
     /**
      * Determine whether the user can update the model.
-     * SEGÚN REGLA: Superusuario, el propio usuario o Jefaturas de la misma jurisdicción.
      */
     public function update(Usuario $user, Usuario $model): bool
     {
-        if ($user->hasRole('superuser') || $user->es_administrador) {
-            return true;
-        }
-
         if ($user->id === $model->id) {
             return true;
         }
@@ -157,29 +150,23 @@ class UsuarioPolicy
             return $this->view($user, $model);
         }
 
-        // El Equipo de Conducción tiene acceso sólo lectura (no pueden actualizar)
         return false;
     }
 
     /**
      * Determine whether the user can delete the model.
-     * SEGÚN REGLA: Sólo Superusuario.
+     * SEGÚN REGLA: Sólo Superusuario (manejado por before()).
      */
     public function delete(Usuario $user, Usuario $model): bool
     {
-        return $user->hasRole('superuser') || $user->es_administrador;
+        return false;
     }
 
     /**
      * Determine whether the user can desvincular institucionalmente.
-     * SEGÚN REGLA: Equipo de Conducción para su colegio, o Superusuario.
      */
     public function desvincular(Usuario $user, Usuario $model): bool
     {
-        if ($user->hasRole('superuser') || $user->es_administrador) {
-            return true;
-        }
-
         if ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
             $userEscuelas = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id');
             $modelEscuelas = $model->persona?->escuelasPersonas()->pluck('escuela_id');
@@ -192,58 +179,68 @@ class UsuarioPolicy
 
     /**
      * Determina si el usuario puede confirmar la vinculación de identidad de otro usuario.
-     * SEGÚN REGLA: Superusuario y Jefaturas Jerárquicas. El Equipo de Conducción NO.
      */
     public function confirmPersona(Usuario $user, Usuario $model): bool
     {
-        if ($user->hasRole('superuser') || $user->es_administrador) {
-            return true;
-        }
-
-        // Jefaturas pueden confirmar si el usuario está en su jurisdicción
         if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return $this->view($user, $model);
         }
 
-        // El Equipo de Conducción NO puede confirmar vinculaciones de identidad
         return false;
     }
 
     /**
      * Determina si el usuario puede buscar candidatos del padrón para vincular.
-     * SEGÚN REGLA: Superusuario y Jefaturas Jerárquicas.
      */
     public function manageCandidatos(Usuario $user, Usuario $model): bool
     {
-        if ($user->hasRole('superuser') || $user->es_administrador) {
-            return true;
-        }
-
         return $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
     }
 
     /**
      * Determina si el usuario puede vincular una persona candidata a un usuario.
-     * SEGÚN REGLA: Superusuario y Jefaturas, con verificación de identidad y jurisdicción.
      */
-    public function vincularPersona(Usuario $user, Usuario $model, Persona $persona): bool
+    /**
+     * Determina si el usuario puede desvincular la persona de un usuario.
+     */
+    public function desvincularPersona(Usuario $user, Usuario $model): bool
     {
-        // No permitir vincular superusuarios/administradores
+        // 1. REGLA DURA (Aplica para todos, incluso si quien ejecuta es Superusuario)
         if ($model->es_administrador || $model->hasRole('superuser')) {
             return false;
         }
 
-        // No permitir si el usuario ya tiene persona vinculada
-        if ($model->persona) {
+        if (!$model->persona) {
             return false;
         }
 
-        // No permitir si la persona ya está vinculada a otro usuario
-        if ($persona->usuario_id) {
+        // 2. Si no es el usuario objetivo, el Superusuario SÍ tiene permiso
+        if ($this->isSuperUser($user)) {
+            return true;
+        }
+
+        // 3. Jefaturas
+        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+            return $this->view($user, $model);
+        }
+
+        return false;
+    }
+
+    /**
+     * Determina si el usuario puede vincular una persona candidata a un usuario.
+     */
+    public function vincularPersona(Usuario $user, Usuario $model, Persona $persona): bool
+    {
+        // 1. REGLA DURA (Aplica para todos)
+        if ($model->es_administrador || $model->hasRole('superuser')) {
             return false;
         }
 
-        // Verificar coincidencia de identidad (DNI + Email)
+        if ($model->persona || $persona->usuario_id) {
+            return false;
+        }
+
         $documentoNumeroRaw = $persona->getRawOriginal('documento_numero');
         $emailCoincide = $persona->contacto?->email === $model->email;
         $dniCoincide = $persona->documento_tipo_id == $model->documento_tipo_id
@@ -253,42 +250,14 @@ class UsuarioPolicy
             return false;
         }
 
-        // Superuser/Admin pueden vincular cualquier persona
-        if ($user->hasRole('superuser') || $user->es_administrador) {
+        // 2. Si pasó las reglas de integridad, el Superusuario tiene permiso
+        if ($this->isSuperUser($user)) {
             return true;
         }
 
-        // Jefaturas: verificar que la persona esté en su jurisdicción
+        // 3. Jefaturas
         if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
             return $this->personaEnJurisdiccion($persona, $user);
-        }
-
-        return false;
-    }
-
-    /**
-     * Determina si el usuario puede desvincular la persona de un usuario.
-     * SEGÚN REGLA: Superusuario y Jefaturas de la misma jurisdicción.
-     */
-    public function desvincularPersona(Usuario $user, Usuario $model): bool
-    {
-        // No permitir desvincular superusuarios/administradores
-        if ($model->es_administrador || $model->hasRole('superuser')) {
-            return false;
-        }
-
-        // No permitir si el usuario no tiene persona vinculada
-        if (!$model->persona) {
-            return false;
-        }
-
-        if ($user->hasRole('superuser') || $user->es_administrador) {
-            return true;
-        }
-
-        // Jefaturas pueden desvincular si el usuario está en su jurisdicción
-        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-            return $this->view($user, $model);
         }
 
         return false;
@@ -315,6 +284,4 @@ class UsuarioPolicy
 
         return false;
     }
-
-    
 }
