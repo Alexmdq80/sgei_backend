@@ -48,24 +48,31 @@ class PersonasUsuariosPruebaSeeder extends Seeder
 
         // Roles globales y escolares
         $roles = Role::whereIn('name', [
-            'superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital',
-            'director', 'vicedirector', 'secretario', 'prosecretario', 'profesor', 'preceptor',
+            'superuser',
+            'jefe_provincial',
+            'jefe_regional',
+            'jefe_distrital',
+            'director',
+            'vicedirector',
+            'secretario',
+            'prosecretario',
+            'profesor',
+            'preceptor',
         ])->pluck('id', 'name');
 
         // Escuelas para roles escolares
         $escuelas = Escuela::inRandomOrder()->limit(30)->get();
 
-        $password = Hash::make('Sgei!2026_Test');
+        $password = Hash::make(config('app.admin_pass'));
 
         // ===== OFFSETS DINÁMICOS (cada ejecución suma un lote nuevo) =====
         $proximoDni = $this->proximoDniPersona();
         $proximoIndiceContacto = $this->proximoIndiceContacto();
         $proximoIndiceUsuario = $this->proximoIndiceUsuario();
+        $proximoIndiceAdmin = $this->proximoIndiceAdmin();
 
-        DB::transaction(function () use (
-            $faker, $docTipo, $provinciaBsAs, $departamentoGp, $roles, $escuelas, $password,
-            $proximoDni, $proximoIndiceContacto, $proximoIndiceUsuario
-        ) {
+
+        DB::transaction(function () use ($faker, $docTipo, $provinciaBsAs, $departamentoGp, $roles, $escuelas, $password, $proximoDni, $proximoIndiceContacto, $proximoIndiceUsuario, $proximoIndiceAdmin) {
             // ===== PERSONAS (500) =====
             $personas = collect();
             for ($i = 0; $i < 500; $i++) {
@@ -76,7 +83,13 @@ class PersonasUsuariosPruebaSeeder extends Seeder
 
             // Superusuarios (3) — es_administrador = true vía forceFill
             for ($i = 0; $i < 3; $i++) {
-                $usuario = $this->crearUsuarioVinculado($personas->shift(), $password, true);
+                $indiceAdmin = $proximoIndiceAdmin + $i;
+                if ($indiceAdmin > 99) {
+                    $this->command->warn('Se alcanzó el límite de 99 superusuarios admin@sgei.local. No se crean más.');
+                    break;
+                }
+                $emailAdmin = sprintf('admin%02d@sgei.local', $indiceAdmin);
+                $usuario = $this->crearUsuarioVinculado($personas->shift(), $password, true, $emailAdmin);
                 $usuario->assignRole($roles['superuser']);
             }
 
@@ -174,6 +187,15 @@ class PersonasUsuariosPruebaSeeder extends Seeder
     {
         return Usuario::where('email', 'like', 'usuario%@test.local')->count() + 1;
     }
+    private function proximoIndiceAdmin(): int
+    {
+        $max = Usuario::where('email', 'like', 'admin%@sgei.local')
+            ->get()
+            ->map(fn($u) => (int) substr($u->email, 5, 2))
+            ->max();
+
+        return $max ? $max + 1 : 1;
+    }
 
     // ===== HELPERS =====
 
@@ -227,17 +249,19 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         return $persona;
     }
 
-    private function crearUsuarioVinculado(Persona $persona, string $password, bool $esAdmin = false): Usuario
+    private function crearUsuarioVinculado(Persona $persona, string $password, bool $esAdmin = false, ?string $email = null): Usuario
     {
         $contacto = $persona->contacto;
+        $email = $email ?? $contacto->email;
 
         $usuario = Usuario::firstOrCreate(
-            ['email' => $contacto->email],
+            ['email' => $email],
             [
                 'nombre' => $persona->nombre . ' ' . $persona->apellido . ' (' . $persona->documentoNumeroRaw() . ')',
                 'documento_tipo_id' => $persona->documento_tipo_id,
                 'documento_numero' => $persona->documentoNumeroRaw(),
-                'email' => $contacto->email,
+                'email' => $email,
+
                 'email_verified_at' => now(),
                 'password' => $password,
                 'password_set' => true,
