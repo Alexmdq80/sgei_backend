@@ -32,12 +32,11 @@ return [
             'port' => env('REVERB_SERVER_PORT', 8080),
             'hostname' => env('REVERB_HOST'),
             'options' => [
-                // 🔒 Habilitar TLS/SSL con tus certificados de mkcert:
-                'tls' => env('REVERB_SCHEME') === 'https' ? [
-                    'local_cert' => env('REVERB_TLS_CERT'),
-                    'local_pk' => env('REVERB_TLS_KEY'),
-                    'verify_peer' => false,
-                ] : [],
+                'tls' => env('REVERB_SERVER_TLS', false) ? [
+                        'local_cert' => env('REVERB_TLS_CERT'),
+                        'local_pk' => env('REVERB_TLS_KEY'),
+                        'verify_peer' => false,
+                    ] : [],
             ],
             'max_request_size' => env('REVERB_MAX_REQUEST_SIZE', 10_000),
             'scaling' => [

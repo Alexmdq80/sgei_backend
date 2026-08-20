@@ -21,12 +21,12 @@ return [
         'login',
         'logout',
         'broadcasting/auth',
-        'api/broadcasting/auth'
+        'api/broadcasting/auth',
     ],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => explode(',', env('FRONTEND_URL', 'http://sgei.local')),
+    'allowed_origins' => explode(',', env('FRONTEND_URL', 'https://sgei.local')),
 
     'allowed_origins_patterns' => [],
 
