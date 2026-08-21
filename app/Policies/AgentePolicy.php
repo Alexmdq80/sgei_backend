@@ -16,11 +16,6 @@ class AgentePolicy
      */
     private function canManageAgents(Usuario $usuario): bool
     {
-        // 1. Jefaturas Jerárquicas
-        if ($usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-            return true;
-        }
-
         // 2. Equipo de Conducción Escolar
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 

@@ -64,6 +64,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'notas.ver', 'notas.cargar', 'notas.cerrar',
             'asistencia.ver', 'asistencia.cargar', 'asistencia.justificar',
             'boletines.generar', 'familia.gestionar', 'familia.notificar',
+            'planes.ver', 'planes.crear', 'planes.editar', 'planes.eliminar',
+            'asignaturas.ver', 'asignaturas.gestionar',
             'sistema.usuarios' // Solo gestión de usuarios locales
         ];
         $director->givePermissionTo($directivoPermissions);
@@ -104,45 +106,6 @@ class RolesAndPermissionsSeeder extends Seeder
         $responsable = Role::firstOrCreate(['name' => 'responsable', 'guard_name' => 'sanctum']);
         $responsable->givePermissionTo(['institucion.ver', 'estudiantes.ver', 'notas.ver', 'asistencia.ver']);
 
-        // 8. Jefe Provincial (Provincial Admin)
-        $jefeProvincial = Role::firstOrCreate(['name' => 'jefe_provincial', 'guard_name' => 'sanctum']);
-        $jefeProvincial->givePermissionTo([
-            'institucion.ver',
-            'personal.ver',
-            'planes.ver',
-            'sistema.usuarios',
-            'sistema.roles'
-        ]);
-
-        // 9. Jefe Regional (Regional Admin)
-        $jefeRegional = Role::firstOrCreate(['name' => 'jefe_regional', 'guard_name' => 'sanctum']);
-        $jefeRegional->givePermissionTo([
-            'institucion.ver',
-            'personal.ver',
-            'planes.ver',
-            'sistema.usuarios'
-        ]);
-
-        // 10. Jefe Distrital (District Admin)
-        $jefeDistrital = Role::firstOrCreate(['name' => 'jefe_distrital', 'guard_name' => 'sanctum']);
-        $jefeDistrital->givePermissionTo([
-            'institucion.ver',
-            'personal.ver',
-            'planes.ver',
-            'sistema.usuarios'
-        ]);
-
-        // 11. Supervisor Curricular (Academic Focus)
-        $supervisor = Role::firstOrCreate(['name' => 'supervisor_curricular', 'guard_name' => 'sanctum']);
-        $supervisor->givePermissionTo([
-            'institucion.ver',
-            'personal.ver',
-            'planes.ver',
-            'planes.crear',
-            'planes.editar',
-            'planes.eliminar',
-            'asignaturas.ver',
-            'asignaturas.gestionar'
-        ]);
+       
     }
 }

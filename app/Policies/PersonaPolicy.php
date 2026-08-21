@@ -16,7 +16,7 @@ class PersonaPolicy
      */
     public function viewAny(Usuario $usuario): bool
     {
-        return $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
+        return false;
     }
 
     /**
@@ -24,7 +24,7 @@ class PersonaPolicy
      */
     public function view(Usuario $usuario, Persona $persona): bool
     {
-        return $usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
+        return false;
     }
 
     /**
@@ -33,9 +33,6 @@ class PersonaPolicy
      */
     public function create(Usuario $usuario): bool
     {
-        if ($usuario->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-            return true;
-        }
 
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
@@ -69,10 +66,6 @@ class PersonaPolicy
      */
     public function assignRoles(Usuario $usuario): bool
     {
-        return $usuario->hasAnyRole([
-            'jefe_provincial',
-            'jefe_regional',
-            'jefe_distrital'
-        ]);
+        return false;
     }
 }

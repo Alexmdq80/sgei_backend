@@ -32,7 +32,7 @@ class EscuelaPolicy
      */
     public function create(Usuario $usuario): bool
     {
-        return $usuario->hasRole('jefe_provincial');
+        return false;
     }
 
     /**
@@ -41,23 +41,6 @@ class EscuelaPolicy
      */
     public function update(Usuario $usuario, Escuela $escuela): bool
     {
-        // 1. Jefe Provincial puede editar cualquier escuela
-        if ($usuario->hasRole('jefe_provincial')) {
-            return true;
-        }
-
-        // 2. Jefe Regional: Solo escuelas en su región
-        if ($usuario->hasRole('jefe_regional')) {
-            $usuario->loadMissing('regionUsuario');
-            return $usuario->regionUsuario && $escuela->localidad?->departamento?->region_id === $usuario->regionUsuario->region_id;
-        }
-
-        // 3. Jefe Distrital: Solo escuelas en su distrito
-        if ($usuario->hasRole('jefe_distrital')) {
-            $usuario->loadMissing('distritoUsuario');
-            return $usuario->distritoUsuario && $escuela->localidad?->departamento_id === $usuario->distritoUsuario->departamento_id;
-        }
-
         // 4. Equipo de Conducción: Solo su propia escuela (Autogestión)
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
@@ -74,6 +57,6 @@ class EscuelaPolicy
      */
     public function delete(Usuario $usuario, Escuela $escuela): bool
     {
-        return $usuario->hasRole('jefe_provincial');
+        return false;
     }
 }

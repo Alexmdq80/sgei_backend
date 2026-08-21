@@ -23,13 +23,7 @@ class CupofPolicy
             return true;
         }
 
-        // 2. Supervisores curriculares no tienen acceso a gestión de CUPOF
-        if ($user->hasRole('supervisor_curricular')) {
-            return false;
-        }
-
-        // 3. Jerarquía administrativa: Sólo Jefe Distrital
-        return $user->hasRole('jefe_distrital');
+        return false;
     }
 
     /**
@@ -38,7 +32,7 @@ class CupofPolicy
      */
     public function create(Usuario $user): bool
     {
-        return $this->isConduccion($user) || $user->hasRole('jefe_distrital');
+        return $this->isConduccion($user);
     }
 
     /**
@@ -51,11 +45,6 @@ class CupofPolicy
 
         // Str::contains evalúa automáticamente si el cargo contiene cualquiera de los roles del array
         $isHierarchical = Str::contains($cargo, EscuelaService::HIERARCHICAL_ROLES);
-
-        // Jerarquía administrativa: SÓLO Jefe Distrital puede asignar cargos jerárquicos
-        if ($user->hasRole('jefe_distrital')) {
-            return $isHierarchical;
-        }
 
         // Conducción: Puede gestionar todos los cargos dentro de su escuela
         return $this->isConduccion($user, $cupof->escuela_id);

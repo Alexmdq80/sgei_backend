@@ -33,64 +33,20 @@ class UserService
     public function getAll(array $filters = []): LengthAwarePaginator
     {
         $user = auth()->user();
-        $isJefeProvincial = $user?->hasRole('jefe_provincial');
-        $isJefeRegional = $user?->hasRole('jefe_regional');
-        $isJefeDistrital = $user?->hasRole('jefe_distrital');
 
         $query = Usuario::query()->with([
             'persona',
             'documentoTipo',
             'persona.escuelasPersonas.escuela',
             'persona.escuelasPersonas.role',
-            'roles',
-            'provinciaUsuario.provincia',
-            'regionUsuario.region',
-            'distritoUsuario.distrito'
+            'roles'
         ]);
 
         // Enforce Jurisdiction for non-superusers
         if ($user && !$user->hasRole('superuser')) {
-            if ($isJefeProvincial && $user->provinciaUsuario) {
-                $filters['provincia_id'] = $user->provinciaUsuario->provincia_id;
-            } elseif ($isJefeRegional && $user->regionUsuario) {
-                $filters['region_id'] = $user->regionUsuario->region_id;
-            } elseif ($isJefeDistrital && $user->distritoUsuario) {
-                $filters['departamento_id'] = $user->distritoUsuario->departamento_id;
-            } elseif ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
+            if ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
                 $filters['escuela_ids'] = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
             }
-        }
-
-        // Apply Hierarchical Roles restriction for all Chiefs
-        if ($isJefeProvincial || $isJefeRegional || $isJefeDistrital) {
-            $hierarchicalRoles = Usuario::ROLES_EQUIPO_CONDUCCION;
-            $globalHierarchicalRoles = ['jefe_provincial', 'jefe_regional', 'jefe_distrital'];
-
-            $query->where(function ($q) use ($hierarchicalRoles, $globalHierarchicalRoles) {
-                // Roles en Escuelas (Directivos, etc)
-                $q->whereHas('persona.escuelasPersonas.role', function ($sq) use ($hierarchicalRoles) {
-                    $sq->whereIn('name', $hierarchicalRoles);
-                })
-                    // O Roles Globales de Jefatura
-                    ->orWhereHas('roles', function ($sq) use ($globalHierarchicalRoles) {
-                        $sq->whereIn('name', $globalHierarchicalRoles);
-                    })
-                    // También ver usuarios que están esperando vinculación (pueden ser sus futuros directivos)
-                    ->orWhere('estado', 'vinculacion_pendiente');
-            });
-        }
-
-        // Filtros Jurisdiccionales (Local Scopes)
-        if (!empty($filters['provincia_id'])) {
-            $query->inProvincia($filters['provincia_id']);
-        }
-
-        if (!empty($filters['region_id'])) {
-            $query->inRegion($filters['region_id']);
-        }
-
-        if (!empty($filters['departamento_id'])) {
-            $query->inDepartamento($filters['departamento_id']);
         }
 
         if (!empty($filters['search'])) {
@@ -636,17 +592,8 @@ class UserService
 
         // Filtro jurisdiccional (solo para no-superusers)
         if (!$performer->hasRole('superuser') && !$performer->es_administrador) {
-            if ($performer->hasRole('jefe_provincial')) {
-                $provId = $performer->provinciaUsuario?->provincia_id;
-                $query->inProvincia($provId);
-            } elseif ($performer->hasRole('jefe_regional')) {
-                $regId = $performer->regionUsuario?->region_id;
-                $query->inRegion($regId);
-            } elseif ($performer->hasRole('jefe_distrital')) {
-                $distId = $performer->distritoUsuario?->departamento_id;
-                $query->inDepartamento($distId);
-            } elseif ($performer->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
-                $escuelaIds = $performer->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
+            if ($performer->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
+                  $escuelaIds = $performer->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
                 if (empty($escuelaIds))
                     return collect();
                 $query->where(function ($q) use ($escuelaIds) {

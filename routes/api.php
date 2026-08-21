@@ -193,9 +193,6 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('calles', App\Http\Controllers\Api\V1\CalleController::class);
 
             // Catálogos Georef
-            Route::apiResource('distritos-usuarios', App\Http\Controllers\Api\V1\Admin\DistritoUsuarioController::class)->only(['index', 'store', 'destroy']);
-            Route::apiResource('provincias-usuarios', App\Http\Controllers\Api\V1\Admin\ProvinciaUsuarioController::class)->only(['index', 'store', 'destroy']);
-            Route::apiResource('regiones-usuarios', App\Http\Controllers\Api\V1\Admin\RegionUsuarioController::class)->only(['index', 'store', 'destroy']);
             Route::apiResource('georef-fuentes', App\Http\Controllers\Api\V1\GeorefFuenteController::class);
             Route::apiResource('georef-categorias', App\Http\Controllers\Api\V1\GeorefCategoriaController::class);
             Route::apiResource('georef-funcions', App\Http\Controllers\Api\V1\GeorefFuncionController::class);

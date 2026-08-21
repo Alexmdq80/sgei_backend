@@ -16,11 +16,6 @@ class EscuelaPersonaPolicy
      */
     public function viewAny(Usuario $user): bool
     {
-        // 1. Jefaturas pueden listar vinculaciones
-        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-            return true;
-        }
-
         // 2. Equipo de Conducción puede ver vinculaciones (para filtrar por su escuela)
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
@@ -36,11 +31,6 @@ class EscuelaPersonaPolicy
      */
     public function view(Usuario $user, EscuelaPersona $escuelaPersona): bool
     {
-        // 1. Jefaturas pueden ver la vinculación
-        if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-            return true;
-        }
-
         // 2. Equipo de Conducción solo si la vinculación pertenece a su escuela
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 

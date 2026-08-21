@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Persona;
 use App\Models\Usuario;
-use App\Models\DistritoUsuario;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -111,9 +110,6 @@ class PersonaService
             'documentoTipo',
             'contacto',
             'usuario.roles',
-            'usuario.provinciaUsuario.provincia',
-            'usuario.regionUsuario.region',
-            'usuario.distritoUsuario.distrito',
             'nacionalidad',
             'genero'
         ]);
@@ -230,113 +226,6 @@ class PersonaService
     }
 
     /**
-     * Assigns the Jefe Provincial role and its geographical context.
-     */
-    public function assignJefeProvincial(Persona $persona, int $provinciaId): Usuario
-    {
-        return DB::transaction(function () use ($persona, $provinciaId) {
-            $user = $this->ensureUserExists($persona);
-
-            if (!$user->hasRole('jefe_provincial')) {
-                $user->assignRole('jefe_provincial');
-            }
-
-            \App\Models\ProvinciaUsuario::updateOrCreate(
-                ['usuario_id' => $user->id],
-                ['provincia_id' => $provinciaId]
-            );
-
-            return $user;
-        });
-    }
-
-    /**
-     * Assigns the Jefe Regional role and its geographical context.
-     */
-    public function assignJefeRegional(Persona $persona, int $regionId): Usuario
-    {
-        return DB::transaction(function () use ($persona, $regionId) {
-            $user = $this->ensureUserExists($persona);
-
-            if (!$user->hasRole('jefe_regional')) {
-                $user->assignRole('jefe_regional');
-            }
-
-            \App\Models\RegionUsuario::updateOrCreate(
-                ['usuario_id' => $user->id],
-                ['region_id' => $regionId]
-            );
-
-            return $user;
-        });
-    }
-
-    /**
-     * Assigns the Jefe Distrital role and its geographical context.
-     */
-    public function assignJefeDistrital(Persona $persona, string $departamentoId): Usuario
-    {
-        return DB::transaction(function () use ($persona, $departamentoId) {
-            $user = $this->ensureUserExists($persona);
-
-            if (!$user->hasRole('jefe_distrital')) {
-                $user->assignRole('jefe_distrital');
-            }
-
-            DistritoUsuario::updateOrCreate(
-                ['usuario_id' => $user->id],
-                ['departamento_id' => $departamentoId]
-            );
-
-            return $user;
-        });
-    }
-
-    /**
-     * Assigns the Supervisor Curricular role.
-     */
-    public function assignSupervisor(Persona $persona): Usuario
-    {
-        return DB::transaction(function () use ($persona) {
-            $user = $this->ensureUserExists($persona);
-
-            if (!$user->hasRole('supervisor_curricular')) {
-                $user->assignRole('supervisor_curricular');
-            }
-
-            return $user;
-        });
-    }
-
-    /**
-     * Removes an administrative role and its context if applicable.
-     */
-    public function removeAdministrativeRole(Persona $persona, string $roleName): void
-    {
-        $user = $persona->usuario;
-        if (!$user)
-            return;
-
-        DB::transaction(function () use ($user, $roleName) {
-            if ($user->hasRole($roleName)) {
-                $user->removeRole($roleName);
-            }
-
-            switch ($roleName) {
-                case 'jefe_provincial':
-                    \App\Models\ProvinciaUsuario::where('usuario_id', $user->id)->delete();
-                    break;
-                case 'jefe_regional':
-                    \App\Models\RegionUsuario::where('usuario_id', $user->id)->delete();
-                    break;
-                case 'jefe_distrital':
-                    DistritoUsuario::where('usuario_id', $user->id)->delete();
-                    break;
-            }
-        });
-    }
-
-    /**
      * Desvincula un usuario de una persona, revoca todos sus roles (excepto superuser)
      * y elimina todas sus vinculaciones institucionales y geográficas.
      */
@@ -352,11 +241,6 @@ class PersonaService
 
                 // 2. Eliminar vinculaciones institucionales (escuelas)
                 \App\Models\EscuelaPersona::where('persona_id', $persona->id)->delete();
-
-                // 3. Eliminar vinculaciones geográficas de roles de jefatura
-                \App\Models\ProvinciaUsuario::where('usuario_id', $linkedUser->id)->delete();
-                \App\Models\RegionUsuario::where('usuario_id', $linkedUser->id)->delete();
-                DistritoUsuario::where('usuario_id', $linkedUser->id)->delete();
 
                 // 4. Revocar todos los roles de Spatie, preservando 'superuser' si lo tuviera
                 $rolesToKeep = [];

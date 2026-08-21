@@ -49,9 +49,6 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         // Roles globales y escolares
         $roles = Role::whereIn('name', [
             'superuser',
-            'jefe_provincial',
-            'jefe_regional',
-            'jefe_distrital',
             'director',
             'vicedirector',
             'secretario',
@@ -91,36 +88,6 @@ class PersonasUsuariosPruebaSeeder extends Seeder
                 $emailAdmin = sprintf('admin%02d@sgei.local', $indiceAdmin);
                 $usuario = $this->crearUsuarioVinculado($personas->shift(), $password, true, $emailAdmin);
                 $usuario->assignRole($roles['superuser']);
-            }
-
-            // Jefes Provinciales (2) — 1 garantizado en BUENOS AIRES
-            for ($i = 0; $i < 2; $i++) {
-                $usuario = $this->crearUsuarioVinculado($personas->shift(), $password);
-                $usuario->assignRole($roles['jefe_provincial']);
-                ProvinciaUsuario::firstOrCreate([
-                    'usuario_id' => $usuario->id,
-                    'provincia_id' => $i === 0 ? $provinciaBsAs->id : Provincia::inRandomOrder()->value('id'),
-                ]);
-            }
-
-            // Jefes Regionales (5)
-            for ($i = 0; $i < 5; $i++) {
-                $usuario = $this->crearUsuarioVinculado($personas->shift(), $password);
-                $usuario->assignRole($roles['jefe_regional']);
-                RegionUsuario::firstOrCreate([
-                    'usuario_id' => $usuario->id,
-                    'region_id' => Region::inRandomOrder()->value('id'),
-                ]);
-            }
-
-            // Jefes Distritales (10) — 1 garantizado en GENERAL PUEYRREDÓN
-            for ($i = 0; $i < 10; $i++) {
-                $usuario = $this->crearUsuarioVinculado($personas->shift(), $password);
-                $usuario->assignRole($roles['jefe_distrital']);
-                DistritoUsuario::firstOrCreate([
-                    'usuario_id' => $usuario->id,
-                    'departamento_id' => $i === 0 ? $departamentoGp->id : Departamento::inRandomOrder()->value('id'),
-                ]);
             }
 
             // Equipos Directivos (30) — roles escolares vía escuela_persona

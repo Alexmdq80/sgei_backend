@@ -16,9 +16,6 @@ class AsignaturaPolicy
     private function isReadOnlyRole(Usuario $user): bool
     {
         $restrictedRoles = [
-            'jefe_provincial',
-            'jefe_regional',
-            'jefe_distrital',
             'director',
             'vicedirector',
             'secretario',

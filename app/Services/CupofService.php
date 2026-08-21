@@ -38,27 +38,7 @@ class CupofService
                 foreach ($hierarchicalKeywords as $keyword) {
                     $q->orWhere('nombre_cargo', 'like', "%{$keyword}%");
                 }
-            });
-
-            // Geographic Scope
-            if ($user->hasRole('jefe_provincial')) {
-                $provId = $user->provinciaUsuario?->provincia_id;
-                $query->whereHas('escuela.localidad.departamento', function($q) use ($provId) {
-                    $q->where('provincia_id', $provId);
-                });
-            } elseif ($user->hasRole('jefe_regional')) {
-                $regionId = $user->regionUsuario?->region_id;
-                $query->whereHas('escuela.localidad.departamento', function($q) use ($regionId) {
-                    $q->where('region_id', $regionId);
-                });
-            } elseif ($user->hasRole('jefe_distrital')) {
-                $distritoId = $user->distritoUsuario?->departamento_id;
-                $query->whereHas('escuela', function($q) use ($distritoId) {
-                    $q->whereHas('localidad', function($sq) use ($distritoId) {
-                        $sq->where('departamento_id', $distritoId);
-                    });
-                });
-            }
+            });   
         } 
         // 2. Restriction for Conduction Team: Only see their own school(s)
         else {
@@ -239,9 +219,7 @@ class CupofService
 
         // Bypass for Superusers: Total access
         if ($user->hasRole('superuser')) return;
-
-        $isHierarchicalAdmin = $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
-        
+              
         $isHierarchical = false;
         $nombreCargoLower = mb_strtolower($nombreCargo, 'UTF-8');
         foreach (\App\Services\EscuelaService::HIERARCHICAL_ROLES as $role) {
@@ -255,28 +233,7 @@ class CupofService
             if (!$isHierarchical) {
                 throw new \Exception("Como cargo jerárquico administrativo, solo tienes permitido gestionar cargos del Equipo de Conducción.", 403);
             }
-
-            // Geographic Validation
-            if ($escuelaId) {
-                $escuela = \App\Models\Escuela::with('localidad.departamento')->findOrFail($escuelaId);
-                
-                if ($user->hasRole('jefe_provincial')) {
-                    $provId = $user->provinciaUsuario?->provincia_id;
-                    if ($escuela->localidad?->departamento?->provincia_id !== $provId) {
-                        throw new \Exception("Acceso Denegado: Como Jefe Provincial, solo puedes gestionar cargos en escuelas de tu propia provincia.", 403);
-                    }
-                } elseif ($user->hasRole('jefe_regional')) {
-                    $regionId = $user->regionUsuario?->region_id;
-                    if ($escuela->localidad?->departamento?->region_id !== $regionId) {
-                        throw new \Exception("Acceso Denegado: Como Jefe Regional, solo puedes gestionar cargos en escuelas de tu propia región educativa.", 403);
-                    }
-                } elseif ($user->hasRole('jefe_distrital')) {
-                    $distritoId = $user->distritoUsuario?->departamento_id;
-                    if ($escuela->localidad?->departamento_id !== $distritoId) {
-                        throw new \Exception("Acceso Denegado: Como Jefe Distrital, solo puedes gestionar cargos en escuelas de tu propio distrito educativo.", 403);
-                    }
-                }
-            }
+            
         } else {
             // Equipo de Conducción (Director, Vice, etc.)
             // Validation is mostly handled by CupofPolicy or previous checks

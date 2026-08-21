@@ -199,7 +199,6 @@ class EscuelaService
         }
 
         $isSuperUser = $admin->hasRole('superuser');
-        $isJefeDistrital = $admin->hasRole('jefe_distrital');
         $role = \Spatie\Permission\Models\Role::findOrFail($roleId);
 
         // NUNCA permitir asignar el rol de superuser a través de viculaciones escolares
@@ -213,11 +212,6 @@ class EscuelaService
         }
 
         $isTargetHierarchical = in_array($role->name, self::HIERARCHICAL_ROLES);
-
-        // 1. Jefe Distrital NO puede realizar asignaciones directas (deben ser vía CUPOF)
-        if ($isJefeDistrital) {
-            throw new \Exception("Acceso Denegado: Como Jefe Distrital, no puedes gestionar roles institucionales directamente desde el Padrón. Debes realizarlo a través de la Gestión de CUPOF.", 403);
-        }
 
         // 2. Equipo de Conducción NO puede asignar cargos jerárquicos
         if ($isTargetHierarchical) {
