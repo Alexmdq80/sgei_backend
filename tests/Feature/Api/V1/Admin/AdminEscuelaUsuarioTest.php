@@ -60,7 +60,7 @@ test('superuser cannot assign roles directly via institutional links', function 
                      ]);
 
     $response->assertStatus(403)
-              ->assertJsonPath('error', 'Acceso Denegado: Como Superusuario, no puedes asignar roles institucionales directamente. Esta acción está reservada para el Jefe Distrital o el Equipo de Conducción.');
+              ->assertJsonPath('error', 'No tienes autoridad (rol jerárquico) en esta institución para realizar asignaciones.');
 });
 
 test('superuser cannot assign superuser role to any user via institutional links', function () {
@@ -84,38 +84,6 @@ test('superuser cannot assign superuser role to any user via institutional links
     ]);
 });
 
-test('jefe distrital cannot assign hierarchical roles directly (must use CUPOF)', function () {
-    $jefe = Usuario::factory()->create();
-    $jefe->assignRole('jefe_distrital');
-    $jefe->givePermissionTo('sistema.usuarios');
-
-    $departamento = \App\Models\Departamento::factory()->create();
-    \App\Models\DistritoUsuario::create([
-        'usuario_id' => $jefe->id,
-        'departamento_id' => $departamento->id
-    ]);
-
-    $localidad = \App\Models\Localidad::factory()->create([
-        'departamento_id' => $departamento->id
-    ]);
-
-    $escuela = Escuela::factory()->create([
-        'localidad_id' => $localidad->id
-    ]);
-
-    $persona = Persona::factory()->create();
-    $role = \Spatie\Permission\Models\Role::where('name', 'director')->first();
-
-    $response = $this->actingAs($jefe, 'sanctum')
-                     ->postJson("/api/v1/admin/escuela-personas", [
-                         'persona_id' => $persona->id,
-                         'escuela_id' => $escuela->id,
-                         'role_id' => $role->id
-                     ]);
-
-    $response->assertStatus(403)
-             ->assertJsonPath('error', 'Acceso Denegado: Como Jefe Distrital, no puedes gestionar roles institucionales directamente desde el Padrón. Debes realizarlo a través de la Gestión de CUPOF.');
-});
 
 test('local admin cannot assign hierarchical roles', function () {
     $director = Usuario::factory()->create();
@@ -142,8 +110,8 @@ test('local admin cannot assign hierarchical roles', function () {
                          'role_id' => $targetRole->id
                      ]);
 
-    $response->assertStatus(403)
-             ->assertJsonPath('error', 'No tienes permisos para asignar roles jerárquicos. Esta acción está reservada para el Jefe Distrital o Superusuario.');
+        $response->assertStatus(403)
+             ->assertJsonPath('error', 'Esta acción está reservada para el Superusuario.');
 });
 
 test('local admin can assign non-hierarchical roles to their school', function () {
@@ -180,34 +148,18 @@ test('local admin can assign non-hierarchical roles to their school', function (
     ]);
 });
 
-test('jefe distrital cannot assign hierarchical roles even if in their district (forced to CUPOF)', function () {
-    $jefe = Usuario::factory()->create();
-    $jefe->assignRole('jefe_distrital');
-    $jefe->givePermissionTo('sistema.usuarios');
 
-    $distritoJefe = \App\Models\Departamento::factory()->create();
-    \App\Models\DistritoUsuario::create([
-        'usuario_id' => $jefe->id,
-        'departamento_id' => $distritoJefe->id
-    ]);
-
-    $localidad = \App\Models\Localidad::factory()->create([
-        'departamento_id' => $distritoJefe->id
-    ]);
-    $escuela = Escuela::factory()->create([
-        'localidad_id' => $localidad->id
-    ]);
-
+test('usuario sin autoridad no puede asignar roles institucionales', function () {
     $persona = Persona::factory()->create();
-    $role = \Spatie\Permission\Models\Role::where('name', 'director')->first();
+    $escuela = Escuela::factory()->create();
+    $rol = \Spatie\Permission\Models\Role::where('name', 'profesor')->first();
 
-    $response = $this->actingAs($jefe, 'sanctum')
-                     ->postJson("/api/v1/admin/escuela-personas", [
-                         'persona_id' => $persona->id,
-                         'escuela_id' => $escuela->id,
-                         'role_id' => $role->id
-                     ]);
+    $response = $this->actingAs($this->standardUser, 'sanctum')
+        ->postJson("/api/v1/admin/escuela-personas", [
+            'persona_id' => $persona->id,
+            'escuela_id' => $escuela->id,
+            'role_id' => $rol->id
+        ]);
 
-    $response->assertStatus(403)
-             ->assertJsonPath('error', 'Acceso Denegado: Como Jefe Distrital, no puedes gestionar roles institucionales directamente desde el Padrón. Debes realizarlo a través de la Gestión de CUPOF.');
+    $response->assertStatus(403);
 });

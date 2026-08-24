@@ -47,17 +47,14 @@ class UsuarioResource extends JsonResource
             'roles' => RoleResource::collection($this->whenLoaded('roles')),
             'permissions' => $this->when(
                 $this->relationLoaded('permissions') || $this->relationLoaded('roles'),
-                fn () => $this->getAllPermissions()->pluck('name')
+                fn() => $this->getAllPermissions()->pluck('name')
             ),
             'documento_tipo' => $this->whenLoaded('documentoTipo'),
             'persona' => new PersonaResource($this->whenLoaded('persona')),
             'escuelas_personas' => $this->when(
                 $this->relationLoaded('persona') && $this->persona?->relationLoaded('escuelasPersonas'),
-                fn () => EscuelaPersonaResource::collection($this->persona->escuelasPersonas)
-            ),
-            'provincia_usuario' => $this->whenLoaded('provinciaUsuario'),
-            'region_usuario' => $this->whenLoaded('regionUsuario'),
-            'distrito_usuario' => $this->whenLoaded('distritoUsuario'),
+                fn() => EscuelaPersonaResource::collection($this->persona->escuelasPersonas)
+            )
         ];
     }
 }

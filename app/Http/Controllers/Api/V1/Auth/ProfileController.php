@@ -28,17 +28,14 @@ class ProfileController extends Controller
     {
         $usuario = Auth::user();
         $usuario->refresh();
-        
+
         return response()->json([
             'user' => new UsuarioResource($usuario->load([
-                'persona', 
-                'documentoTipo', 
-                'roles', 
-                'persona.escuelasPersonas.escuela', 
-                'persona.escuelasPersonas.role',
-                'provinciaUsuario',
-                'regionUsuario',
-                'distritoUsuario'
+                'persona',
+                'documentoTipo',
+                'roles',
+                'persona.escuelasPersonas.escuela',
+                'persona.escuelasPersonas.role'
             ]))
         ]);
     }

@@ -10,29 +10,29 @@ uses(RefreshDatabase::class, ProvidesRoles::class);
 
 beforeEach(function () {
     $this->seedRoles();
-    
-    // Crear un Supervisor Curricular
-    $this->supervisor = Usuario::factory()->create(['estado' => 'activo']);
-    $this->supervisor->assignRole('supervisor_curricular');
 
-    // Crear un Usuario común (ej. Profesor)
+    // Super administrador: puede gestionar planes curriculares
+    $this->admin = Usuario::factory()->create(['estado' => 'activo']);
+    $this->admin->assignRole('superuser');
+
+    // Usuario sin permisos curriculares
     $this->profesor = Usuario::factory()->create(['estado' => 'activo']);
     $this->profesor->assignRole('profesor');
 });
 
-test('un supervisor puede listar los planes', function () {
+test('el superuser puede listar los planes', function () {
     Plan::factory()->count(3)->create();
 
-    $response = $this->actingAs($this->supervisor, 'sanctum')
+    $response = $this->actingAs($this->admin, 'sanctum')
         ->getJson('/api/v1/planes');
 
     $response->assertStatus(200)
         ->assertJsonCount(3);
 });
 
-test('un supervisor puede crear un plan', function () {
+test('el superuser puede crear un plan', function () {
     $ciclo = PlanCiclo::factory()->create();
-    
+
     $data = [
         'nombre' => 'Nuevo Plan Test',
         'nombre_completo' => 'Nombre Completo del Nuevo Plan Test',
@@ -42,18 +42,18 @@ test('un supervisor puede crear un plan', function () {
         'plan_ciclo_id' => $ciclo->id,
     ];
 
-    $response = $this->actingAs($this->supervisor, 'sanctum')
+    $response = $this->actingAs($this->admin, 'sanctum')
         ->postJson('/api/v1/planes', $data);
 
     $response->assertStatus(201)
         ->assertJsonFragment(['nombre' => 'Nuevo Plan Test']);
-    
+
     $this->assertDatabaseHas('plans', ['nombre' => 'Nuevo Plan Test']);
 });
 
-test('un supervisor puede actualizar un plan', function () {
+test('el superuser puede actualizar un plan', function () {
     $plan = Plan::factory()->create(['nombre' => 'Plan Original']);
-    
+
     $data = [
         'nombre' => 'Plan Actualizado',
         'nombre_completo' => 'Nombre Completo Actualizado',
@@ -61,17 +61,17 @@ test('un supervisor puede actualizar un plan', function () {
         'plan_ciclo_id' => $plan->plan_ciclo_id,
     ];
 
-    $response = $this->actingAs($this->supervisor, 'sanctum')
+    $response = $this->actingAs($this->admin, 'sanctum')
         ->putJson("/api/v1/planes/{$plan->id}", $data);
 
     $response->assertStatus(200)
         ->assertJsonFragment(['nombre' => 'Plan Actualizado']);
 });
 
-test('un supervisor puede eliminar un plan', function () {
+test('el superuser puede eliminar un plan', function () {
     $plan = Plan::factory()->create();
 
-    $response = $this->actingAs($this->supervisor, 'sanctum')
+    $response = $this->actingAs($this->admin, 'sanctum')
         ->deleteJson("/api/v1/planes/{$plan->id}");
 
     $response->assertStatus(204);
@@ -86,9 +86,10 @@ test('un usuario sin permisos no puede gestionar planes', function () {
 });
 
 test('la creacion de plan requiere campos obligatorios', function () {
-    $response = $this->actingAs($this->supervisor, 'sanctum')
+    $response = $this->actingAs($this->admin, 'sanctum')
         ->postJson('/api/v1/planes', []);
 
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['nombre', 'nombre_completo', 'duracion_anios', 'plan_ciclo_id']);
 });
+

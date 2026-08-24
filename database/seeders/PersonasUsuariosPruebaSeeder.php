@@ -4,8 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Calle;
 use App\Models\Contacto;
-use App\Models\Departamento;
-use App\Models\DistritoUsuario;
 use App\Models\DocumentoTipo;
 use App\Models\Domicilio;
 use App\Models\Escuela;
@@ -13,10 +11,6 @@ use App\Models\EscuelaPersona;
 use App\Models\Localidad;
 use App\Models\Nacion;
 use App\Models\Persona;
-use App\Models\Provincia;
-use App\Models\ProvinciaUsuario;
-use App\Models\Region;
-use App\Models\RegionUsuario;
 use App\Models\Usuario;
 use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
@@ -35,14 +29,6 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         $docTipo = DocumentoTipo::find(1); // DNI
         if (!$docTipo) {
             $this->command->error('Ejecutá DocumentoTipoSeeder antes.');
-            return;
-        }
-
-        // Jefaturas: BUSCAR, no crear
-        $provinciaBsAs = Provincia::where('nombre', 'BUENOS AIRES')->first();
-        $departamentoGp = Departamento::where('nombre', 'GENERAL PUEYRREDÓN')->first();
-        if (!$provinciaBsAs || !$departamentoGp) {
-            $this->command->error('No se encontraron BUENOS AIRES / GENERAL PUEYRREDÓN. Abortando.');
             return;
         }
 
@@ -69,7 +55,7 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         $proximoIndiceAdmin = $this->proximoIndiceAdmin();
 
 
-        DB::transaction(function () use ($faker, $docTipo, $provinciaBsAs, $departamentoGp, $roles, $escuelas, $password, $proximoDni, $proximoIndiceContacto, $proximoIndiceUsuario, $proximoIndiceAdmin) {
+        DB::transaction(function () use ($faker, $docTipo, $roles, $escuelas, $password, $proximoDni, $proximoIndiceContacto, $proximoIndiceUsuario, $proximoIndiceAdmin) {
             // ===== PERSONAS (500) =====
             $personas = collect();
             for ($i = 0; $i < 500; $i++) {

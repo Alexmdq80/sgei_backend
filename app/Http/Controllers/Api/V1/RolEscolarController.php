@@ -17,9 +17,8 @@ class RolEscolarController extends Controller
         // Solo devolvemos roles que tengan sentido institucional.
         // Excluimos explícitamente roles globales/administrativos de sistema.
         $roles = Role::where('guard_name', 'sanctum')
-            ->whereNotIn('name', ['superuser', 'jefe_distrital', 'supervisor_curricular'])
             ->get();
-            
+
         return response()->json(RoleResource::collection($roles));
     }
 }

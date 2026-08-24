@@ -17,7 +17,8 @@ class LoginController extends Controller
      */
     public function __construct(
         protected AuthService $authService
-    ) {}
+    ) {
+    }
 
     /**
      * Authenticate a user and return a token.
@@ -38,14 +39,11 @@ class LoginController extends Controller
 
             return response()->json([
                 'user' => new \App\Http\Resources\UsuarioResource($data['user']->load([
-                    'persona', 
-                    'documentoTipo', 
-                    'roles', 
-                    'persona.escuelasPersonas.escuela', 
-                    'persona.escuelasPersonas.role',
-                    'provinciaUsuario',
-                    'regionUsuario',
-                    'distritoUsuario'
+                    'persona',
+                    'documentoTipo',
+                    'roles',
+                    'persona.escuelasPersonas.escuela',
+                    'persona.escuelasPersonas.role'
                 ])),
                 'token' => $data['token'],
                 'refresh_token' => $data['refresh_token']

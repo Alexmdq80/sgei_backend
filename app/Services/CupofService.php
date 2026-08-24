@@ -21,34 +21,25 @@ class CupofService
     public function getAllCupofs(array $filters = []): Collection
     {
         $user = auth()->user();
-        if (!$user) return collect();
+        if (!$user)
+            return collect();
 
         $isSuperUser = $user->hasRole('superuser');
-        $isHierarchicalAdmin = $user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital']);
         $query = Cupof::with(['escuela', 'asignatura', 'escalafon', 'puestoTipo', 'movimientoActivo.persona']);
 
         // Bypass for Superusers: see everything
         if ($isSuperUser) {
             // No filter applied here, proceeds to global filters
         }
-        // 1. Restriction for Hierarchical Admins: Only see hierarchical positions within their jurisdiction
-        elseif ($isHierarchicalAdmin) {
-            $hierarchicalKeywords = \App\Services\EscuelaService::HIERARCHICAL_ROLES;
-            $query->where(function ($q) use ($hierarchicalKeywords) {
-                foreach ($hierarchicalKeywords as $keyword) {
-                    $q->orWhere('nombre_cargo', 'like', "%{$keyword}%");
-                }
-            });   
-        } 
         // 2. Restriction for Conduction Team: Only see their own school(s)
         else {
             $schoolIds = $user->escuelasPersonas()
-                ->whereHas('role', function($q) {
+                ->whereHas('role', function ($q) {
                     $q->whereIn('name', \App\Services\EscuelaService::HIERARCHICAL_ROLES);
                 })
                 ->whereNotNull('verified_at')
                 ->pluck('escuela_id');
-            
+
             $query->whereIn('escuela_id', $schoolIds);
         }
 
@@ -189,7 +180,7 @@ class CupofService
         return DB::transaction(function () use ($cupof, $motivoBaja, $persona) {
             // 1. Deactivate current occupant
             $cupof->movimientos()->where('activo', true)->update([
-                'activo' => false, 
+                'activo' => false,
                 'fecha_fin' => now()
             ]);
 
@@ -215,11 +206,13 @@ class CupofService
     private function validateHierarchicalAccess(string $nombreCargo, ?int $escuelaId = null): void
     {
         $user = auth()->user();
-        if (!$user) throw new \Exception("Usuario no autenticado", 401);
+        if (!$user)
+            throw new \Exception("Usuario no autenticado", 401);
 
         // Bypass for Superusers: Total access
-        if ($user->hasRole('superuser')) return;
-              
+        if ($user->hasRole('superuser'))
+            return;
+
         $isHierarchical = false;
         $nombreCargoLower = mb_strtolower($nombreCargo, 'UTF-8');
         foreach (\App\Services\EscuelaService::HIERARCHICAL_ROLES as $role) {
@@ -229,15 +222,6 @@ class CupofService
             }
         }
 
-        if ($isHierarchicalAdmin) {
-            if (!$isHierarchical) {
-                throw new \Exception("Como cargo jerárquico administrativo, solo tienes permitido gestionar cargos del Equipo de Conducción.", 403);
-            }
-            
-        } else {
-            // Equipo de Conducción (Director, Vice, etc.)
-            // Validation is mostly handled by CupofPolicy or previous checks
-        }
     }
 
     /**
@@ -246,7 +230,8 @@ class CupofService
     private function syncEscuelaPersona(Cupof $cupof, Persona $persona, bool $isRelease = false): void
     {
         $usuario = $persona->usuario;
-        if (!$usuario) return;
+        if (!$usuario)
+            return;
 
         $escuelaId = $cupof->escuela_id;
 
@@ -254,7 +239,7 @@ class CupofService
         if ($isRelease) {
             $hasOtherCupofs = CupofMovimiento::where('persona_id', $persona->id)
                 ->where('activo', true)
-                ->whereHas('cupof', function($q) use ($escuelaId) {
+                ->whereHas('cupof', function ($q) use ($escuelaId) {
                     $q->where('escuela_id', $escuelaId);
                 })
                 ->exists();
@@ -282,7 +267,8 @@ class CupofService
     public function syncAllRolesFromCupof(Usuario $usuario): void
     {
         $persona = $usuario->persona;
-        if (!$persona) return;
+        if (!$persona)
+            return;
 
         $schoolIds = $persona->movimientosCupofActivos()
             ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
@@ -300,11 +286,12 @@ class CupofService
     public function refreshUserRoleInSchool($usuario, $escuelaId, $persona): void
     {
         // 1. Get all unique roles derived from active CUPOFs for this persona in this school
-        $activeCupofs = Cupof::with(['escalafon', 'puestoTipo'])->whereHas('movimientos', function($q) use ($persona) {
+        $activeCupofs = Cupof::with(['escalafon', 'puestoTipo'])->whereHas('movimientos', function ($q) use ($persona) {
             $q->where('persona_id', $persona->id)->where('activo', true);
         })->where('escuela_id', $escuelaId)->get();
 
-        if ($activeCupofs->isEmpty()) return;
+        if ($activeCupofs->isEmpty())
+            return;
 
         $uniqueRolesInSchool = $activeCupofs->map(fn($c) => $this->mapCupofToRole($c))->unique();
 
@@ -316,7 +303,8 @@ class CupofService
         // 3. For each unique role, ensure a verified link exists in escuela_usuario
         foreach ($uniqueRolesInSchool as $roleName) {
             $roleId = $roleIds[$roleName] ?? null;
-            if (!$roleId) continue;
+            if (!$roleId)
+                continue;
 
             \App\Models\EscuelaPersona::updateOrCreate(
                 [
@@ -353,19 +341,26 @@ class CupofService
         $cargo = mb_strtolower($cupof->nombre_cargo ?? '', 'UTF-8');
         $tipoPuesto = mb_strtolower($cupof->puestoTipo?->nombre ?? '', 'UTF-8');
         $escalafon = mb_strtolower($cupof->escalafon?->nombre ?? '', 'UTF-8');
-        
+
         $searchString = $cargo . ' ' . $tipoPuesto . ' ' . $escalafon;
-        
+
         // Check hierarchical titles
-        if (str_contains($searchString, 'director')) return 'director';
-        if (str_contains($searchString, 'vice')) return 'vicedirector';
-        if (str_contains($searchString, 'secretario')) return 'secretario';
-        if (str_contains($searchString, 'prosecretario')) return 'prosecretario';
-        if (str_contains($searchString, 'preceptor')) return 'preceptor';
+        if (str_contains($searchString, 'director'))
+            return 'director';
+        if (str_contains($searchString, 'vice'))
+            return 'vicedirector';
+        if (str_contains($searchString, 'secretario'))
+            return 'secretario';
+        if (str_contains($searchString, 'prosecretario'))
+            return 'prosecretario';
+        if (str_contains($searchString, 'preceptor'))
+            return 'preceptor';
 
         // Fallback to escalafon
-        if (str_contains($escalafon, 'docente')) return 'profesor';
-        if (str_contains($escalafon, 'auxiliar')) return 'auxiliar';
+        if (str_contains($escalafon, 'docente'))
+            return 'profesor';
+        if (str_contains($escalafon, 'auxiliar'))
+            return 'auxiliar';
 
         return 'profesor';
     }

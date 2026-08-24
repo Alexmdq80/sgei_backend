@@ -128,7 +128,7 @@ test('admin can confirm vinculation manually', function () {
     $this->assertEquals('activo', $user->fresh()->estado);
 });
 
-test('supervisor role cannot confirm vinculation manually', function () {
+test('un usuario sin permiso sistema.usuarios no puede confirmar vinculacion manualmente', function () {
     $persona = Persona::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '12345678'
@@ -139,9 +139,9 @@ test('supervisor role cannot confirm vinculation manually', function () {
         'email' => 'test@example.com'
     ]);
 
-    // Admin without appropriate role (supervisor_curricular has not enough permissions)
+    // Profesor no posee permiso 'sistema.usuarios' delegado
     $admin = Usuario::factory()->create(['es_administrador' => false]);
-    $admin->assignRole('supervisor_curricular');
+    $admin->assignRole('profesor');
 
     $response = $this->actingAs($admin, 'sanctum')
                      ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
@@ -177,143 +177,6 @@ test('cannot confirm vinculation of unverified user manually', function () {
     $response->assertStatus(422);
 });
 
-test('jefe regional can confirm vinculation of jefe distrital in their region', function () {
-    // 1. Create a region
-    $region = \App\Models\Region::create(['numero' => '99', 'vigente' => true]);
-    
-    // 2. Create a departamento/distrito inside that region
-    $dept = \App\Models\Departamento::factory()->create([
-        'region_id' => $region->id
-    ]);
-
-    // 3. Create Persona
-    $persona = Persona::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678'
-    ]);
-    Contacto::create(['persona_id' => $persona->id, 'email' => 'distrital@example.com']);
-
-    // 4. Create Usuario to link with role jefe_distrital
-    $user = Usuario::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
-        'email' => 'distrital@example.com',
-        'email_verified_at' => now(),
-        'estado' => 'vinculacion_pendiente'
-    ]);
-    $user->assignRole('jefe_distrital');
-    \App\Models\DistritoUsuario::create([
-        'usuario_id' => $user->id,
-        'departamento_id' => $dept->id
-    ]);
-
-    // Performer is jefe regional of that region
-    $performer = Usuario::factory()->create();
-    $performer->assignRole('jefe_regional');
-    \App\Models\RegionUsuario::create([
-        'usuario_id' => $performer->id,
-        'region_id' => $region->id
-    ]);
-
-    $response = $this->actingAs($performer, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
-
-    $response->assertOk();
-    $this->assertEquals($user->id, $persona->fresh()->usuario_id);
-});
-
-test('jefe regional cannot confirm vinculation of jefe distrital outside their region', function () {
-    $regionA = \App\Models\Region::create(['numero' => '100', 'vigente' => true]);
-    $regionB = \App\Models\Region::create(['numero' => '101', 'vigente' => true]);
-    
-    $deptB = \App\Models\Departamento::factory()->create([
-        'region_id' => $regionB->id
-    ]);
-
-    $persona = Persona::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678'
-    ]);
-    Contacto::create(['persona_id' => $persona->id, 'email' => 'distrital@example.com']);
-
-    $user = Usuario::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
-        'email' => 'distrital@example.com',
-        'email_verified_at' => now(),
-        'estado' => 'vinculacion_pendiente'
-    ]);
-    $user->assignRole('jefe_distrital');
-    \App\Models\DistritoUsuario::create([
-        'usuario_id' => $user->id,
-        'departamento_id' => $deptB->id
-    ]);
-
-    // Performer is jefe regional of region A
-    $performer = Usuario::factory()->create();
-    $performer->assignRole('jefe_regional');
-    \App\Models\RegionUsuario::create([
-        'usuario_id' => $performer->id,
-        'region_id' => $regionA->id
-    ]);
-
-    $response = $this->actingAs($performer, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
-
-    $response->assertStatus(403);
-});
-
-test('jefe distrital can confirm vinculation of conduccion in their district', function () {
-    $dept = \App\Models\Departamento::factory()->create();
-    $school = \App\Models\Escuela::factory()->create([
-        'localidad_id' => \App\Models\Localidad::factory()->create(['departamento_id' => $dept->id])->id
-    ]);
-
-    $persona = Persona::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678'
-    ]);
-    Contacto::create(['persona_id' => $persona->id, 'email' => 'director@example.com']);
-
-    $user = Usuario::factory()->create([
-        'documento_tipo_id' => 1,
-        'documento_numero' => '12345678',
-        'email' => 'director@example.com',
-        'email_verified_at' => now(),
-        'estado' => 'vinculacion_pendiente'
-    ]);
-
-    // Crear CUPOF y movimiento para la persona en una escuela del distrito
-    $cupof = \App\Models\Cupof::factory()->create([
-        'escuela_id' => $school->id,
-        'nombre_cargo' => 'DIRECTOR/A',
-        'escalafon_id' => 1, // Docente
-        'puesto_tipo_id' => 1 // Cargo
-    ]);
-    
-    \App\Models\CupofMovimiento::create([
-        'cupof_id' => $cupof->id,
-        'persona_id' => $persona->id,
-        'situacion_revista' => 'titular',
-        'fecha_inicio' => now(),
-        'activo' => true
-    ]);
-
-    // Performer is jefe distrital of dept
-    $performer = Usuario::factory()->create();
-    $performer->assignRole('jefe_distrital');
-    \App\Models\DistritoUsuario::create([
-        'usuario_id' => $performer->id,
-        'departamento_id' => $dept->id
-    ]);
-
-    $response = $this->actingAs($performer, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/link-user");
-
-    $response->assertOk();
-    $this->assertEquals($user->id, $persona->fresh()->usuario_id);
-});
-
 test('conduccion role cannot confirm vinculation of anyone', function () {
     $persona = Persona::factory()->create([
         'documento_tipo_id' => 1,
@@ -346,13 +209,7 @@ test('unlinking user from persona revokes all roles except superuser and removes
     ]);
     $persona->update(['usuario_id' => $user->id]);
 
-    $user->assignRole('jefe_regional');
-    $user->assignRole('superuser');
-    $region = \App\Models\Region::create(['numero' => '99', 'vigente' => true]);
-    \App\Models\RegionUsuario::create([
-        'usuario_id' => $user->id,
-        'region_id' => $region->id
-    ]);
+        $user->assignRole(['director', 'superuser']);
 
     $admin = Usuario::factory()->create(['es_administrador' => true]);
     $admin->assignRole('superuser');
@@ -361,13 +218,11 @@ test('unlinking user from persona revokes all roles except superuser and removes
                      ->postJson("/api/v1/admin/personas/{$persona->id}/unlink-user");
 
     $response->assertOk();
-    $persona->refresh();
-    $user->refresh();
+        $user->refresh();
 
-    $this->assertNull($persona->usuario_id);
-    $this->assertFalse($user->hasRole('jefe_regional'), 'Role jefe_regional should be revoked');
-    $this->assertTrue($user->hasRole('superuser'), 'Role superuser should be kept');
-    $this->assertSoftDeleted('region_usuario', ['usuario_id' => $user->id]);
+    $this->assertNull($persona->fresh()->usuario_id, 'La persona debe quedar desvinculada');
+    $this->assertFalse($user->hasRole('director'), 'El rol institucional debe revocarse');
+    $this->assertTrue($user->hasRole('superuser'), 'El rol superuser debe preservarse');
 });
 
 // =========================================================================

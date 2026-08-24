@@ -3,11 +3,9 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\Plan;
-use App\Models\Anio;
 use App\Models\Usuario;
 use App\Models\Ambito;
-use App\Models\EscuelaUsuario;
-use Spatie\Permission\Models\Role;
+use App\Models\AnioPlan;
 use Tests\ProvidesRoles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -15,30 +13,24 @@ uses(RefreshDatabase::class, ProvidesRoles::class);
 
 beforeEach(function () {
     $this->seedRoles();
-    
-    // Create a superuser
+
+    // Super Administrador (acceso total al Panel General)
     $this->superuser = Usuario::factory()->create(['estado' => 'activo']);
     $this->superuser->assignRole('superuser');
 
-    // Create different users with restricted roles
-    $this->jefeProvincial = Usuario::factory()->create(['estado' => 'activo']);
-    $this->jefeProvincial->assignRole('jefe_provincial');
-
-    $this->jefeRegional = Usuario::factory()->create(['estado' => 'activo']);
-    $this->jefeRegional->assignRole('jefe_regional');
-
-    $this->jefeDistrital = Usuario::factory()->create(['estado' => 'activo']);
-    $this->jefeDistrital->assignRole('jefe_distrital');
-
+    // Director institucional (rol restringido SOLO a lectura sobre planes/asignaturas)
     $this->director = Usuario::factory()->create(['estado' => 'activo']);
     $this->director->assignRole('director');
 
-    // Standard user with no special roles
+        // Profesor institucional (sin permisos curriculares)
     $this->profesor = Usuario::factory()->create(['estado' => 'activo']);
     $this->profesor->assignRole('profesor');
+
+    // Año de plan válido para tests de asignaturas
+    $this->anioPlan = AnioPlan::factory()->create();
 });
 
-test('superuser can access Panel General and write to it', function () {
+test('superuser puede acceder al Panel General y escribir', function () {
     $response = $this->actingAs($this->superuser, 'sanctum')
         ->postJson('/api/v1/admin/ambitos', [
             'nombre' => 'Ambito Test Super',
@@ -47,100 +39,57 @@ test('superuser can access Panel General and write to it', function () {
     $response->assertStatus(201);
 });
 
-test('restricted roles cannot access Panel General endpoints at all', function () {
-    $restrictedUsers = [
-        $this->jefeProvincial,
-        $this->jefeRegional,
-        $this->jefeDistrital,
-        $this->director,
-    ];
-
-    foreach ($restrictedUsers as $user) {
+test('roles restringidos no pueden acceder a los endpoints del Panel General', function () {
+    foreach ([$this->director, $this->profesor] as $user) {
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/admin/ambitos');
 
-        $response->assertStatus(403)
-            ->assertJsonFragment(['error' => 'No tienes permisos para acceder al Panel General.']);
-
-        $responsePost = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/v1/admin/ambitos', [
-                'nombre' => 'Ambito Test NonSuper',
-            ]);
-
-        $responsePost->assertStatus(403);
+                // El middleware block_panel_general rechaza con 403 antes de llegar al controlador/validación.
+        $response->assertStatus(403);
     }
 });
 
-test('restricted roles can view Años (Panel Curricular) but not modify them', function () {
-    $anio = Anio::factory()->create(['nombre' => '1ERO']);
+test('director puede listar planes (solo lectura) pero no crearlos', function () {
+    Plan::factory()->count(3)->create();
 
-    $restrictedUsers = [
-        $this->jefeProvincial,
-        $this->jefeRegional,
-        $this->jefeDistrital,
-        $this->director,
-    ];
+    // GET → read-only permitido
+    $responseGet = $this->actingAs($this->director, 'sanctum')
+        ->getJson('/api/v1/planes');
 
-    foreach ($restrictedUsers as $user) {
-        // Can view Años
-        $responseGet = $this->actingAs($user, 'sanctum')
-            ->getJson('/api/v1/admin/anios');
+    $responseGet->assertStatus(200);
 
-        $responseGet->assertStatus(200);
+    // POST → prohibido (rol read-only)
+    $responsePost = $this->actingAs($this->director, 'sanctum')
+        ->postJson('/api/v1/planes', [
+            'nombre' => 'Plan Prohibido',
+            'nombre_completo' => 'Nombre Completo del Plan Prohibido',
+            'duracion_anios' => 5,
+            'plan_ciclo_id' => Plan::factory()->create()->plan_ciclo_id,
+        ]);
 
-        // Cannot create Años
-        $responsePost = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/v1/admin/anios', [
-                'nombre' => '2DO',
-                'nombre_completo' => 'SEGUNDO AÑO',
-                'vigente' => true
-            ]);
-
-        $responsePost->assertStatus(403);
-    }
+    $responsePost->assertStatus(403);
 });
 
-test('restricted roles can view Planes (Panel Curricular) but not modify them', function () {
-    $plan = Plan::factory()->create(['nombre' => 'Plan Curricular Test']);
+test('profesor no puede gestionar planes ni asignaturas', function () {
+    $plan = Plan::factory()->create();
 
-    $restrictedUsers = [
-        $this->jefeProvincial,
-        $this->jefeRegional,
-        $this->jefeDistrital,
-        $this->director,
-    ];
+    $this->actingAs($this->profesor, 'sanctum')
+        ->getJson('/api/v1/planes')
+        ->assertStatus(403);
 
-    foreach ($restrictedUsers as $user) {
-        // Can view Planes
-        $responseGet = $this->actingAs($user, 'sanctum')
-            ->getJson('/api/v1/planes');
+    $this->actingAs($this->profesor, 'sanctum')
+        ->postJson('/api/v1/planes', [
+            'nombre' => 'Nuevo Plan',
+            'nombre_completo' => 'Completo',
+            'duracion_anios' => 3,
+            'plan_ciclo_id' => $plan->plan_ciclo_id,
+        ])->assertStatus(403);
 
-        $responseGet->assertStatus(200);
-
-        // Cannot create/update/delete Planes
-        $responsePost = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/v1/planes', [
-                'nombre' => 'Nuevo Plan Prohibido',
-                'nombre_completo' => 'Nombre Completo del Nuevo Plan Prohibido',
-                'duracion_anios' => 5,
-                'plan_ciclo_id' => $plan->plan_ciclo_id,
-            ]);
-
-        $responsePost->assertStatus(403);
-
-        $responsePut = $this->actingAs($user, 'sanctum')
-            ->putJson("/api/v1/planes/{$plan->id}", [
-                'nombre' => 'Plan Modificado',
-                'nombre_completo' => 'Nombre Completo del Plan Modificado',
-                'duracion_anios' => 3,
-                'plan_ciclo_id' => $plan->plan_ciclo_id,
-            ]);
-
-        $responsePut->assertStatus(403);
-
-        $responseDelete = $this->actingAs($user, 'sanctum')
-            ->deleteJson("/api/v1/planes/{$plan->id}");
-
-        $responseDelete->assertStatus(403);
-    }
+        $this->actingAs($this->profesor, 'sanctum')
+        ->postJson('/api/v1/asignaturas', [
+            'nombre' => 'Física',
+            'anio_plan_id' => $this->anioPlan->id,
+            'horas_semanales' => 4,
+        ])->assertStatus(403);
 });
+

@@ -253,7 +253,26 @@ class PersonaService
                 $newState = $linkedUser->hasVerifiedEmail() ? 'email_verificado' : 'email_pendiente';
                 $linkedUser->update(['estado' => $newState]);
             }
-        });
+                });
+    }
+
+    /**
+     * Revoca un rol administrativo global del usuario vinculado a una persona.
+     * El rol 'superuser' nunca puede ser revocado a través de esta operación.
+     */
+    public function removeAdministrativeRole(Persona $persona, string $role): void
+    {
+        $user = $persona->usuario;
+
+        if (!$user) {
+            throw new \Exception('La persona no tiene un usuario vinculado.', 404);
+        }
+
+        if ($role === 'superuser') {
+            throw new \Exception('No se puede revocar el rol de Superusuario a través de esta operación.', 403);
+        }
+
+        $user->removeRole($role);
     }
 
     /**

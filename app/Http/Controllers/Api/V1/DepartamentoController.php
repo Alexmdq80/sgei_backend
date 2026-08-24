@@ -13,7 +13,8 @@ class DepartamentoController extends Controller
 {
     public function __construct(
         protected DepartamentoService $departamentoService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of the resource.
@@ -22,28 +23,16 @@ class DepartamentoController extends Controller
     {
         $search = $request->query('search');
         $perPage = $request->query('per_page', 15);
-        
+
         $user = $request->user();
         $filters = [];
-
-        // Si no es superuser ni administrador, aplicamos restricciones automáticas de jurisdicción
-        if ($user && !$user->hasRole('superuser') && !$user->es_administrador) {
-            if ($user->hasRole('jefe_regional')) {
-                $filters['region_id'] = $user->regionUsuario?->region_id;
-            } elseif ($user->hasRole('jefe_provincial')) {
-                $filters['provincia_id'] = $user->provinciaUsuario?->provincia_id;
-            }
-        } else {
-            // Permitir filtros explícitos a administradores globales si los pasan en la URL
-            if ($request->has('region_id')) {
-                $filters['region_id'] = $request->query('region_id');
-            }
-            if ($request->has('provincia_id')) {
-                $filters['provincia_id'] = $request->query('provincia_id');
-            }
+        if ($request->has('region_id')) {
+            $filters['region_id'] = $request->query('region_id');
         }
-
-        return response()->json($this->departamentoService->getAll($search, (int)$perPage, $filters));
+        if ($request->has('provincia_id')) {
+            $filters['provincia_id'] = $request->query('provincia_id');
+        }
+        return response()->json($this->departamentoService->getAll($search, (int) $perPage, $filters));
     }
 
     /**

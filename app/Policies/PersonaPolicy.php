@@ -12,7 +12,7 @@ class PersonaPolicy
 
     /**
      * Determine whether the user can view any models.
-     * Superuser autorizado por before(). Jefaturas tienen acceso de lectura.
+     * Superuser autorizado por before().
      */
     public function viewAny(Usuario $usuario): bool
     {
@@ -29,7 +29,7 @@ class PersonaPolicy
 
     /**
      * Determine whether the user can create models.
-     * Superuser autorizado por before(). Jefaturas y Equipo de Conducción pueden crear.
+     * Superuser autorizado por before(). Equipo de Conducción pueden crear.
      */
     public function create(Usuario $usuario): bool
     {
@@ -62,7 +62,7 @@ class PersonaPolicy
 
     /**
      * Determine whether the user can assign roles.
-     * Superuser autorizado por before(). Jefaturas pueden abrir el modal.
+     * Superuser autorizado por before().
      */
     public function assignRoles(Usuario $usuario): bool
     {

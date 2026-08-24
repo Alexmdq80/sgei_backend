@@ -220,21 +220,7 @@ test('el administrador puede filtrar usuarios por rol superuser', function () {
         ->assertJsonMissing(['nombre' => 'User Four']);
 });
 
-test('el administrador puede filtrar usuarios por rol jefe_provincial', function () {
-    // Crear un usuario con rol global jefe_provincial
-    $jefeProvincial = Usuario::factory()->create([
-        'nombre' => 'Jefe Provincial Test',
-        'email_verified_at' => now(),
-    ]);
-    $jefeProvincial->assignRole('jefe_provincial');
 
-    $response = $this->actingAs($this->admin, 'sanctum')
-        ->getJson('/api/v1/admin/usuarios?role=jefe_provincial');
-
-    $response->assertStatus(200)
-        ->assertJsonFragment(['nombre' => 'Jefe Provincial Test'])
-        ->assertJsonMissing(['nombre' => 'User Four']);
-});
 
 test('el administrador puede filtrar usuarios por rol equipo_directivo', function () {
     // User One, Two, Three, Five y Six tienen rol 'director' en escuela_persona

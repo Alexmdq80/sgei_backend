@@ -291,79 +291,32 @@ test('usuario sin permisos no puede reenviar activacion', function () {
     $response->assertStatus(403);
 });
 
-// ### Test 22 - Superuser puede asignar Jefe Provincial
 
-test('superuser puede asignar jefe provincial a una persona', function () {
+// ### Test 22 - Superuser puede remover un rol institucional de una persona vinculada
 
-    Notification::fake();
-    
-    $persona = Persona::factory()->create();
-    $persona->contacto()->create(['email' => 'test@example.com']);
-
-    // Crear provincia
-    $provincia = Provincia::factory()->create();
-
-    $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/jefe-provincial", [
-                         'provincia_id' => $provincia->id
-                     ]);
-
-    $response->assertStatus(200);
-
-    // Opcional: verificar que se envió la notificación
-    $user = $persona->fresh()->usuario;
-    Notification::assertSentTo($user, AccountInvitationNotification::class);
-});
-
-
-// Nota: Para este test necesitás que exista la factory de Provincia. Si no existe, primero creala como `\App\Models\Provincia::factory()`. Verificá en la terminal si funciona.
-
-//### Test 23 - Usuario sin permisos no puede asignar Jefe Provincial
-
-test('usuario sin permisos no puede asignar jefe provincial', function () {
-
-
-    $persona = Persona::factory()->create();
-
-    $response = $this->actingAs($this->usuarioSinPermisos, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/jefe-provincial", [
-                         'provincia_id' => 1
-                     ]);
-
-    $response->assertStatus(403);
-});
-
-// ### Test 24 - Superuser puede asignar Supervisor Curricular
-
-test('superuser puede asignar supervisor curricular', function () {
-    $persona = Persona::factory()->create();
-
-    // Crear contacto con email (requerido por ensureUserExists)
-
-    Contacto::create([
-        'persona_id' => $persona->id,
-        'email' => 'supervisor@example.com'
-    ]);
-
-    $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/supervisor");
-
-    $response->assertStatus(200);
-});
-
-// ### Test 25 - Superuser puede remover un rol
-
-test('superuser puede remover un rol de una persona', function () {
+test('superuser puede remover un rol institucional de una persona', function () {
     $persona = Persona::factory()->create();
     $user = Usuario::factory()->create();
     $persona->update(['usuario_id' => $user->id]);
-    $user->assignRole('jefe_provincial');
+    $user->assignRole('director');
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->deleteJson("/api/v1/admin/personas/{$persona->id}/roles/jefe_provincial");
+        ->deleteJson("/api/v1/admin/personas/{$persona->id}/roles/director");
 
     $response->assertStatus(200);
+    $this->assertFalse($user->fresh()->hasRole('director'));
 });
 
+// ### Test 23 - Usuario sin permisos no puede remover un rol
 
+test('usuario sin permisos no puede remover un rol de una persona', function () {
+    $persona = Persona::factory()->create();
+    $user = Usuario::factory()->create();
+    $persona->update(['usuario_id' => $user->id]);
+    $user->assignRole('director');
 
+    $response = $this->actingAs($this->usuarioSinPermisos, 'sanctum')
+        ->deleteJson("/api/v1/admin/personas/{$persona->id}/roles/director");
+
+    $response->assertStatus(403);
+});

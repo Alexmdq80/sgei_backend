@@ -30,8 +30,8 @@ class EscuelaPersonaController extends Controller
 
         $query = \App\Models\EscuelaPersona::with(['persona.documentoTipo', 'escuela.localidad', 'role']);
 
-        // Si no es Superusuario ni Jefatura, limitamos a sus propias escuelas
-        if (!$user->hasAnyRole(['superuser', 'jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
+                // Si no es Superusuario ni administrador, limitamos a sus propias escuelas
+        if (!$user->hasRole('superuser') && !$user->es_administrador) {
             $mySchools = $user->persona?->escuelasPersonas()    
                 ->whereHas('role', function($q) {
                     $q->whereIn('name', \App\Services\EscuelaService::HIERARCHICAL_ROLES);

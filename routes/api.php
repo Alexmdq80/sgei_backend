@@ -150,10 +150,6 @@ Route::prefix('v1')->group(function () {
 
             Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class)->except(['store']);
 
-            Route::post('personas/{persona}/jefe-provincial', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeProvincial']);
-            Route::post('personas/{persona}/jefe-regional', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeRegional']);
-            Route::post('personas/{persona}/jefe-distrital', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignJefeDistrital']);
-            Route::post('personas/{persona}/supervisor', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'assignSupervisor']);
             Route::delete('personas/{persona}/roles/{role}', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'removeRole']);
 
             // Catálogo de Cargos (CRUD de maestro, el index es público vía /api/v1/cargos)

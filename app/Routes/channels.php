@@ -12,13 +12,7 @@ Broadcast::channel('usuarios', function (Usuario $user) {
     if ($user->es_administrador || $user->hasRole('superuser')) {
         return true;
     }
-
-    // 2. Jefaturas Territoriales
-    if ($user->hasAnyRole(['jefe_provincial', 'jefe_regional', 'jefe_distrital'])) {
-        return true;
-    }
-
-    // 3. Equipos directivos / conducción institucional
+    // 2. Equipos directivos / conducción institucional
     if ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
         return true;
     }

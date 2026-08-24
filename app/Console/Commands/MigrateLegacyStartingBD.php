@@ -36,7 +36,7 @@ class MigrateLegacyStartingBD extends Command
 
         // Verificación de Roles (Crítico para escuela_persona)
         $spatieRoles = \Spatie\Permission\Models\Role::all();
-        if ($spatieRoles->count() <= 2) { // 'superuser' y 'supervisor_curricular' suelen ser los únicos por defecto
+        if ($spatieRoles->count() <= 1) { // 'superuser' suele ser el único por defecto
             $this->warn('⚠️ La tabla de roles parece estar incompleta. Se recomienda ejecutar:');
             $this->warn('   php artisan db:seed --class=RolesAndPermissionsSeeder');
             if (!$this->confirm('¿Desea continuar de todos modos?', false)) {

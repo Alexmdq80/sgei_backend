@@ -25,9 +25,6 @@ class BlockPanelGeneralAccess
 
         // Listar los roles prohibidos de acceder al Panel General
         $restrictedRoles = [
-            'jefe_provincial',
-            'jefe_regional',
-            'jefe_distrital',
             'director',
             'vicedirector',
             'secretario',
@@ -36,12 +33,12 @@ class BlockPanelGeneralAccess
 
         // Verificar si el usuario tiene alguno de los roles restringidos
         $hasRestrictedRole = $user->hasAnyRole($restrictedRoles);
-        
+
         if (!$hasRestrictedRole) {
             // Verificar conducción institucional en escuela_usuarios
             $hasRestrictedRole = $user->persona?->escuelasPersonas()
                 ->whereNotNull('verified_at')
-                ->whereHas('role', function($q) use ($restrictedRoles) {
+                ->whereHas('role', function ($q) use ($restrictedRoles) {
                     $q->whereIn('name', $restrictedRoles);
                 })
                 ->exists();
@@ -49,16 +46,6 @@ class BlockPanelGeneralAccess
 
         if ($hasRestrictedRole) {
             $path = $request->path();
-            
-            // Jefe Regional y Jefe Provincial necesitan leer departamentos
-            // para poder asignar Jefes Distritales. Solo se permite GET.
-            $canReadDepartamentos = $user->hasAnyRole(['jefe_regional', 'jefe_provincial', 'superuser'])
-                && preg_match("#api/v1/admin/departamentos(\$|/)#", $path)
-                && $request->isMethod('GET');
-
-            if ($canReadDepartamentos) {
-                return $next($request);
-            }
 
             // Lista de segmentos de ruta correspondientes al Panel General que deben bloquearse por completo.
             $panelGeneralResources = [

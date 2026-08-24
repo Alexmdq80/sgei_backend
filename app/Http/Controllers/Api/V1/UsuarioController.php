@@ -107,10 +107,7 @@ class UsuarioController extends Controller
             'persona.escuelasPersonas.escuela',
             'persona.escuelasPersonas.role',
             'documentoTipo',
-            'roles',
-            'provinciaUsuario.provincia',
-            'regionUsuario.region',
-            'distritoUsuario.distrito'
+            'roles'
         ]);
 
         // 2. Autorizar DESPUÉS de cargar (la policy usa relaciones ya cargadas → sin N+1)

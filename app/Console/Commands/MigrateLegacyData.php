@@ -36,7 +36,7 @@ class MigrateLegacyData extends Command
 
         // Verificación de Roles (Crítico para escuela_persona)
         $spatieRoles = \Spatie\Permission\Models\Role::all();
-        if ($spatieRoles->count() <= 2) { // 'superuser' y 'supervisor_curricular' suelen ser los únicos por defecto
+        if ($spatieRoles->count() <= 1) { // 'superuser' suele se ek único por defecto
             $this->warn('⚠️ La tabla de roles parece estar incompleta. Se recomienda ejecutar:');
             $this->warn('   php artisan db:seed --class=RolesAndPermissionsSeeder');
             if (!$this->confirm('¿Desea continuar de todos modos?', false)) {
@@ -191,7 +191,8 @@ class MigrateLegacyData extends Command
                         // Lógica Especial: Mapeo de Roles
                         if ($tableName === 'escuela_persona' && $column === 'role_id') {
                             $value = $this->roleMap[$value] ?? null;
-                            if (!$value) return null;
+                            if (!$value)
+                                return null;
                         }
 
                         // Lógica Especial: Evitar duplicados y placeholders en emails
@@ -220,7 +221,7 @@ class MigrateLegacyData extends Command
                 // Fallback de Escuela en inscripcion_pases
                 if ($tableName === 'inscripcion_pases' && empty($filteredArray['escuela_id'])) {
                     if (is_null($this->unknownEscuelaId)) {
-                        $this->unknownEscuelaId = DB::table('escuelas')->where('nombre', 'DESCONOCIDO / SIN DATOS')->value('id') 
+                        $this->unknownEscuelaId = DB::table('escuelas')->where('nombre', 'DESCONOCIDO / SIN DATOS')->value('id')
                             ?? DB::table('escuelas')->insertGetId(['nombre' => 'DESCONOCIDO / SIN DATOS', 'created_at' => now(), 'updated_at' => now()]);
                     }
                     $filteredArray['escuela_id'] = $this->unknownEscuelaId;
