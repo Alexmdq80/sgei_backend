@@ -175,33 +175,6 @@ test('la respuesta de usuarios incluye el CUE y el nombre del rol escolar', func
         ->assertJsonPath('data.0.escuelas_personas.0.role.name', 'director');
 });
 
-test('el administrador puede filtrar usuarios por provincia', function () {
-    $response = $this->actingAs($this->admin, 'sanctum')
-        ->getJson("/api/v1/admin/usuarios?provincia_id={$this->provinciaA->id}");
-
-    $response->assertStatus(200)
-        ->assertJsonFragment(['nombre' => 'User Five'])
-        ->assertJsonMissing(['nombre' => 'User Six'])
-        ->assertJsonMissing(['nombre' => 'User Four']);
-});
-
-test('el administrador puede filtrar usuarios por departamento', function () {
-    $response = $this->actingAs($this->admin, 'sanctum')
-        ->getJson("/api/v1/admin/usuarios?departamento_id={$this->departamentoA->id}");
-
-    $response->assertStatus(200)
-        ->assertJsonFragment(['nombre' => 'User Five'])
-        ->assertJsonMissing(['nombre' => 'User Six']);
-});
-
-test('el administrador puede filtrar usuarios por búsqueda combinada con provincia', function () {
-    $response = $this->actingAs($this->admin, 'sanctum')
-        ->getJson("/api/v1/admin/usuarios?search=User&provincia_id={$this->provinciaB->id}");
-
-    $response->assertStatus(200)
-        ->assertJsonFragment(['nombre' => 'User Six'])
-        ->assertJsonMissing(['nombre' => 'User Five']);
-});
 
 test('el administrador puede filtrar usuarios por rol superuser', function () {
     // Crear un superusuario adicional

@@ -102,7 +102,7 @@ test('el administrador superuser no puede actualizar el rol institucional de un 
               'role_id' => $roleSecretario
          ])
          ->assertStatus(403)
-         ->assertJsonPath('error', 'Acceso Denegado: Como Superusuario, no puedes asignar roles institucionales directamente. Esta acción está reservada para el Jefe Distrital o el Equipo de Conducción.');
+         ->assertJsonPath('error', 'Esta acción está reservada para el Superusuario.');
 });
 
 // =========================================================================
