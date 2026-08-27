@@ -26,6 +26,8 @@ readonly class PersonaFilterDTO
         public ?int $documentoTipoId = null,
         public ?bool $hasUser = null,
         public ?int $perPage = null,
+        public ?string $sortBy = null,
+        public ?string $order = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -43,6 +45,8 @@ readonly class PersonaFilterDTO
             documentoTipoId: $request->filled('documento_tipo_id') ? (int) $request->documento_tipo_id : null,
             hasUser: $request->has('has_user') ? $request->boolean('has_user') : null,
             perPage: $request->filled('per_page') ? (int) $request->per_page : null,
+            sortBy: $request->filled('sort_by') ? (string) $request->sort_by : null,
+            order: $request->filled('order') ? (string) $request->order : null,
         );
     }
 
@@ -61,6 +65,8 @@ readonly class PersonaFilterDTO
             documentoTipoId: isset($data['documento_tipo_id']) ? (int) $data['documento_tipo_id'] : null,
             hasUser: isset($data['has_user']) ? (bool) $data['has_user'] : null,
             perPage: isset($data['per_page']) ? (int) $data['per_page'] : null,
+            sortBy: isset($data['sort_by']) ? (string) $data['sort_by'] : null,
+            order: isset($data['order']) ? (string) $data['order'] : null,
         );
     }
 }

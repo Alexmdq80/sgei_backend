@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Persona;
@@ -15,7 +17,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 use App\Notifications\UserUnlinkedNotification;
 use App\Notifications\VerifyEmailNotification;
-
 
 class PersonaService
 {
@@ -173,7 +174,30 @@ class PersonaService
             }
         }
 
-        return $query->orderBy('apellido')->orderBy('nombre')->paginate($filters->perPage ?? 15);
+        // --- Ordenamiento dinámico (whitelist p/ inyección SQL) ---
+        $allowedSortColumns = [
+            'apellido',
+            'nombre',
+            'documento_numero',
+            'created_at',
+            'updated_at',
+        ];
+
+        $sortBy = $filters->sortBy !== null && in_array($filters->sortBy, $allowedSortColumns)
+            ? $filters->sortBy
+            : null;
+
+        $order = ($filters->order ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
+        if ($sortBy === 'apellido') {
+            $query->orderBy('apellido', $order)->orderBy('nombre', $order);
+        } elseif ($sortBy !== null) {
+            $query->orderBy($sortBy, $order);
+        } else {
+            $query->orderBy('apellido')->orderBy('nombre');
+        }
+
+        return $query->paginate($filters->perPage ?? 10);
     }
     /**
      * Ensures that a Persona has an associated Usuario account.
