@@ -13,5 +13,6 @@ test('can list document types', function () {
     $response = $this->actingAs($user, 'sanctum')->getJson('/api/v1/documento-tipos');
 
     $response->assertStatus(200)
-         ->assertJsonCount(9);
+        ->assertJsonCount(DocumentoTipo::count());
+
 });

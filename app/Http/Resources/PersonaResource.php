@@ -39,6 +39,7 @@ class PersonaResource extends JsonResource
             'nombre' => $this->nombre,
             'apellido' => $this->apellido,
             'nombre_completo' => "{$this->apellido}, {$this->nombre}",
+            'foto_url' => $this->foto_url,
             'documento_tipo_id' => $this->documento_tipo_id,
             'documento_tipo' => $this->whenLoaded('documentoTipo', fn() => [
                 'id' => $this->documentoTipo->id,
@@ -65,8 +66,6 @@ class PersonaResource extends JsonResource
             'nacimiento_departamento' => $this->whenLoaded('nacimientoDepartamento', fn() => $this->nacimientoDepartamento?->nombre),
             'localidad_id' => $this->localidad_id,
             'tramite' => $this->tramite,
-            'posee_cpi_si' => $this->posee_cpi_si,
-            'posee_docExt_si' => $this->posee_docExt_si,
             'documento_numero' => $this->documentoNumeroRaw(),
             'CUIL_prefijo' => $this->CUIL_prefijo,
             'CUIL_sufijo' => $this->CUIL_sufijo,

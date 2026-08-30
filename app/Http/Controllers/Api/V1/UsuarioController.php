@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
 use \Illuminate\Validation\ValidationException;
 use \App\Services\CupofService;
 use \Illuminate\Database\QueryException;
-
+use Illuminate\Support\Facades\Storage;
 class UsuarioController extends Controller
 {
     protected UserService $userService;
@@ -251,6 +251,22 @@ class UsuarioController extends Controller
         return response()->json([
             'message' => 'Usuario eliminado con éxito.'
         ]);
+    }
+    /**
+     * Stream a target user's avatar (authorized).
+     */
+    public function getAvatar(Usuario $usuario)
+    {
+        $this->authorize('viewAvatar', $usuario);
+
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+
+        if (!$usuario->avatar_path || !$disk->exists($usuario->avatar_path)) {
+            return response()->json(['error' => 'Avatar no encontrado.'], 404);
+        }
+
+        return $disk->response($usuario->avatar_path);
     }
 
 }

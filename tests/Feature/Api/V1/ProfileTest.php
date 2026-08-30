@@ -17,14 +17,14 @@ test('can get authenticated user profile', function () {
     $response = $this->getJson('/api/v1/auth/me');
 
     $response->assertOk()
-             ->assertJson([
-                 'user' => [
-                     'id' => $this->user->id,
-                     'nombre' => $this->user->nombre,
-                     'documento_numero' => $this->user->documento_numero,
-                     'email' => $this->user->email,
-                 ]
-             ]);
+        ->assertJson([
+            'user' => [
+                'id' => $this->user->id,
+                'nombre' => $this->user->nombre,
+                'documento_numero' => $this->user->documento_numero,
+                'email' => $this->user->email,
+            ]
+        ]);
 });
 
 test('can update authenticated user profile', function () {
@@ -38,15 +38,15 @@ test('can update authenticated user profile', function () {
     $response = $this->putJson('/api/v1/auth/profile', $newData);
 
     $response->assertOk()
-             ->assertJson([
-                 'message' => 'Perfil actualizado con éxito.',
-                 'user' => [
-                     'nombre' => 'Jane',
-                     'documento_tipo_id' => 1,
-                     'documento_numero' => '98765432',
-                     'email' => 'jane.doe.updated@example.com',
-                 ],
-             ]);
+        ->assertJson([
+            'message' => 'Perfil actualizado con éxito.',
+            'user' => [
+                'nombre' => 'Jane',
+                'documento_tipo_id' => 1,
+                'documento_numero' => '98765432',
+                'email' => 'jane.doe.updated@example.com',
+            ],
+        ]);
 
     $this->assertDatabaseHas('usuarios', [
         'id' => $this->user->id,
@@ -65,7 +65,7 @@ test('cannot update profile with invalid data', function () {
     $response = $this->putJson('/api/v1/auth/profile', $newData);
 
     $response->assertStatus(422)
-             ->assertJsonValidationErrors(['nombre', 'email']);
+        ->assertJsonValidationErrors(['nombre', 'email']);
 });
 
 test('cannot update profile with duplicate email', function () {
@@ -81,39 +81,40 @@ test('cannot update profile with duplicate email', function () {
     $response = $this->putJson('/api/v1/auth/profile', $newData);
 
     $response->assertStatus(422)
-             ->assertJsonValidationErrors(['email']);
+        ->assertJsonValidationErrors(['email']);
 });
 
 test('can update authenticated user avatar', function () {
-    Storage::fake('public');
+    Storage::fake('local');
 
     $file = UploadedFile::fake()->image('avatar.jpg');
 
     $response = $this->postJson('/api/v1/auth/avatar', ['avatar' => $file]);
 
     $response->assertOk()
-             ->assertJsonStructure(['message', 'avatar_url']);
+        ->assertJsonStructure(['message', 'avatar_url']);
 
     // Check if user's avatar_path was updated in the database and file exists
     $this->user->refresh();
     expect($this->user->avatar_path)->not->toBeNull();
-    
+
     // The filename should start with user_id_ and end with .jpg
     expect($this->user->avatar_path)->toStartWith('avatars/' . $this->user->id . '_');
     expect($this->user->avatar_path)->toEndWith('.jpg');
-    
-    Storage::disk('public')->assertExists($this->user->avatar_path);
+
+    Storage::disk('local')->assertExists($this->user->avatar_path);
 });
 
+
 test('old avatar is deleted when updating a new one', function () {
-    Storage::fake('public');
+    Storage::fake('local');
 
     // First avatar
     $firstFile = UploadedFile::fake()->image('first.jpg');
     $this->postJson('/api/v1/auth/avatar', ['avatar' => $firstFile]);
     $this->user->refresh();
     $oldAvatarPath = $this->user->avatar_path;
-    Storage::disk('public')->assertExists($oldAvatarPath);
+    Storage::disk('local')->assertExists($oldAvatarPath);
 
     // Wait a second to ensure a different timestamp if needed
     sleep(1);
@@ -123,23 +124,24 @@ test('old avatar is deleted when updating a new one', function () {
     $this->postJson('/api/v1/auth/avatar', ['avatar' => $secondFile]);
 
     // Old avatar should be deleted
-    Storage::disk('public')->assertMissing($oldAvatarPath);
-    
+    Storage::disk('local')->assertMissing($oldAvatarPath);
+
     $this->user->refresh();
-    Storage::disk('public')->assertExists($this->user->avatar_path);
+    Storage::disk('local')->assertExists($this->user->avatar_path);
     expect($this->user->avatar_path)->toStartWith('avatars/' . $this->user->id . '_');
     expect($this->user->avatar_path)->toEndWith('.png');
 });
 
+
 test('cannot upload invalid avatar file', function () {
-    Storage::fake('public');
+    Storage::fake('local');
 
     $invalidFile = UploadedFile::fake()->create('document.pdf'); // Not an image
 
     $response = $this->postJson('/api/v1/auth/avatar', ['avatar' => $invalidFile]);
 
     $response->assertStatus(422)
-             ->assertJsonValidationErrors(['avatar']);
+        ->assertJsonValidationErrors(['avatar']);
 });
 
 test('can update authenticated user password', function () {
@@ -156,7 +158,7 @@ test('can update authenticated user password', function () {
     ]);
 
     $response->assertOk()
-             ->assertJson(['message' => 'Contraseña actualizada con éxito.']);
+        ->assertJson(['message' => 'Contraseña actualizada con éxito.']);
 
     expect(password_verify($newPassword, $this->user->fresh()->password))->toBeTrue();
 });
@@ -176,10 +178,10 @@ test('cannot update password with incorrect current password', function () {
     ]);
 
     $response->assertStatus(400)
-             ->assertJson([
-                 'error' => 'La contraseña actual es incorrecta.',
-                 'code' => 400
-             ]);
+        ->assertJson([
+            'error' => 'La contraseña actual es incorrecta.',
+            'code' => 400
+        ]);
 });
 
 test('cannot update password with invalid new password', function () {
@@ -196,5 +198,5 @@ test('cannot update password with invalid new password', function () {
     ]);
 
     $response->assertStatus(422)
-             ->assertJsonValidationErrors(['password']);
+        ->assertJsonValidationErrors(['password']);
 });

@@ -172,4 +172,23 @@ class UsuarioPolicy
     {
         return false;
     }
+    /**
+     * Determine whether the user can view a target user's avatar.
+     */
+    public function viewAvatar(Usuario $user, Usuario $targetUser): bool
+    {
+        if ($user->id === $targetUser->id) {
+            return true;
+        }
+
+        if ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
+            $userEscuelas = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id');
+            $modelEscuelas = $targetUser->persona?->escuelasPersonas()->pluck('escuela_id');
+
+            return $userEscuelas->intersect($modelEscuelas)->isNotEmpty();
+        }
+
+        return false;
+    }
+
 }

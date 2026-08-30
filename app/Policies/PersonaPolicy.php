@@ -68,4 +68,23 @@ class PersonaPolicy
     {
         return false;
     }
+    /**
+     * Determine whether the user can view a Persona's profile photo.
+     * Superuser, directivos de sus escuelas, o el usuario vinculado.
+     */
+    public function viewFoto(Usuario $usuario, Persona $persona): bool
+    {
+        // Superuser ya autorizado por before()
+        if (
+            $usuario->persona?->escuelasPersonas()
+                ->whereHas('role', fn($q) => $q->whereIn('name', Usuario::ROLES_EQUIPO_CONDUCCION))
+                ->whereNotNull('verified_at')
+                ->exists()
+        ) {
+            return true;
+        }
+
+        return $persona->usuario_id !== null && $usuario->id === $persona->usuario_id;
+    }
+
 }

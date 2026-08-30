@@ -8,6 +8,62 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property string|null $id_georef
+ * @property int|null $provincia_id
+ * @property int|null $georef_fuente_id
+ * @property int|null $georef_categoria_id
+ * @property string $nombre
+ * @property string|null $nombre_completo
+ * @property numeric|null $centroide_lat
+ * @property numeric|null $centroide_lon
+ * @property string|null $provincia_interseccion
+ * @property int|null $region_id
+ * @property int|null $distrito_numero
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\GeorefAsentamiento> $georefAsentamientos
+ * @property-read int|null $georef_asentamientos_count
+ * @property-read \App\Models\GeorefCategoria|null $georefCategoria
+ * @property-read \App\Models\GeorefFuente|null $georefFuente
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\GeorefLocalidad> $georefLocalidades
+ * @property-read int|null $georef_localidades_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Localidad> $localidades
+ * @property-read int|null $localidades_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Persona> $personas
+ * @property-read int|null $personas_count
+ * @property-read \App\Models\Provincia|null $provincia
+ * @property-read \App\Models\Region|null $region
+ * @method static \Database\Factories\DepartamentoFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereCentroideLat($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereCentroideLon($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereDistritoNumero($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereGeorefCategoriaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereGeorefFuenteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereIdGeoref($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereNombre($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereNombreCompleto($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereProvinciaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereProvinciaInterseccion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereRegionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereUpdatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento withoutTrashed()
+ * @mixin \Eloquent
+ */
 class Departamento extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;

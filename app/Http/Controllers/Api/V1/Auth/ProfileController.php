@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\UsuarioResource;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -111,4 +112,21 @@ class ProfileController extends Controller
             ], 400);
         }
     }
+    /**
+     * Stream the authenticated user's avatar (private).
+     */
+    public function getAvatar()
+    {
+        $user = Auth::user();
+
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+
+        if (!$user->avatar_path || !$disk->exists($user->avatar_path)) {
+            return response()->json(['error' => 'Avatar no encontrado.'], 404);
+        }
+
+        return $disk->response($user->avatar_path);
+    }
+
 }

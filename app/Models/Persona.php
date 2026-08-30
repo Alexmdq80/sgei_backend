@@ -12,6 +12,100 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Casts\DocumentoIdentidadCast;
 
+/**
+ * @property int $id
+ * @property string|null $usuario_id
+ * @property int|null $documento_tipo_id
+ * @property int|null $documento_situacion_id
+ * @property int|null $sexo_id
+ * @property int|null $genero_id
+ * @property int|null $nacionalidad_nacion_id
+ * @property int|null $nacion_id
+ * @property int|null $provincia_id
+ * @property int|null $departamento_id
+ * @property int|null $localidad_id
+ * @property \App\ValueObjects\DocumentoIdentidad|null $documento_numero
+ * @property string|null $apellido
+ * @property string|null $nombre
+ * @property string|null $foto_path
+ * @property string|null $nombre_alternativo
+ * @property string|null $tramite
+ * @property int|null $vive_si
+ * @property string|null $CUIL_prefijo
+ * @property string|null $CUIL_sufijo
+ * @property \Illuminate\Support\Carbon|null $nacimiento_fecha
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Contacto|null $contacto
+ * @property-read \App\Models\DocumentoSituacion|null $documentoSituacion
+ * @property-read \App\Models\DocumentoTipo|null $documentoTipo
+ * @property-read \App\Models\Domicilio|null $domicilio
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EscuelaPersona> $escuelasPersonas
+ * @property-read int|null $escuelas_personas_count
+ * @property-read \App\Models\Genero|null $genero
+ * @property-read string|null $foto_url
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\HistorialInscripcion> $historialInscripciones
+ * @property-read int|null $historial_inscripciones_count
+ * @property-read \App\Models\Inscripcion|null $inscripcion
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Legajo> $legajos
+ * @property-read int|null $legajos_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CupofMovimiento> $movimientosCupof
+ * @property-read int|null $movimientos_cupof_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CupofMovimiento> $movimientosCupofActivos
+ * @property-read int|null $movimientos_cupof_activos_count
+ * @property-read \App\Models\Departamento|null $nacimientoDepartamento
+ * @property-read \App\Models\Localidad|null $nacimientoLocalidad
+ * @property-read \App\Models\Nacion|null $nacimientoPais
+ * @property-read \App\Models\Provincia|null $nacimientoProvincia
+ * @property-read \App\Models\Nacion|null $nacionalidad
+ * @property-read \App\Models\Sexo|null $sexo
+ * @property-read \App\Models\Usuario|null $usuario
+ * @property-read \App\Models\PersonaVinculoPersona|null $pivot
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Persona> $vinculosComoAdulto
+ * @property-read int|null $vinculos_como_adulto_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Persona> $vinculosComoEstudiante
+ * @property-read int|null $vinculos_como_estudiante_count
+ * @method static \Database\Factories\PersonaFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona inDepartamento(int $departamentoId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona inProvincia(int $provinciaId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona inRegion(int $regionId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereApellido($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereCUILPrefijo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereCUILSufijo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereDepartamentoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereDocumentoNumero($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereDocumentoSituacionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereDocumentoTipoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereFotoPath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereGeneroId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereLocalidadId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNacimientoFecha($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNacionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNacionalidadNacionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNombre($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNombreAlternativo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereProvinciaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereSexoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereTramite($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereUpdatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereUsuarioId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereViveSi($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona withoutTrashed()
+ * @mixin \Eloquent
+ */
 class Persona extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;
@@ -23,7 +117,7 @@ class Persona extends Model
      */
     protected $auditGroup = 'entities';
 
-   /**
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -44,8 +138,7 @@ class Persona extends Model
         "nombre",
         "nombre_alternativo",
         "tramite",
-        "posee_cpi_si",
-        "posee_docExt_si",
+        "foto_path",
         "vive_si",
         "CUIL_prefijo",
         "CUIL_sufijo",
@@ -57,11 +150,18 @@ class Persona extends Model
      *
      * @var array<string, string>
      */
-    
+
     protected $casts = [
         'documento_numero' => DocumentoIdentidadCast::class,
         'nacimiento_fecha' => 'datetime',
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = ['foto_url'];
 
     /**
      * Mutator for apellido (Uppercase).
@@ -69,7 +169,7 @@ class Persona extends Model
     protected function apellido(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -79,7 +179,7 @@ class Persona extends Model
     protected function nombre(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -89,7 +189,7 @@ class Persona extends Model
     protected function nombreAlternativo(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -99,10 +199,16 @@ class Persona extends Model
     protected function tramite(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
-
+    /**
+     * Get the full URL to the (private, authenticated) profile photo.
+     */
+    public function getFotoUrlAttribute(): ?string
+    {
+        return $this->foto_path ? url("/api/v1/admin/personas/{$this->id}/foto") : null;
+    }
     /**
      * Relationship to the user.
      */
@@ -261,8 +367,8 @@ class Persona extends Model
     public function vinculosComoEstudiante(): BelongsToMany
     {
         return $this->belongsToMany(Persona::class, 'persona_vinculo_persona', 'persona_estudiante_id', 'persona_adulto_id')
-                    ->using(PersonaVinculoPersona::class)
-                    ->withPivot(['vinculo_id', 'vencimiento_fecha', 'detalle']);
+            ->using(PersonaVinculoPersona::class)
+            ->withPivot(['vinculo_id', 'vencimiento_fecha', 'detalle']);
     }
 
     /**
@@ -271,8 +377,8 @@ class Persona extends Model
     public function vinculosComoAdulto(): BelongsToMany
     {
         return $this->belongsToMany(Persona::class, 'persona_vinculo_persona', 'persona_adulto_id', 'persona_estudiante_id')
-                    ->using(PersonaVinculoPersona::class)
-                    ->withPivot(['vinculo_id', 'vencimiento_fecha', 'detalle']);
+            ->using(PersonaVinculoPersona::class)
+            ->withPivot(['vinculo_id', 'vencimiento_fecha', 'detalle']);
     }
 
     /**
@@ -284,12 +390,12 @@ class Persona extends Model
             $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($provinciaId) {
                 $sq->where('provincia_id', $provinciaId);
             })
-            ->orWhereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
-                $sq->where('provincia_id', $provinciaId);
-            })
-            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
-                $sq->where('provincia_id', $provinciaId);
-            });
+                ->orWhereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                    $sq->where('provincia_id', $provinciaId);
+                })
+                ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($provinciaId) {
+                    $sq->where('provincia_id', $provinciaId);
+                });
         });
     }
 
@@ -302,12 +408,12 @@ class Persona extends Model
             $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad.departamento', function ($sq) use ($regionId) {
                 $sq->where('region_id', $regionId);
             })
-            ->orWhereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
-                $sq->where('region_id', $regionId);
-            })
-            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
-                $sq->where('region_id', $regionId);
-            });
+                ->orWhereHas('inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                    $sq->where('region_id', $regionId);
+                })
+                ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento', function ($sq) use ($regionId) {
+                    $sq->where('region_id', $regionId);
+                });
         });
     }
 
@@ -320,12 +426,12 @@ class Persona extends Model
             $q->whereHas('movimientosCupofActivos.cupof.escuela.localidad', function ($sq) use ($departamentoId) {
                 $sq->where('departamento_id', $departamentoId);
             })
-            ->orWhereHas('inscripcion.escuelaProcedencia.localidad', function ($sq) use ($departamentoId) {
-                $sq->where('departamento_id', $departamentoId);
-            })
-            ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad', function ($sq) use ($departamentoId) {
-                $sq->where('departamento_id', $departamentoId);
-            });
+                ->orWhereHas('inscripcion.escuelaProcedencia.localidad', function ($sq) use ($departamentoId) {
+                    $sq->where('departamento_id', $departamentoId);
+                })
+                ->orWhereHas('vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad', function ($sq) use ($departamentoId) {
+                    $sq->where('departamento_id', $departamentoId);
+                });
         });
     }
 

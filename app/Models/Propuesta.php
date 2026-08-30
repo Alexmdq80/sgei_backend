@@ -9,6 +9,47 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * @property int $id
+ * @property int $escuela_id
+ * @property int $anio_plan_id
+ * @property int|null $turno_inicio_id
+ * @property int|null $turno_fin_id
+ * @property int|null $jornada_id
+ * @property int|null $lectivo_id
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\AnioPlan|null $anioPlan
+ * @property-read \App\Models\Lectivo|null $cicloLectivo
+ * @property-read \App\Models\Escuela|null $escuela
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Espacio> $espacios
+ * @property-read int|null $espacios_count
+ * @property-read \App\Models\Jornada|null $jornada
+ * @property-read \App\Models\Turno|null $turnoFin
+ * @property-read \App\Models\Turno|null $turnoInicio
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereAnioPlanId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereEscuelaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereJornadaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereLectivoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereTurnoFinId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereTurnoInicioId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereUpdatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta withoutTrashed()
+ * @mixin \Eloquent
+ */
 class Propuesta extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;

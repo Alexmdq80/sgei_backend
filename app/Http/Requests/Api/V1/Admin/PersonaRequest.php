@@ -50,12 +50,11 @@ class PersonaRequest extends FormRequest
             'CUIL_prefijo' => ['nullable', 'string', 'max:2'],
             'CUIL_sufijo' => ['nullable', 'string', 'max:1'],
             'cuil' => ['nullable', 'string', 'max:15'],
-            'posee_cpi_si' => ['nullable', 'boolean'],
-            'posee_docExt_si' => ['nullable', 'boolean'],
             'nacion_id' => ['nullable', 'integer', Rule::exists('nacions', 'id')],
             'provincia_id' => ['nullable', 'integer', Rule::exists('provincias', 'id')],
             'departamento_id' => ['nullable', 'integer', Rule::exists('departamentos', 'id')],
             'localidad_id' => ['nullable', 'integer', Rule::exists('localidads', 'id')],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:3072'],
             'email' => [
                 'nullable',
                 'email',

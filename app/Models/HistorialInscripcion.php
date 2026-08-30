@@ -8,6 +8,74 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @property int $id
+ * @property string $inscripcion_id
+ * @property int $persona_id
+ * @property int|null $persona_firma_id
+ * @property int|null $espacio_id
+ * @property int|null $escuela_id
+ * @property int|null $nivel_id
+ * @property int|null $modalidad_id
+ * @property int|null $condicion_id
+ * @property int|null $persona_vinculo_persona_1_id
+ * @property int|null $persona_vinculo_persona_2_id
+ * @property int|null $persona_vinculo_persona_3_id
+ * @property string|null $codigo_abc
+ * @property int $proyecto_inclusion_si
+ * @property int $concurre_especial_si
+ * @property int $asistente_externo_si
+ * @property \Illuminate\Support\Carbon|null $fecha
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\InscripcionBaja|null $baja
+ * @property-read \App\Models\Condicion|null $condicion
+ * @property-read \App\Models\Escuela|null $escuelaProcedencia
+ * @property-read \App\Models\Espacio|null $espacio
+ * @property-read \App\Models\InscripcionFinalizado|null $finalizado
+ * @property-read \App\Models\HistorialInfoInscripcion|null $info
+ * @property-read \App\Models\Inscripcion|null $inscripcion
+ * @property-read \App\Models\Modalidad|null $modalidadProcedencia
+ * @property-read \App\Models\Nivel|null $nivelProcedencia
+ * @property-read \App\Models\InscripcionPase|null $pase
+ * @property-read \App\Models\Persona|null $persona
+ * @property-read \App\Models\Persona|null $personaFirma
+ * @property-read \App\Models\PersonaVinculoPersona|null $vinculoPersona_1
+ * @property-read \App\Models\PersonaVinculoPersona|null $vinculoPersona_2
+ * @property-read \App\Models\PersonaVinculoPersona|null $vinculoPersona_3
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereAsistenteExternoSi($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereCodigoAbc($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereConcurreEspecialSi($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereCondicionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereEscuelaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereEspacioId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereFecha($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereInscripcionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereModalidadId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereNivelId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion wherePersonaFirmaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion wherePersonaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion wherePersonaVinculoPersona1Id($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion wherePersonaVinculoPersona2Id($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion wherePersonaVinculoPersona3Id($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereProyectoInclusionSi($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereUpdatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion withoutTrashed()
+ * @mixin \Eloquent
+ */
 class HistorialInscripcion extends Model
 {
     use HasFactory, SoftDeletes, AuditableTrait;

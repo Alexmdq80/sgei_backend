@@ -2071,10 +2071,9 @@ namespace App\Models{
  * @property \App\ValueObjects\DocumentoIdentidad|null $documento_numero
  * @property string|null $apellido
  * @property string|null $nombre
+ * @property string|null $foto_path
  * @property string|null $nombre_alternativo
  * @property string|null $tramite
- * @property int|null $posee_cpi_si
- * @property int|null $posee_docExt_si
  * @property int|null $vive_si
  * @property string|null $CUIL_prefijo
  * @property string|null $CUIL_sufijo
@@ -2138,8 +2137,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNacionalidadNacionId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNombre($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNombreAlternativo($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona wherePoseeCpiSi($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona wherePoseeDocExtSi($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereProvinciaId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereSexoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereTramite($value)

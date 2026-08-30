@@ -32,8 +32,6 @@ readonly class UpdatePersonaDTO
         public ?string $tramite = null,
         public ?string $cuilPrefijo = null,
         public ?string $cuilSufijo = null,
-        public ?bool $poseeCpiSi = null,
-        public ?bool $poseeDocExtSi = null,
         public ?bool $viveSi = null,
     ) {
     }
@@ -72,8 +70,6 @@ readonly class UpdatePersonaDTO
             tramite: isset($data['tramite']) ? (string) $data['tramite'] : null,
             cuilPrefijo: isset($data['CUIL_prefijo']) ? (string) $data['CUIL_prefijo'] : null,
             cuilSufijo: isset($data['CUIL_sufijo']) ? (string) $data['CUIL_sufijo'] : null,
-            poseeCpiSi: isset($data['posee_cpi_si']) ? (bool) $data['posee_cpi_si'] : null,
-            poseeDocExtSi: isset($data['posee_docExt_si']) ? (bool) $data['posee_docExt_si'] : null,
             viveSi: isset($data['vive_si']) ? (bool) $data['vive_si'] : null,
             confirmed: (bool) ($data['confirmed'] ?? false),
         );
@@ -122,10 +118,6 @@ readonly class UpdatePersonaDTO
             $data['CUIL_prefijo'] = $this->cuilPrefijo;
         if ($this->cuilSufijo !== null)
             $data['CUIL_sufijo'] = $this->cuilSufijo;
-        if ($this->poseeCpiSi !== null)
-            $data['posee_cpi_si'] = $this->poseeCpiSi;
-        if ($this->poseeDocExtSi !== null)
-            $data['posee_docExt_si'] = $this->poseeDocExtSi;
         if ($this->viveSi !== null)
             $data['vive_si'] = $this->viveSi;
 

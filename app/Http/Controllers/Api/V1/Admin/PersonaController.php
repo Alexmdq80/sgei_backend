@@ -16,7 +16,7 @@ use App\DTOs\Persona\UpdatePersonaDTO;
 use App\DTOs\Persona\PersonaFilterDTO;
 use App\Exceptions\ConfirmationRequiredException;
 use App\Notifications\UserLinkedNotification;
-
+use Illuminate\Support\Facades\Storage;
 class PersonaController extends Controller
 {
     protected UserService $userService;
@@ -274,4 +274,51 @@ class PersonaController extends Controller
         }
 
     }
+    /**
+     * Stream a Persona's profile photo (authorized, private storage).
+     */
+    public function getFoto(Persona $persona)
+    {
+        $this->authorize('viewFoto', $persona);
+
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+
+        if (!$persona->foto_path || !$disk->exists($persona->foto_path)) {
+            return response()->json(['error' => 'Foto no encontrada.'], 404);
+        }
+
+        return $disk->response($persona->foto_path);
+    }
+
+    /**
+     * Upload / replace a Persona's profile photo.
+     */
+    public function uploadFoto(PersonaRequest $request, Persona $persona): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('update', $persona);
+
+        $fotoUrl = $this->personaService->updateFoto($persona, $request->file('foto'));
+
+        return response()->json([
+            'message' => 'Foto de perfil actualizada con éxito.',
+            'foto_url' => $fotoUrl,
+        ]);
+    }
+
+    /**
+     * Delete a Persona's profile photo.
+     */
+    public function deleteFoto(Persona $persona): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('update', $persona);
+
+        $this->personaService->deleteFoto($persona);
+
+        return response()->json([
+            'message' => 'Foto de perfil eliminada con éxito.',
+            'foto_url' => null,
+        ]);
+    }
+
 }

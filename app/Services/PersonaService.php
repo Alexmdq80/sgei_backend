@@ -17,6 +17,8 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 use App\Notifications\UserUnlinkedNotification;
 use App\Notifications\VerifyEmailNotification;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class PersonaService
 {
@@ -277,7 +279,7 @@ class PersonaService
                 $newState = $linkedUser->hasVerifiedEmail() ? 'email_verificado' : 'email_pendiente';
                 $linkedUser->update(['estado' => $newState]);
             }
-                });
+        });
     }
 
     /**
@@ -329,4 +331,37 @@ class PersonaService
 
         return $user->fresh();
     }
+    /**
+     * Store (or replace) a Persona's profile photo in private storage.
+     */
+    public function updateFoto(Persona $persona, UploadedFile $foto): string
+    {
+        // Delete the previous photo if it exists
+        if ($persona->foto_path && Storage::disk('local')->exists($persona->foto_path)) {
+            Storage::disk('local')->delete($persona->foto_path);
+        }
+
+        $timestamp = time();
+        $extension = $foto->getClientOriginalExtension();
+        $filename = "persona_{$persona->id}_{$timestamp}.{$extension}";
+
+        $path = $foto->storeAs('personas', $filename, 'local');
+
+        $persona->update(['foto_path' => $path]);
+
+        return $persona->foto_url;
+    }
+
+    /**
+     * Delete a Persona's profile photo.
+     */
+    public function deleteFoto(Persona $persona): void
+    {
+        if ($persona->foto_path && Storage::disk('local')->exists($persona->foto_path)) {
+            Storage::disk('local')->delete($persona->foto_path);
+        }
+
+        $persona->update(['foto_path' => null]);
+    }
+
 }

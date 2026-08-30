@@ -81,6 +81,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('/avatar', [ProfileController::class, 'updateAvatar']);
                 Route::delete('/avatar', [ProfileController::class, 'deleteAvatar']);
                 Route::put('/password', [ProfileController::class, 'updatePassword']);
+                Route::get('/avatar', [ProfileController::class, 'getAvatar']);
             });
         });
     });
@@ -130,6 +131,9 @@ Route::prefix('v1')->group(function () {
         Route::post('personas/{persona}/resend-activation', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'resendActivation']);
         Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);
         Route::post('personas/{persona}/unlink-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'unlinkUser']);
+        Route::get('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'getFoto']);
+        Route::post('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'uploadFoto']);
+        Route::delete('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'deleteFoto']);
 
         Route::apiResource('cupofs', App\Http\Controllers\Api\V1\CupofController::class);
         Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);
@@ -147,6 +151,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/usuarios/{usuario}/desvincular-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'desvincularPersona']);
             Route::post('/usuarios/{usuario}/resend-activation', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendActivation']);
             Route::post('/usuarios/{usuario}/resend-verification', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendEmailVerification']);
+            Route::get('/usuarios/{usuario}/avatar', [App\Http\Controllers\Api\V1\UsuarioController::class, 'getAvatar']);
 
             Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class)->except(['store']);
 

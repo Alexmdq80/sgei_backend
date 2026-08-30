@@ -26,9 +26,8 @@ readonly class CreatePersonaDTO
         public ?string $tramite = null,
         public ?string $cuilPrefijo = null,
         public ?string $cuilSufijo = null,
-        public ?bool $poseeCpiSi = null,
-        public ?bool $poseeDocExtSi = null,
         public ?bool $viveSi = null,
+        public ?string $email = null
     ) {
     }
 
@@ -65,9 +64,8 @@ readonly class CreatePersonaDTO
             tramite: isset($data['tramite']) ? (string) $data['tramite'] : null,
             cuilPrefijo: isset($data['CUIL_prefijo']) ? (string) $data['CUIL_prefijo'] : null,
             cuilSufijo: isset($data['CUIL_sufijo']) ? (string) $data['CUIL_sufijo'] : null,
-            poseeCpiSi: isset($data['posee_cpi_si']) ? (bool) $data['posee_cpi_si'] : null,
-            poseeDocExtSi: isset($data['posee_docExt_si']) ? (bool) $data['posee_docExt_si'] : null,
             viveSi: isset($data['vive_si']) ? (bool) $data['vive_si'] : null,
+            email: isset($data['email']) ? (string) $data['email'] : null,
         );
     }
 
@@ -90,9 +88,8 @@ readonly class CreatePersonaDTO
             'tramite' => $this->tramite,
             'CUIL_prefijo' => $this->cuilPrefijo,
             'CUIL_sufijo' => $this->cuilSufijo,
-            'posee_cpi_si' => $this->poseeCpiSi,
-            'posee_docExt_si' => $this->poseeDocExtSi,
             'vive_si' => $this->viveSi,
+            'email' => $this->email,
         ];
 
         if ($this->documentoIdentidad !== null) {

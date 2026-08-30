@@ -458,22 +458,19 @@ class UserService
      */
     public function updateAvatar(Usuario $user, UploadedFile $avatar): string
     {
-        // Delete old avatar if exists
-        if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
-            Storage::disk('public')->delete($user->avatar_path);
+        if ($user->avatar_path && Storage::disk('local')->exists($user->avatar_path)) {
+            Storage::disk('local')->delete($user->avatar_path);
         }
 
-        // Create a custom filename: user_id_timestamp.extension
         $timestamp = time();
         $extension = $avatar->getClientOriginalExtension();
         $filename = "{$user->id}_{$timestamp}.{$extension}";
 
-        // Store new avatar in 'public/avatars' with the custom filename
-        $path = $avatar->storeAs('avatars', $filename, 'public');
+        $path = $avatar->storeAs('avatars', $filename, 'local');
 
         $user->update(['avatar_path' => $path]);
 
-        return asset('storage/' . $path);
+        return $user->avatar_url;
     }
 
     /**
@@ -481,8 +478,8 @@ class UserService
      */
     public function deleteAvatar(Usuario $user): void
     {
-        if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
-            Storage::disk('public')->delete($user->avatar_path);
+        if ($user->avatar_path && Storage::disk('local')->exists($user->avatar_path)) {
+            Storage::disk('local')->delete($user->avatar_path);
         }
 
         $user->update(['avatar_path' => null]);
@@ -593,7 +590,7 @@ class UserService
         // Filtro jurisdiccional (solo para no-superusers)
         if (!$performer->hasRole('superuser') && !$performer->es_administrador) {
             if ($performer->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
-                  $escuelaIds = $performer->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
+                $escuelaIds = $performer->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
                 if (empty($escuelaIds))
                     return collect();
                 $query->where(function ($q) use ($escuelaIds) {

@@ -14,12 +14,15 @@ class DocumentoTipoSeeder extends Seeder
     {
         $tipos = [
             ['id' => 1, 'nombre' => 'DNI', 'vigente' => true],
-            ['id' => 2, 'nombre' => 'CDI', 'vigente' => true],
-            ['id' => 3, 'nombre' => 'LC', 'vigente' => true],
+            ['id' => 2, 'nombre' => 'LC', 'vigente' => true],
+            ['id' => 3, 'nombre' => 'LE', 'vigente' => true],
             ['id' => 4, 'nombre' => 'PASAPORTE', 'vigente' => true],
-            ['id' => 5, 'nombre' => 'OTRO', 'vigente' => true],
-            ['id' => 6, 'nombre' => 'INDOCUMENTADO', 'vigente' => true],
+            ['id' => 5, 'nombre' => 'CPI', 'vigente' => true],
+            ['id' => 6, 'nombre' => 'DOCUMENTO EXTRANJERO', 'vigente' => true],
+            ['id' => 7, 'nombre' => 'INDOCUMENTADO', 'vigente' => true],
+            ['id' => 8, 'nombre' => 'OTRO', 'vigente' => true],
         ];
+
 
         foreach ($tipos as $tipo) {
             DocumentoTipo::updateOrCreate(['id' => $tipo['id']], $tipo);

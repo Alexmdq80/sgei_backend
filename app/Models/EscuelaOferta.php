@@ -7,6 +7,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
+/**
+ * @property-read \App\Models\Escuela|null $escuela
+ * @property-read \App\Models\Oferta|null $oferta
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaOferta newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaOferta newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaOferta onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaOferta query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaOferta withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaOferta withoutTrashed()
+ * @mixin \Eloquent
+ */
 class EscuelaOferta extends Pivot
 {
     use HasFactory, SoftDeletes, AuditableTrait;
