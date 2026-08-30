@@ -86,13 +86,12 @@ Route::prefix('v1')->group(function () {
         });
     });
 
-    // Catálogos Protegidos (Fuera del prefijo auth para mantener compatibilidad de URL)
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/cargos', [App\Http\Controllers\Api\V1\CargoController::class, 'index']);
-    });
+    // Rutas Protegidas Generales (Fuera del prefijo 'admin')
 
-    // Gestión Académica (Planes de Estudio)
     Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+        Route::get('/cargos', [App\Http\Controllers\Api\V1\CargoController::class, 'index']);
+        Route::get('/usuarios/{usuario}/avatar', [App\Http\Controllers\Api\V1\UsuarioController::class, 'getAvatar']);
+
         Route::apiResource('planes', App\Http\Controllers\Api\V1\PlanController::class);
 
         // Gestión de Asignaturas
@@ -119,6 +118,7 @@ Route::prefix('v1')->group(function () {
         });
         Route::get('/escalafones', [App\Http\Controllers\Api\V1\EscalafonController::class, 'index']);
         Route::get('/puesto-tipos', [App\Http\Controllers\Api\V1\PuestoTipoController::class, 'index']);
+
     });
 
     // Gestión Administrativa
@@ -151,7 +151,6 @@ Route::prefix('v1')->group(function () {
             Route::post('/usuarios/{usuario}/desvincular-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'desvincularPersona']);
             Route::post('/usuarios/{usuario}/resend-activation', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendActivation']);
             Route::post('/usuarios/{usuario}/resend-verification', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendEmailVerification']);
-            Route::get('/usuarios/{usuario}/avatar', [App\Http\Controllers\Api\V1\UsuarioController::class, 'getAvatar']);
 
             Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class)->except(['store']);
 

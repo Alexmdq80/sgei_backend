@@ -177,18 +177,26 @@ class UsuarioPolicy
      */
     public function viewAvatar(Usuario $user, Usuario $targetUser): bool
     {
+        // 1. El propio usuario siempre puede ver su avatar
         if ($user->id === $targetUser->id) {
             return true;
         }
 
+        // 2. Superusuario / Administrador
+        if ($this->isSuperUser($user)) {
+            return true;
+        }
+
+        // 3. Equipo de conducción de su misma escuela
         if ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
             $userEscuelas = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id');
             $modelEscuelas = $targetUser->persona?->escuelasPersonas()->pluck('escuela_id');
 
-            return $userEscuelas->intersect($modelEscuelas)->isNotEmpty();
+            return $userEscuelas && $modelEscuelas && $userEscuelas->intersect($modelEscuelas)->isNotEmpty();
         }
 
         return false;
     }
+
 
 }

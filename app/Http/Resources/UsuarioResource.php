@@ -43,7 +43,9 @@ class UsuarioResource extends JsonResource
             'estado' => $this->estado,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
-            'avatar_url' => $this->avatar_url,
+            'avatar_url' => $this->avatar_path
+                ? url("/api/v1/usuarios/{$this->id}/avatar") . '?v=' . ($this->updated_at?->timestamp ?? time())
+                : null,
             'roles' => RoleResource::collection($this->whenLoaded('roles')),
             'permissions' => $this->when(
                 $this->relationLoaded('permissions') || $this->relationLoaded('roles'),

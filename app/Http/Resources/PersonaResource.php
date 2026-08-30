@@ -39,7 +39,9 @@ class PersonaResource extends JsonResource
             'nombre' => $this->nombre,
             'apellido' => $this->apellido,
             'nombre_completo' => "{$this->apellido}, {$this->nombre}",
-            'foto_url' => $this->foto_url,
+            'foto_url' => $this->foto_path
+                ? url("/api/v1/admin/personas/{$this->id}/foto") . '?v=' . ($this->updated_at?->timestamp ?? time())
+                : null,
             'documento_tipo_id' => $this->documento_tipo_id,
             'documento_tipo' => $this->whenLoaded('documentoTipo', fn() => [
                 'id' => $this->documentoTipo->id,

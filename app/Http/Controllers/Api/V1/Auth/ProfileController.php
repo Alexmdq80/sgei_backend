@@ -67,14 +67,15 @@ class ProfileController extends Controller
                 'message' => 'Avatar actualizado con éxito.',
                 'avatar_url' => $avatarUrl
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Error al subir avatar: ' . $e->getMessage());
             return response()->json([
-                'error' => 'Error al subir el avatar.',
+                'error' => 'Error al subir el avatar: ' . $e->getMessage(),
                 'code' => 500
             ], 500);
         }
     }
+
 
     /**
      * Delete the user's avatar.

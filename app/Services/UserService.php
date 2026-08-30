@@ -463,15 +463,21 @@ class UserService
         }
 
         $timestamp = time();
-        $extension = $avatar->getClientOriginalExtension();
+        $extension = $avatar->getClientOriginalExtension() ?: 'jpg';
         $filename = "{$user->id}_{$timestamp}.{$extension}";
 
         $path = $avatar->storeAs('avatars', $filename, 'local');
 
-        $user->update(['avatar_path' => $path]);
+        if (!$path) {
+            throw new \RuntimeException('No se pudo almacenar el archivo de avatar.');
+        }
 
-        return $user->avatar_url;
+        $user->update(['avatar_path' => $path]);
+        $user->refresh();
+
+        return $user->avatar_url ?? url("/api/v1/usuarios/{$user->id}/avatar");
     }
+
 
     /**
      * Delete the user's avatar.
