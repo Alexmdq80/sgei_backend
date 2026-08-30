@@ -26,33 +26,46 @@ class PersonaRequest extends FormRequest
     {
         $persona = $this->route('persona');
         $id = is_object($persona) ? $persona->id : $persona;
-        
+
         // El ID del contacto para ignorar en el unique de email
         $contactoId = is_object($persona) ? $persona->contacto?->id : null;
 
         return [
             'apellido' => ['required', 'string', 'max:255'],
             'nombre' => ['required', 'string', 'max:255'],
-            'documento_tipo_id' => ['required', 'integer', Rule::exists('documento_tipos', 'id')],
+            'nombre_alternativo' => ['nullable', 'string', 'max:255'],
+            'sexo_id' => ['nullable', 'integer', Rule::exists('sexos', 'id')],
+            'genero_id' => ['nullable', 'integer', Rule::exists('generos', 'id')],
+            'nacionalidad_nacion_id' => ['nullable', 'integer', Rule::exists('nacions', 'id')],
+            'nacimiento_fecha' => ['nullable', 'date'],
+            'documento_situacion_id' => ['nullable', 'integer', Rule::exists('documento_situacions', 'id')],
+            'documento_tipo_id' => ['nullable', 'integer', Rule::exists('documento_tipos', 'id')],
             'documento_numero' => [
-                'required', 
-                'string', 
-                'max:20', 
+                'nullable',
+                'string',
+                'max:20',
                 Rule::unique('personas', 'documento_numero')->ignore($id)
             ],
+            'tramite' => ['nullable', 'string', 'max:50'],
+            'CUIL_prefijo' => ['nullable', 'string', 'max:2'],
+            'CUIL_sufijo' => ['nullable', 'string', 'max:1'],
+            'cuil' => ['nullable', 'string', 'max:15'],
+            'posee_cpi_si' => ['nullable', 'boolean'],
+            'posee_docExt_si' => ['nullable', 'boolean'],
+            'nacion_id' => ['nullable', 'integer', Rule::exists('nacions', 'id')],
+            'provincia_id' => ['nullable', 'integer', Rule::exists('provincias', 'id')],
+            'departamento_id' => ['nullable', 'integer', Rule::exists('departamentos', 'id')],
+            'localidad_id' => ['nullable', 'integer', Rule::exists('localidads', 'id')],
             'email' => [
-                'nullable', 
-                'email', 
-                'max:255', 
+                'nullable',
+                'email',
+                'max:255',
                 Rule::unique('contactos', 'email')->ignore($contactoId)
             ],
             'confirmed' => ['sometimes', 'boolean'],
-            'cuil' => ['nullable', 'string', 'max:15'],
-            'fecha_nacimiento' => ['nullable', 'date'],
-            'genero_id' => ['nullable', 'integer', Rule::exists('generos', 'id')],
-            'nacionalidad_id' => ['nullable', 'integer', Rule::exists('nacions', 'id')],
         ];
     }
+
 
     public function messages(): array
     {

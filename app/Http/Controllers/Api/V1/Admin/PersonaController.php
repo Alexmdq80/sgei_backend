@@ -55,10 +55,14 @@ class PersonaController extends Controller
 
         return new PersonaResource($persona->load([
             'documentoTipo',
+            'documentoSituacion',
+            'sexo',
+            'genero',
             'usuario.roles',
             'nacionalidad',
             'nacimientoPais',
             'nacimientoProvincia',
+            'nacimientoDepartamento',
             'nacimientoLocalidad',
             'domicilio.calle',
             'contacto'

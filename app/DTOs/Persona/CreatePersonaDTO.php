@@ -12,10 +12,11 @@ readonly class CreatePersonaDTO
     public function __construct(
         public string $apellido,
         public string $nombre,
-        public DocumentoIdentidad $documentoIdentidad,
+        public ?DocumentoIdentidad $documentoIdentidad = null,   // ANTES: sin "?"
         public ?string $nombreAlternativo = null,
         public ?int $sexoId = null,
         public ?int $generoId = null,
+        public ?int $documentoSituacionId = null,                 // NUEVO
         public ?string $nacimientoFecha = null,
         public ?int $nacionalidadNacionId = null,
         public ?int $nacionId = null,
@@ -28,7 +29,9 @@ readonly class CreatePersonaDTO
         public ?bool $poseeCpiSi = null,
         public ?bool $poseeDocExtSi = null,
         public ?bool $viveSi = null,
-    ) {}
+    ) {
+    }
+
 
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
@@ -38,16 +41,21 @@ readonly class CreatePersonaDTO
 
     public static function fromArray(array $data): self
     {
+        $documentoIdentidad = (isset($data['documento_tipo_id']) && isset($data['documento_numero']) && $data['documento_numero'] !== '')
+            ? new DocumentoIdentidad(
+                tipoId: (int) $data['documento_tipo_id'],
+                numero: (string) $data['documento_numero'],
+            )
+            : null;
+
         return new self(
             apellido: (string) ($data['apellido'] ?? ''),
             nombre: (string) ($data['nombre'] ?? ''),
-            documentoIdentidad: new DocumentoIdentidad(
-                tipoId: (int) ($data['documento_tipo_id'] ?? 0),
-                numero: (string) ($data['documento_numero'] ?? ''),
-            ),
+            documentoIdentidad: $documentoIdentidad,
             nombreAlternativo: isset($data['nombre_alternativo']) ? (string) $data['nombre_alternativo'] : null,
             sexoId: isset($data['sexo_id']) ? (int) $data['sexo_id'] : null,
             generoId: isset($data['genero_id']) ? (int) $data['genero_id'] : null,
+            documentoSituacionId: isset($data['documento_situacion_id']) ? (int) $data['documento_situacion_id'] : null,
             nacimientoFecha: isset($data['nacimiento_fecha']) ? (string) $data['nacimiento_fecha'] : null,
             nacionalidadNacionId: isset($data['nacionalidad_nacion_id']) ? (int) $data['nacionalidad_nacion_id'] : null,
             nacionId: isset($data['nacion_id']) ? (int) $data['nacion_id'] : null,
@@ -63,16 +71,16 @@ readonly class CreatePersonaDTO
         );
     }
 
+
     public function toArray(): array
     {
-        return array_filter([
+        $data = [
             'apellido' => $this->apellido,
             'nombre' => $this->nombre,
-            'documento_tipo_id' => $this->documentoIdentidad->tipoId(),
-            'documento_numero' => $this->documentoIdentidad->numero(),
             'nombre_alternativo' => $this->nombreAlternativo,
             'sexo_id' => $this->sexoId,
             'genero_id' => $this->generoId,
+            'documento_situacion_id' => $this->documentoSituacionId,
             'nacimiento_fecha' => $this->nacimientoFecha,
             'nacionalidad_nacion_id' => $this->nacionalidadNacionId,
             'nacion_id' => $this->nacionId,
@@ -85,6 +93,14 @@ readonly class CreatePersonaDTO
             'posee_cpi_si' => $this->poseeCpiSi,
             'posee_docExt_si' => $this->poseeDocExtSi,
             'vive_si' => $this->viveSi,
-        ], fn ($val) => $val !== null);
+        ];
+
+        if ($this->documentoIdentidad !== null) {
+            $data['documento_tipo_id'] = $this->documentoIdentidad->tipoId();
+            $data['documento_numero'] = $this->documentoIdentidad->numero();
+        }
+
+        return array_filter($data, fn($val) => $val !== null);
     }
+
 }

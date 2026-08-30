@@ -40,36 +40,59 @@ class PersonaResource extends JsonResource
             'apellido' => $this->apellido,
             'nombre_completo' => "{$this->apellido}, {$this->nombre}",
             'documento_tipo_id' => $this->documento_tipo_id,
-            'documento_tipo' => $this->whenLoaded('documentoTipo', fn () => [
+            'documento_tipo' => $this->whenLoaded('documentoTipo', fn() => [
                 'id' => $this->documentoTipo->id,
                 'nombre' => $this->documentoTipo->nombre,
             ]),
+            'documento_situacion_id' => $this->documento_situacion_id,
+            'documento_situacion' => $this->whenLoaded('documentoSituacion', fn() => [
+                'id' => $this->documentoSituacion->id,
+                'nombre' => $this->documentoSituacion->nombre,
+            ]),
+            'nombre_alternativo' => $this->nombre_alternativo,
+            'sexo_id' => $this->sexo_id,
+            'sexo' => $this->whenLoaded('sexo', fn() => [
+                'id' => $this->sexo->id,
+                'nombre' => $this->sexo->nombre,
+                'letra' => $this->sexo->letra,
+            ]),
+            'genero_id' => $this->genero_id,
+            // 'genero' ya está definido más abajo como objeto {id, nombre} ✓
+            'nacionalidad_nacion_id' => $this->nacionalidad_nacion_id,
+            'nacion_id' => $this->nacion_id,
+            'provincia_id' => $this->provincia_id,
+            'departamento_id' => $this->departamento_id,
+            'nacimiento_departamento' => $this->whenLoaded('nacimientoDepartamento', fn() => $this->nacimientoDepartamento?->nombre),
+            'localidad_id' => $this->localidad_id,
+            'tramite' => $this->tramite,
+            'posee_cpi_si' => $this->posee_cpi_si,
+            'posee_docExt_si' => $this->posee_docExt_si,
             'documento_numero' => $this->documentoNumeroRaw(),
             'CUIL_prefijo' => $this->CUIL_prefijo,
             'CUIL_sufijo' => $this->CUIL_sufijo,
-            'cuil' => ($this->CUIL_prefijo && $this->CUIL_sufijo) 
-                ? "{$this->CUIL_prefijo}-{$this->documento_numero}-{$this->CUIL_sufijo}" 
+            'cuil' => ($this->CUIL_prefijo && $this->CUIL_sufijo)
+                ? "{$this->CUIL_prefijo}-{$this->documento_numero}-{$this->CUIL_sufijo}"
                 : null,
             'nacimiento_fecha' => $this->nacimiento_fecha?->format('Y-m-d'),
-            'genero' => $this->whenLoaded('genero', fn () => [
+            'genero' => $this->whenLoaded('genero', fn() => [
                 'id' => $this->genero->id,
                 'nombre' => $this->genero->nombre,
             ]),
             'usuario_id' => $this->usuario_id,
-            'usuario_email' => $this->whenLoaded('usuario', fn () => $this->usuario?->email),
+            'usuario_email' => $this->whenLoaded('usuario', fn() => $this->usuario?->email),
             'usuario' => new UsuarioResource($this->whenLoaded('usuario')),
-            'nacionalidad' => $this->whenLoaded('nacionalidad', fn () => $this->nacionalidad?->nombre),
-            'nacimiento_pais' => $this->whenLoaded('nacimientoPais', fn () => $this->nacimientoPais?->nombre),
-            'nacimiento_provincia' => $this->whenLoaded('nacimientoProvincia', fn () => $this->nacimientoProvincia?->nombre),
-            'nacimiento_localidad' => $this->whenLoaded('nacimientoLocalidad', fn () => $this->nacimientoLocalidad?->nombre),
-            'domicilio' => $this->whenLoaded('domicilio', fn () => [
+            'nacionalidad' => $this->whenLoaded('nacionalidad', fn() => $this->nacionalidad?->nombre),
+            'nacimiento_pais' => $this->whenLoaded('nacimientoPais', fn() => $this->nacimientoPais?->nombre),
+            'nacimiento_provincia' => $this->whenLoaded('nacimientoProvincia', fn() => $this->nacimientoProvincia?->nombre),
+            'nacimiento_localidad' => $this->whenLoaded('nacimientoLocalidad', fn() => $this->nacimientoLocalidad?->nombre),
+            'domicilio' => $this->whenLoaded('domicilio', fn() => [
                 'calle' => $this->domicilio->calle?->nombre,
                 'numero' => $this->domicilio->numero,
                 'piso' => $this->domicilio->piso,
                 'depto' => $this->domicilio->depto,
                 'barrio' => $this->domicilio->barrio,
             ]),
-            'contacto' => $this->whenLoaded('contacto', fn () => [
+            'contacto' => $this->whenLoaded('contacto', fn() => [
                 'telefono_fijo' => $this->contacto->telefono_fijo,
                 'telefono_movil' => $this->contacto->telefono_movil,
                 'email' => $this->contacto->email,
@@ -91,7 +114,7 @@ class PersonaResource extends JsonResource
             foreach ($this->movimientosCupofActivos as $movimiento) {
                 $escalafon = mb_strtolower($movimiento->cupof?->escalafon?->nombre ?? '', 'UTF-8');
                 $cargo = mb_strtoupper($movimiento->cupof?->nombre_cargo ?? '', 'UTF-8');
-                
+
                 if (str_contains($escalafon, 'docente')) {
                     $relaciones[] = "DOCENTE ({$cargo})";
                 } elseif (str_contains($escalafon, 'auxiliar')) {

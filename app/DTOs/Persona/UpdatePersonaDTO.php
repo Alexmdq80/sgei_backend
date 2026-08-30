@@ -22,6 +22,7 @@ readonly class UpdatePersonaDTO
         public ?string $nombreAlternativo = null,
         public ?int $sexoId = null,
         public ?int $generoId = null,
+        public ?int $documentoSituacionId = null,
         public ?string $nacimientoFecha = null,
         public ?int $nacionalidadNacionId = null,
         public ?int $nacionId = null,
@@ -34,7 +35,8 @@ readonly class UpdatePersonaDTO
         public ?bool $poseeCpiSi = null,
         public ?bool $poseeDocExtSi = null,
         public ?bool $viveSi = null,
-    ) {}
+    ) {
+    }
 
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
@@ -60,6 +62,7 @@ readonly class UpdatePersonaDTO
             nombreAlternativo: isset($data['nombre_alternativo']) ? (string) $data['nombre_alternativo'] : null,
             sexoId: isset($data['sexo_id']) ? (int) $data['sexo_id'] : null,
             generoId: isset($data['genero_id']) ? (int) $data['genero_id'] : null,
+            documentoSituacionId: isset($data['documento_situacion_id']) ? (int) $data['documento_situacion_id'] : null,
             nacimientoFecha: isset($data['nacimiento_fecha']) ? (string) $data['nacimiento_fecha'] : null,
             nacionalidadNacionId: isset($data['nacionalidad_nacion_id']) ? (int) $data['nacionalidad_nacion_id'] : null,
             nacionId: isset($data['nacion_id']) ? (int) $data['nacion_id'] : null,
@@ -85,27 +88,46 @@ readonly class UpdatePersonaDTO
     {
         $data = [];
 
-        if ($this->apellido !== null)            $data['apellido'] = $this->apellido;
-        if ($this->nombre !== null)              $data['nombre'] = $this->nombre;
+        if ($this->apellido !== null)
+            $data['apellido'] = $this->apellido;
+        if ($this->nombre !== null)
+            $data['nombre'] = $this->nombre;
         if ($this->documentoIdentidad !== null) {
             $data['documento_tipo_id'] = $this->documentoIdentidad->tipoId();
-            $data['documento_numero']  = $this->documentoIdentidad->numero(); // raw string
+            $data['documento_numero'] = $this->documentoIdentidad->numero(); // raw string
         }
-        if ($this->nombreAlternativo !== null)   $data['nombre_alternativo'] = $this->nombreAlternativo;
-        if ($this->sexoId !== null)              $data['sexo_id'] = $this->sexoId;
-        if ($this->generoId !== null)            $data['genero_id'] = $this->generoId;
-        if ($this->nacimientoFecha !== null)     $data['nacimiento_fecha'] = $this->nacimientoFecha;
-        if ($this->nacionalidadNacionId !== null) $data['nacionalidad_nacion_id'] = $this->nacionalidadNacionId;
-        if ($this->nacionId !== null)            $data['nacion_id'] = $this->nacionId;
-        if ($this->provinciaId !== null)         $data['provincia_id'] = $this->provinciaId;
-        if ($this->departamentoId !== null)      $data['departamento_id'] = $this->departamentoId;
-        if ($this->localidadId !== null)         $data['localidad_id'] = $this->localidadId;
-        if ($this->tramite !== null)             $data['tramite'] = $this->tramite;
-        if ($this->cuilPrefijo !== null)         $data['CUIL_prefijo'] = $this->cuilPrefijo;
-        if ($this->cuilSufijo !== null)          $data['CUIL_sufijo'] = $this->cuilSufijo;
-        if ($this->poseeCpiSi !== null)          $data['posee_cpi_si'] = $this->poseeCpiSi;
-        if ($this->poseeDocExtSi !== null)       $data['posee_docExt_si'] = $this->poseeDocExtSi;
-        if ($this->viveSi !== null)              $data['vive_si'] = $this->viveSi;
+        if ($this->nombreAlternativo !== null)
+            $data['nombre_alternativo'] = $this->nombreAlternativo;
+        if ($this->sexoId !== null)
+            $data['sexo_id'] = $this->sexoId;
+        if ($this->documentoSituacionId !== null)
+            $data['documento_situacion_id'] = $this->documentoSituacionId;
+        if ($this->generoId !== null)
+            $data['genero_id'] = $this->generoId;
+        if ($this->nacimientoFecha !== null)
+            $data['nacimiento_fecha'] = $this->nacimientoFecha;
+        if ($this->nacionalidadNacionId !== null)
+            $data['nacionalidad_nacion_id'] = $this->nacionalidadNacionId;
+        if ($this->nacionId !== null)
+            $data['nacion_id'] = $this->nacionId;
+        if ($this->provinciaId !== null)
+            $data['provincia_id'] = $this->provinciaId;
+        if ($this->departamentoId !== null)
+            $data['departamento_id'] = $this->departamentoId;
+        if ($this->localidadId !== null)
+            $data['localidad_id'] = $this->localidadId;
+        if ($this->tramite !== null)
+            $data['tramite'] = $this->tramite;
+        if ($this->cuilPrefijo !== null)
+            $data['CUIL_prefijo'] = $this->cuilPrefijo;
+        if ($this->cuilSufijo !== null)
+            $data['CUIL_sufijo'] = $this->cuilSufijo;
+        if ($this->poseeCpiSi !== null)
+            $data['posee_cpi_si'] = $this->poseeCpiSi;
+        if ($this->poseeDocExtSi !== null)
+            $data['posee_docExt_si'] = $this->poseeDocExtSi;
+        if ($this->viveSi !== null)
+            $data['vive_si'] = $this->viveSi;
 
         return $data;
     }
