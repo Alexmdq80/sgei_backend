@@ -149,6 +149,10 @@ class UsuarioPolicy
             return false;
         }
 
+        if (!$persona->vive_si) {
+            return false;
+        }
+
         $documentoNumeroRaw = $persona->getRawOriginal('documento_numero');
         $emailCoincide = $persona->contacto?->email === $model->email;
         $dniCoincide = $persona->documento_tipo_id == $model->documento_tipo_id

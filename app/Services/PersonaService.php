@@ -73,6 +73,14 @@ class PersonaService
                 }
             }
 
+            // Seguridad: no se permite marcar como fallecida una persona con usuario vinculado
+            $pasandoAFallecida = $dto->viveSi === false && (bool) $persona->vive_si === true;
+            if ($pasandoAFallecida && $persona->usuario_id) {
+                throw ValidationException::withMessages([
+                    'vive_si' => ['No se puede marcar como fallecida una persona que tiene un usuario vinculado. Primero desvincule al usuario.'],
+                ]);
+            }
+            
             // Update persona model with non-null attributes from DTO
             $persona->update($dto->toPersonaArray());
 

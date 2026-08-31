@@ -68,6 +68,7 @@ class PersonaResource extends JsonResource
             'nacimiento_departamento' => $this->whenLoaded('nacimientoDepartamento', fn() => $this->nacimientoDepartamento?->nombre),
             'localidad_id' => $this->localidad_id,
             'tramite' => $this->tramite,
+            'vive_si' => $this->vive_si,
             'documento_numero' => $this->documentoNumeroRaw(),
             'CUIL_prefijo' => $this->CUIL_prefijo,
             'CUIL_sufijo' => $this->CUIL_sufijo,

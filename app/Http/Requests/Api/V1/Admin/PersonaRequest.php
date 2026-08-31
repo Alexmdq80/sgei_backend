@@ -30,7 +30,10 @@ class PersonaRequest extends FormRequest
         // El ID del contacto para ignorar en el unique de email
         $contactoId = is_object($persona) ? $persona->contacto?->id : null;
 
-        return [
+        // Si se envía vive_si = 0 (fallecida) => el email queda PROHIBIDO
+        $esFallecida = in_array($this->input('vive_si'), [0, '0', false], true);
+
+        $rules = [
             'apellido' => ['required', 'string', 'max:255'],
             'nombre' => ['required', 'string', 'max:255'],
             'nombre_alternativo' => ['nullable', 'string', 'max:255'],
@@ -55,15 +58,18 @@ class PersonaRequest extends FormRequest
             'departamento_id' => ['nullable', 'integer', Rule::exists('departamentos', 'id')],
             'localidad_id' => ['nullable', 'integer', Rule::exists('localidads', 'id')],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:3072'],
-            'email' => [
-                'nullable',
-                'email',
-                'max:255',
-                Rule::unique('contactos', 'email')->ignore($contactoId)
-            ],
+            'email' => $esFallecida
+                ? ['prohibited']
+                : ['nullable', 'email', 'max:255', Rule::unique('contactos', 'email')->ignore($contactoId)],
+            'vive_si' => ['nullable', 'boolean'],
             'confirmed' => ['sometimes', 'boolean'],
         ];
+
+        return $rules;
     }
+
+
+
 
 
     public function messages(): array

@@ -177,6 +177,12 @@ class PersonaController extends Controller
                 'code' => 403
             ], 403);
         }
+        if (!$persona->vive_si) {
+            return response()->json([
+                'error' => 'Acción no permitida: la persona está registrada como fallecida y no puede vincularse a un usuario.',
+                'code' => 409
+            ], 409);
+        }
 
         if ($persona->usuario_id) {
             $existingUser = $persona->usuario;

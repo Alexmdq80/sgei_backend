@@ -65,7 +65,7 @@ class UsuarioController extends Controller
                 'code' => 403
             ], 403);
         }
-
+        
         try {
             $this->userService->resendEmailVerification($usuario);
         } catch (ValidationException $e) {

@@ -64,8 +64,9 @@ class UsuarioPersonaController extends Controller
             ]);
         }
 
-        // Buscar la persona que coincida (DNI + Email)
-        $persona = Persona::where('documento_tipo_id', $usuario->documento_tipo_id)
+        // Buscar la persona que coincida (DNI + Email + Vive)
+        $persona = Persona::where('vive_si', 1)
+            ->where('documento_tipo_id', $usuario->documento_tipo_id)
             ->where('documento_numero', $usuario->documento_numero)
             ->whereHas('contacto', function ($query) use ($usuario) {
                 $query->where('email', $usuario->email);

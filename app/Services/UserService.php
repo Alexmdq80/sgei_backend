@@ -208,8 +208,9 @@ class UserService
             return;
         }
 
-        // Search for a persona with matching documents and matching email in contact info
-        $persona = Persona::where('documento_tipo_id', $user->documento_tipo_id)
+        // Search for a persona with matching documents and matching email in contact info and vive_si === true 
+        $persona = Persona::where('vive_si', 1)
+            ->where('documento_tipo_id', $user->documento_tipo_id)
             ->where('documento_numero', $user->documento_numero)
             ->whereHas('contacto', function ($query) use ($user) {
                 $query->where('email', $user->email);
@@ -243,6 +244,10 @@ class UserService
         }
 
         if (!$persona->documento_tipo_id || !$persona->documento_numero) {
+            return;
+        }
+        // Una persona fallecida nunca se auto-vincula a un usuario
+        if (!$persona->vive_si) {
             return;
         }
 
@@ -579,7 +584,8 @@ class UserService
             return new \Illuminate\Database\Eloquent\Collection();
         }
 
-        $query = Persona::where('documento_tipo_id', $usuario->documento_tipo_id)
+        $query = Persona::where('vive_si', 1)
+            ->where('documento_tipo_id', $usuario->documento_tipo_id)
             ->where('documento_numero', $usuario->documento_numero)
             ->whereHas('contacto', function ($q) use ($usuario) {
                 $q->where('email', $usuario->email);
