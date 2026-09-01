@@ -42,8 +42,9 @@ class PersonaRequest extends FormRequest
             'nacionalidad_nacion_id' => ['nullable', 'integer', Rule::exists('nacions', 'id')],
             'nacimiento_fecha' => ['nullable', 'date'],
             'documento_situacion_id' => ['nullable', 'integer', Rule::exists('documento_situacions', 'id')],
-            'documento_tipo_id' => ['nullable', 'integer', Rule::exists('documento_tipos', 'id')],
+            'documento_tipo_id' => ['required', 'integer', Rule::exists('documento_tipos', 'id')],
             'documento_numero' => [
+                'required_unless:documento_tipo_id,7',
                 'nullable',
                 'string',
                 'max:20',
@@ -68,15 +69,14 @@ class PersonaRequest extends FormRequest
         return $rules;
     }
 
-
-
-
-
     public function messages(): array
     {
         return [
+            'documento_tipo_id.required' => 'El tipo de documento es obligatorio.',
+            'documento_numero.required_unless' => 'El número de documento es obligatorio salvo que la persona sea INDOCUMENTADA (tipo 7).',
             'documento_numero.unique' => 'Este número de documento ya se encuentra registrado en el padrón de personas.',
             'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.'
         ];
+
     }
 }

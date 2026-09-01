@@ -27,9 +27,13 @@ class PersonaService
      */
     public function createPersona(CreatePersonaDTO $dto, ?string $cuilRaw = null, ?string $requestEmail = null): Persona
     {
-        return DB::transaction(function () use ($dto, $cuilRaw, $requestEmail) {
+         return DB::transaction(function () use ($dto, $cuilRaw, $requestEmail) {
             $personaData = $dto->toArray();
 
+            // Indocumentado (tipo 7) sin numero: se autogenera el identificador provisorio IND-XXXXXX
+            if ((int) ($personaData['documento_tipo_id'] ?? 0) === 7 && empty($personaData['documento_numero'] ?? '')) {
+                $personaData['documento_numero'] = self::generarIdentificadorProvisorio();
+            }
             // Handle raw CUIL string if formatted as XX-XXXXXXXX-X
             if (!empty($cuilRaw)) {
                 $parts = explode('-', str_replace([' ', '.'], '', $cuilRaw));
@@ -51,7 +55,27 @@ class PersonaService
             return $persona->fresh(['contacto', 'usuario']);
         });
     }
+    /**
+     * Genera el siguiente identificador provisorio para personas INDOCUMENTADAS (tipo 7).
+     * Formato: IND-XXXXXX, correlativo a partir del mayor existente (o IND-000001).
+     */
+    private function generarIdentificadorProvisorio(): string
+    {
+        $ultimo = Persona::query()
+            ->where('documento_tipo_id', 7)
+            ->where('documento_numero', 'like', 'IND-%')
+            ->whereRaw("documento_numero REGEXP '^IND-[0-9]+$'")
+            ->orderByRaw('CAST(SUBSTRING(documento_numero, 5) AS UNSIGNED) DESC')
+            ->value('documento_numero');
 
+        $siguiente = 1;
+        if ($ultimo !== null) {
+            $siguiente = ((int) substr((string) $ultimo, 4)) + 1;
+        }
+
+        return 'IND-' . str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
+    }
+    
     /**
      * Update an existing Persona record and manage security rules for identity changes.
      */
@@ -82,7 +106,17 @@ class PersonaService
             }
             
             // Update persona model with non-null attributes from DTO
-            $persona->update($dto->toPersonaArray());
+            $personaData = $dto->toPersonaArray();
+
+            // Indocumentado (tipo 7) sin numero: conserva/autogenera el identificador provisorio
+            if (((int) ($personaData['documento_tipo_id'] ?? 0)) === 7 && empty($personaData['documento_numero'] ?? '')) {
+                $actual = $persona->documentoNumeroRaw();
+                $personaData['documento_numero'] = (is_string($actual) && preg_match('/^IND-\d{6}$/', $actual))
+                    ? $actual
+                    : self::generarIdentificadorProvisorio();
+            }
+
+            $persona->update($personaData);
 
             // Update or clear contact email
             if ($hasEmailInPayload) {

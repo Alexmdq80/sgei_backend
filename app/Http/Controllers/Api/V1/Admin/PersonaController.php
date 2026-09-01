@@ -300,9 +300,13 @@ class PersonaController extends Controller
     /**
      * Upload / replace a Persona's profile photo.
      */
-    public function uploadFoto(PersonaRequest $request, Persona $persona): \Illuminate\Http\JsonResponse
+    public function uploadFoto(Request $request, Persona $persona): \Illuminate\Http\JsonResponse
     {
         $this->authorize('update', $persona);
+
+        $request->validate([
+            'foto' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:3072'],
+        ]);
 
         $fotoUrl = $this->personaService->updateFoto($persona, $request->file('foto'));
 

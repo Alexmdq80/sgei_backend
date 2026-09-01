@@ -8,11 +8,15 @@ use InvalidArgumentException;
 
 readonly class DocumentoIdentidad
 {
-    private const PATRONES_POR_TIPO = [
+       private const PATRONES_POR_TIPO = [
         1 => '/^\d{7,8}$/',   // DNI
         2 => '/^\d{7,8}$/',   // LC (Libreta Cívica)
         3 => '/^\d{7,8}$/',   // LE (Libreta de Enrolamiento)
         4 => '/^[A-Za-z0-9]{3,20}$/', // Pasaporte
+        5 => '/^[A-Za-z0-9\-\s]{5,20}$/', // CPI
+        6 => '/^[A-Za-z0-9\-\s]{3,20}$/', // Documento Extranjero
+        7 => '/^IND-\d{6}$/',            // Indocumentado
+        8 => '/^[A-Za-z0-9\-\s]{1,30}$/', // Otro
     ];
 
     public readonly int $tipoId;

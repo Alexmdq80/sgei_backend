@@ -17,6 +17,7 @@ readonly class UpdatePersonaDTO
         public ?string $apellido = null,
         public ?string $nombre = null,
         public ?DocumentoIdentidad $documentoIdentidad = null,
+        public ?int $documentoTipoId = null,
         public ?string $email = null,
         public ?bool $confirmed = false,
         public ?string $nombreAlternativo = null,
@@ -45,17 +46,25 @@ readonly class UpdatePersonaDTO
     public static function fromArray(array $data): self
     {
         $documentoIdentidad = null;
-        if (isset($data['documento_tipo_id']) || isset($data['documento_numero'])) {
-            $documentoIdentidad = new DocumentoIdentidad(
-                tipoId: (int) ($data['documento_tipo_id'] ?? 0),
-                numero: (string) ($data['documento_numero'] ?? ''),
-            );
+        $documentoTipoId = null;
+
+        if (isset($data['documento_tipo_id'])) {
+            $tipoId = (int) $data['documento_tipo_id'];
+            $numero = isset($data['documento_numero']) ? trim((string) $data['documento_numero']) : '';
+
+            if ($numero !== '') {
+                $documentoIdentidad = new DocumentoIdentidad(tipoId: $tipoId, numero: $numero);
+            } else {
+                // Indocumentado sin numero: se conserva el tipo (el service autogenera/conserva el identificador)
+                $documentoTipoId = $tipoId;
+            }
         }
 
         return new self(
             apellido: isset($data['apellido']) ? (string) $data['apellido'] : null,
             nombre: isset($data['nombre']) ? (string) $data['nombre'] : null,
             documentoIdentidad: $documentoIdentidad,
+            documentoTipoId: $documentoTipoId,
             email: array_key_exists('email', $data) ? ($data['email'] !== null ? (string) $data['email'] : null) : null,
             nombreAlternativo: isset($data['nombre_alternativo']) ? (string) $data['nombre_alternativo'] : null,
             sexoId: isset($data['sexo_id']) ? (int) $data['sexo_id'] : null,
@@ -91,6 +100,8 @@ readonly class UpdatePersonaDTO
         if ($this->documentoIdentidad !== null) {
             $data['documento_tipo_id'] = $this->documentoIdentidad->tipoId();
             $data['documento_numero'] = $this->documentoIdentidad->numero(); // raw string
+        } elseif ($this->documentoTipoId !== null) {
+            $data['documento_tipo_id'] = $this->documentoTipoId;
         }
         if ($this->nombreAlternativo !== null)
             $data['nombre_alternativo'] = $this->nombreAlternativo;

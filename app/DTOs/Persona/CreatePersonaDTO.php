@@ -13,6 +13,7 @@ readonly class CreatePersonaDTO
         public string $apellido,
         public string $nombre,
         public ?DocumentoIdentidad $documentoIdentidad = null,   // ANTES: sin "?"
+        public ?int $documentoTipoId = null,
         public ?string $nombreAlternativo = null,
         public ?int $sexoId = null,
         public ?int $generoId = null,
@@ -40,10 +41,13 @@ readonly class CreatePersonaDTO
 
     public static function fromArray(array $data): self
     {
-        $documentoIdentidad = (isset($data['documento_tipo_id']) && isset($data['documento_numero']) && $data['documento_numero'] !== '')
+          $tipoId = isset($data['documento_tipo_id']) ? (int) $data['documento_tipo_id'] : null;
+        $numero = ($data['documento_numero'] ?? '') !== '' ? (string) $data['documento_numero'] : null;
+
+        $documentoIdentidad = ($tipoId !== null && $numero !== null)
             ? new DocumentoIdentidad(
-                tipoId: (int) $data['documento_tipo_id'],
-                numero: (string) $data['documento_numero'],
+                tipoId: $tipoId,
+                numero: $numero,
             )
             : null;
 
@@ -51,6 +55,7 @@ readonly class CreatePersonaDTO
             apellido: (string) ($data['apellido'] ?? ''),
             nombre: (string) ($data['nombre'] ?? ''),
             documentoIdentidad: $documentoIdentidad,
+            documentoTipoId: $documentoIdentidad === null ? $tipoId : null,
             nombreAlternativo: isset($data['nombre_alternativo']) ? (string) $data['nombre_alternativo'] : null,
             sexoId: isset($data['sexo_id']) ? (int) $data['sexo_id'] : null,
             generoId: isset($data['genero_id']) ? (int) $data['genero_id'] : null,
@@ -95,6 +100,8 @@ readonly class CreatePersonaDTO
         if ($this->documentoIdentidad !== null) {
             $data['documento_tipo_id'] = $this->documentoIdentidad->tipoId();
             $data['documento_numero'] = $this->documentoIdentidad->numero();
+        } elseif ($this->documentoTipoId !== null) {
+            $data['documento_tipo_id'] = $this->documentoTipoId;
         }
 
         return array_filter($data, fn($val) => $val !== null);
