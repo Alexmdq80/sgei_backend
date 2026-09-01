@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DTOs\Persona\CreatePersonaDTO;
+use App\DTOs\Persona\PersonaFilterDTO;
+use App\DTOs\Persona\UpdatePersonaDTO;
+use App\Models\EscuelaPersona;
 use App\Models\Persona;
 use App\Models\Usuario;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use App\Notifications\AccountInvitationNotification;
-use App\DTOs\Persona\PersonaFilterDTO;
-use App\DTOs\Persona\CreatePersonaDTO;
-use App\DTOs\Persona\UpdatePersonaDTO;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Validation\ValidationException;
 use App\Notifications\UserUnlinkedNotification;
 use App\Notifications\VerifyEmailNotification;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PersonaService
 {
@@ -27,7 +28,7 @@ class PersonaService
      */
     public function createPersona(CreatePersonaDTO $dto, ?string $cuilRaw = null, ?string $requestEmail = null): Persona
     {
-         return DB::transaction(function () use ($dto, $cuilRaw, $requestEmail) {
+        return DB::transaction(function () use ($dto, $cuilRaw, $requestEmail) {
             $personaData = $dto->toArray();
 
             // Indocumentado (tipo 7) sin numero: se autogenera el identificador provisorio IND-XXXXXX
@@ -35,7 +36,7 @@ class PersonaService
                 $personaData['documento_numero'] = self::generarIdentificadorProvisorio();
             }
             // Handle raw CUIL string if formatted as XX-XXXXXXXX-X
-            if (!empty($cuilRaw)) {
+            if (! empty($cuilRaw)) {
                 $parts = explode('-', str_replace([' ', '.'], '', $cuilRaw));
                 if (count($parts) === 3) {
                     $personaData['CUIL_prefijo'] = $parts[0];
@@ -46,7 +47,7 @@ class PersonaService
             $persona = Persona::create($personaData);
 
             $emailToSave = $dto->email ?? $requestEmail;
-            if (!empty($emailToSave)) {
+            if (! empty($emailToSave)) {
                 $persona->contacto()->create([
                     'email' => $emailToSave,
                 ]);
@@ -55,6 +56,7 @@ class PersonaService
             return $persona->fresh(['contacto', 'usuario']);
         });
     }
+
     /**
      * Genera el siguiente identificador provisorio para personas INDOCUMENTADAS (tipo 7).
      * Formato: IND-XXXXXX, correlativo a partir del mayor existente (o IND-000001).
@@ -64,18 +66,17 @@ class PersonaService
         $ultimo = Persona::query()
             ->where('documento_tipo_id', 7)
             ->where('documento_numero', 'like', 'IND-%')
-            ->whereRaw("documento_numero REGEXP '^IND-[0-9]+$'")
-            ->orderByRaw('CAST(SUBSTRING(documento_numero, 5) AS UNSIGNED) DESC')
+            ->orderBy('documento_numero', 'desc')
             ->value('documento_numero');
 
         $siguiente = 1;
-        if ($ultimo !== null) {
-            $siguiente = ((int) substr((string) $ultimo, 4)) + 1;
+        if (is_string($ultimo) && preg_match('/^IND-(\d{6})$/', $ultimo, $match)) {
+            $siguiente = ((int) $match[1]) + 1;
         }
 
-        return 'IND-' . str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
+        return 'IND-'.str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
     }
-    
+
     /**
      * Update an existing Persona record and manage security rules for identity changes.
      */
@@ -104,7 +105,7 @@ class PersonaService
                     'vive_si' => ['No se puede marcar como fallecida una persona que tiene un usuario vinculado. Primero desvincule al usuario.'],
                 ]);
             }
-            
+
             // Update persona model with non-null attributes from DTO
             $personaData = $dto->toPersonaArray();
 
@@ -120,7 +121,7 @@ class PersonaService
 
             // Update or clear contact email
             if ($hasEmailInPayload) {
-                $newEmail = !empty($dto->email) ? $dto->email : null;
+                $newEmail = ! empty($dto->email) ? $dto->email : null;
                 $persona->contacto()->updateOrCreate(
                     ['persona_id' => $persona->id],
                     ['email' => $newEmail]
@@ -146,6 +147,7 @@ class PersonaService
             return (bool) $persona->delete();
         });
     }
+
     /**
      * Get paginated list of Personas filtered by PersonaFilterDTO criteria.
      */
@@ -156,7 +158,7 @@ class PersonaService
             'contacto',
             'usuario.roles',
             'nacionalidad',
-            'genero'
+            'genero',
         ]);
 
         // 1. Search term (nombre, apellido, documento)
@@ -243,6 +245,7 @@ class PersonaService
 
         return $query->paginate($filters->perPage ?? 10);
     }
+
     /**
      * Ensures that a Persona has an associated Usuario account.
      * If not, it creates one based on Persona's data.
@@ -256,16 +259,16 @@ class PersonaService
         return DB::transaction(function () use ($persona) {
             $persona->loadMissing('contacto');
 
-            if (!$persona->contacto || !$persona->contacto->email) {
-                throw new \Exception("La persona debe tener un email de contacto registrado para crear una cuenta de usuario.");
+            if (! $persona->contacto || ! $persona->contacto->email) {
+                throw new \Exception('La persona debe tener un email de contacto registrado para crear una cuenta de usuario.');
             }
 
             // Check if a user with this email already exists but is not linked
             $user = Usuario::where('email', $persona->contacto->email)->first();
 
-            if (!$user) {
+            if (! $user) {
                 $user = Usuario::create([
-                    'nombre' => $persona->nombre . ' ' . $persona->apellido,
+                    'nombre' => $persona->nombre.' '.$persona->apellido,
                     'documento_tipo_id' => $persona->documento_tipo_id,
                     'documento_numero' => $persona->documento_numero,
                     'email' => $persona->contacto->email,
@@ -274,7 +277,7 @@ class PersonaService
                     'password_set' => false,
                     'verification_token' => Str::random(60),
                     'verification_token_created_at' => now(),
-                    'estado' => 'esperando_activacion'
+                    'estado' => 'esperando_activacion',
                 ]);
 
                 // Notify for activation/invitation
@@ -285,7 +288,7 @@ class PersonaService
             $persona->update(['usuario_id' => $user->id]);
 
             // Sincronizar roles basados en CUPOF
-            app(\App\Services\CupofService::class)->syncAllRolesFromCupof($user);
+            app(CupofService::class)->syncAllRolesFromCupof($user);
 
             // Importante: No ponemos 'activo' todavía, el estado final lo pondrá el flujo de activación
 
@@ -308,7 +311,7 @@ class PersonaService
                 $linkedUser->notify(new UserUnlinkedNotification($persona->nombre, $persona->apellido));
 
                 // 2. Eliminar vinculaciones institucionales (escuelas)
-                \App\Models\EscuelaPersona::where('persona_id', $persona->id)->delete();
+                EscuelaPersona::where('persona_id', $persona->id)->delete();
 
                 // 4. Revocar todos los roles de Spatie, preservando 'superuser' si lo tuviera
                 $rolesToKeep = [];
@@ -332,7 +335,7 @@ class PersonaService
     {
         $user = $persona->usuario;
 
-        if (!$user) {
+        if (! $user) {
             throw new \Exception('La persona no tiene un usuario vinculado.', 404);
         }
 
@@ -349,19 +352,19 @@ class PersonaService
     public function resendActivation(Persona $persona): Usuario
     {
         $user = $persona->usuario;
-        if (!$user) {
-            throw new \Exception("La persona no tiene una cuenta de usuario vinculada.");
+        if (! $user) {
+            throw new \Exception('La persona no tiene una cuenta de usuario vinculada.');
         }
 
         if ($user->hasVerifiedEmail() || $user->estado === 'activo') {
-            throw new \Exception("La cuenta de esta persona ya se encuentra activa.");
+            throw new \Exception('La cuenta de esta persona ya se encuentra activa.');
         }
 
         DB::transaction(function () use ($user) {
             $user->update([
                 'verification_token' => Str::random(60),
                 'verification_token_created_at' => now(),
-                //'estado' => 'esperando_activacion'
+                // 'estado' => 'esperando_activacion'
             ]);
 
             if ($user->estado === 'esperando_activacion') {
@@ -373,6 +376,7 @@ class PersonaService
 
         return $user->fresh();
     }
+
     /**
      * Store (or replace) a Persona's profile photo in private storage.
      */
@@ -405,5 +409,4 @@ class PersonaService
 
         $persona->update(['foto_path' => null]);
     }
-
 }

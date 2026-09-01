@@ -57,6 +57,13 @@ describe('DocumentoIdentidad Value Object', function () {
         expect($doc->numero())->toBe('12345678');
     });
 
+    // --- Indocumentado (tipo 7) ---
+
+    it('conserva el formato IND-XXXXXX para indocumentados', function () {
+        $doc = new DocumentoIdentidad(7, 'IND-000001');
+        expect($doc->numero())->toBe('IND-000001');
+    });
+
     // --- Formato ---
 
     it('devuelve el formato con puntos para 8 dígitos', function () {

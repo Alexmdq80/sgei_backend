@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 readonly class DocumentoIdentidad
 {
-       private const PATRONES_POR_TIPO = [
+    private const PATRONES_POR_TIPO = [
         1 => '/^\d{7,8}$/',   // DNI
         2 => '/^\d{7,8}$/',   // LC (Libreta Cívica)
         3 => '/^\d{7,8}$/',   // LE (Libreta de Enrolamiento)
@@ -20,6 +20,7 @@ readonly class DocumentoIdentidad
     ];
 
     public readonly int $tipoId;
+
     private readonly string $numero;
 
     public function __construct(
@@ -30,7 +31,7 @@ readonly class DocumentoIdentidad
         $this->tipoId = $tipoId;
 
         // 2. Sanitizamos ANTES de guardar en la propiedad
-        $numero = $this->sanitizar($numero);
+        $numero = $this->sanitizar($tipoId, $numero);
 
         // 3. Validamos
         $this->validar($tipoId, $numero);
@@ -39,24 +40,32 @@ readonly class DocumentoIdentidad
         $this->numero = $numero;
     }
 
-    private function sanitizar(string $valor): string
+    private function sanitizar(int $tipoId, string $valor): string
     {
-        return str_replace(['.', ' ', '-', '_', ','], '', trim($valor));
+        $valor = trim($valor);
+
+        // Tipos numéricos (DNI 1, LC 2, LE 3): se eliminan los separadores de formato.
+        if (in_array($tipoId, [1, 2, 3], true)) {
+            return str_replace(['.', ' ', '-', '_', ','], '', $valor);
+        }
+
+        // Tipos alfanuméricos (4-8): se conservan guiones/espacios válidos del formato.
+        return str_replace(['.', ','], '', $valor);
     }
 
     private function validar(int $tipoId, string $numero): void
     {
         // BUG 3 FIX: Lanzar excepción si el tipo no existe en el mapa
-        if (!isset(self::PATRONES_POR_TIPO[$tipoId])) {
+        if (! isset(self::PATRONES_POR_TIPO[$tipoId])) {
             throw new InvalidArgumentException(
-                "El tipo de documento ID '{$tipoId}' no es válido. " .
-                "Los tipos permitidos son: " . implode(', ', array_keys(self::PATRONES_POR_TIPO))
+                "El tipo de documento ID '{$tipoId}' no es válido. ".
+                'Los tipos permitidos son: '.implode(', ', array_keys(self::PATRONES_POR_TIPO))
             );
         }
 
         $patron = self::PATRONES_POR_TIPO[$tipoId];
 
-        if (!preg_match($patron, $numero)) {
+        if (! preg_match($patron, $numero)) {
             throw new InvalidArgumentException(
                 "El número de documento '{$numero}' no es válido para el tipo de documento seleccionado (ID: {$tipoId})."
             );
@@ -76,22 +85,22 @@ readonly class DocumentoIdentidad
     public function getFormatted(): string
     {
         // BUG 2 FIX: No formatear con puntos si no es numérico (ej: pasaporte)
-        if (!ctype_digit($this->numero)) {
+        if (! ctype_digit($this->numero)) {
             return $this->numero;
         }
 
         $len = strlen($this->numero);
 
         if ($len === 7) {
-            return substr($this->numero, 0, 1) . '.' .
-                   substr($this->numero, 1, 3) . '.' .
-                   substr($this->numero, 4, 3);
+            return substr($this->numero, 0, 1).'.'.
+                substr($this->numero, 1, 3).'.'.
+                substr($this->numero, 4, 3);
         }
 
         if ($len === 8) {
-            return substr($this->numero, 0, 2) . '.' .
-                   substr($this->numero, 2, 3) . '.' .
-                   substr($this->numero, 5, 3);
+            return substr($this->numero, 0, 2).'.'.
+                substr($this->numero, 2, 3).'.'.
+                substr($this->numero, 5, 3);
         }
 
         return $this->numero;

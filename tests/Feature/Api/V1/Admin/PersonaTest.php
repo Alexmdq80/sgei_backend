@@ -1,77 +1,74 @@
 <?php
 
-use App\Models\Usuario;
-use App\Models\Persona;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Notifications\AccountInvitationNotification;
-use Illuminate\Support\Facades\Notification;
 use App\Models\Contacto;
-use App\Models\Provincia;
+use App\Models\Persona;
+use App\Models\Usuario;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
-    
+
     // Usuario admin con rol superuser
     $this->admin = Usuario::factory()->create(['es_administrador' => true]);
     $this->admin->assignRole('superuser');
-    
+
     // Usuario sin permisos
     $this->usuarioSinPermisos = Usuario::factory()->create();
 });
 
-//_Test 1 - No autenticado no puede listar (GET /personas)__
+// _Test 1 - No autenticado no puede listar (GET /personas)__
 
 test('no autenticado no puede listar personas', function () {
     $response = $this->getJson('/api/v1/admin/personas');
     $response->assertStatus(401);
 });
 
-//__Test 2 - No autenticado no puede crear (POST /personas)__
+// __Test 2 - No autenticado no puede crear (POST /personas)__
 
 test('no autenticado no puede crear una persona', function () {
     $response = $this->postJson('/api/v1/admin/personas', []);
     $response->assertStatus(401);
 });
 
-//__Test 3 - No autenticado no puede ver detalle (GET /personas/{id})__
+// __Test 3 - No autenticado no puede ver detalle (GET /personas/{id})__
 
 test('no autenticado no puede ver detalle de persona', function () {
     $response = $this->getJson('/api/v1/admin/personas/1');
     $response->assertStatus(401);
 });
 
-//__Test 4 - No autenticado no puede eliminar (DELETE /personas/{id})__
+// __Test 4 - No autenticado no puede eliminar (DELETE /personas/{id})__
 
 test('no autenticado no puede eliminar persona', function () {
     $response = $this->deleteJson('/api/v1/admin/personas/1');
     $response->assertStatus(401);
 });
 
-//__Test 5 - Usuario sin permisos no puede listar__
+// __Test 5 - Usuario sin permisos no puede listar__
 
 test('usuario autenticado sin permisos no puede listar personas', function () {
     $response = $this->actingAs($this->usuarioSinPermisos, 'sanctum')
-                     ->getJson('/api/v1/admin/personas');
+        ->getJson('/api/v1/admin/personas');
     $response->assertStatus(403);
 });
 
-//__Test 6 - Usuario sin permisos no puede crear__
+// __Test 6 - Usuario sin permisos no puede crear__
 
 test('usuario autenticado sin permisos no puede crear una persona', function () {
     $response = $this->actingAs($this->usuarioSinPermisos, 'sanctum')
-                     ->postJson('/api/v1/admin/personas', [
-                         'apellido' => 'Perez',
-                         'nombre' => 'Juan',
-                         'documento_tipo_id' => 1,
-                         'documento_numero' => '12345678',
-                     ]);
+        ->postJson('/api/v1/admin/personas', [
+            'apellido' => 'Perez',
+            'nombre' => 'Juan',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+        ]);
     $response->assertStatus(403);
 });
 
- // =========================================================================
+// =========================================================================
 // GRUPO B: TESTS DEL INDEX (LISTADO)
 // =========================================================================
 
@@ -81,14 +78,14 @@ test('admin puede listar personas paginadas', function () {
     Persona::factory()->count(3)->create();
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                    ->getJson('/api/v1/admin/personas');
+        ->getJson('/api/v1/admin/personas');
 
     $response->assertStatus(200)
-            ->assertJsonStructure([
-                'data',
-                'meta' => ['current_page', 'last_page', 'per_page', 'total'],
-                'links' => ['first', 'last', 'prev', 'next']
-            ]);
+        ->assertJsonStructure([
+            'data',
+            'meta' => ['current_page', 'last_page', 'per_page', 'total'],
+            'links' => ['first', 'last', 'prev', 'next'],
+        ]);
 });
 
 // Test 8 - Admin puede buscar por nombre
@@ -98,7 +95,7 @@ test('admin puede buscar personas por nombre', function () {
     Persona::factory()->create(['nombre' => 'PEDRO', 'apellido' => 'GOMEZ']);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                    ->getJson('/api/v1/admin/personas?search=JUAN');
+        ->getJson('/api/v1/admin/personas?search=JUAN');
 
     $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(1);
@@ -112,32 +109,32 @@ test('admin puede buscar personas por apellido', function () {
     Persona::factory()->create(['apellido' => 'GOMEZ', 'nombre' => 'PEDRO']);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->getJson('/api/v1/admin/personas?search=PEREZ');
+        ->getJson('/api/v1/admin/personas?search=PEREZ');
 
     $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(1);
 });
 
-### Test 10 - Admin puede buscar por documento
+// ## Test 10 - Admin puede buscar por documento
 
 test('admin puede buscar personas por documento', function () {
     Persona::factory()->create(['documento_numero' => '12345678']);
     Persona::factory()->create(['documento_numero' => '87654321']);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->getJson('/api/v1/admin/personas?search=12345678');
+        ->getJson('/api/v1/admin/personas?search=12345678');
 
     $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(1);
 });
 
-//### Test 11 - Búsqueda sin resultados devuelve lista vacía
+// ### Test 11 - Búsqueda sin resultados devuelve lista vacía
 
 test('busqueda sin resultados devuelve lista vacia', function () {
     Persona::factory()->create(['nombre' => 'JUAN']);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->getJson('/api/v1/admin/personas?search=XXXXX');
+        ->getJson('/api/v1/admin/personas?search=XXXXX');
 
     $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(0);
@@ -151,17 +148,17 @@ test('admin puede ver detalle de una persona', function () {
     $persona = Persona::factory()->create();
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->getJson("/api/v1/admin/personas/{$persona->id}");
+        ->getJson("/api/v1/admin/personas/{$persona->id}");
 
     $response->assertStatus(200)
-             ->assertJsonStructure(['data' => ['id', 'nombre', 'apellido', 'documento_numero']]);
+        ->assertJsonStructure(['data' => ['id', 'nombre', 'apellido', 'documento_numero']]);
 });
 
 // ### Test 13 - Devuelve 404 si la persona no existe
 
 test('devuelve 404 al ver detalle de persona inexistente', function () {
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->getJson('/api/v1/admin/personas/99999');
+        ->getJson('/api/v1/admin/personas/99999');
 
     $response->assertStatus(404);
 });
@@ -170,16 +167,16 @@ test('devuelve 404 al ver detalle de persona inexistente', function () {
 
 test('admin puede crear una persona con datos válidos', function () {
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson('/api/v1/admin/personas', [
-                         'apellido' => 'PEREZ',
-                         'nombre' => 'JUAN',
-                         'documento_tipo_id' => 1,
-                         'documento_numero' => '12345678',
-                     ]);
+        ->postJson('/api/v1/admin/personas', [
+            'apellido' => 'PEREZ',
+            'nombre' => 'JUAN',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+        ]);
 
     $response->assertStatus(201)
-             ->assertJsonPath('message', 'Persona registrada con éxito en el padrón.')
-             ->assertJsonStructure(['data' => ['id', 'nombre', 'apellido']]);
+        ->assertJsonPath('message', 'Persona registrada con éxito en el padrón.')
+        ->assertJsonStructure(['data' => ['id', 'nombre', 'apellido']]);
 });
 
 // Nota: El Request del controlador convierte nombre y apellido a mayúsculas automáticamente, por eso van en mayúscula.
@@ -188,18 +185,17 @@ test('admin puede crear una persona con datos válidos', function () {
 
 test('admin puede crear persona con email y se crea contacto', function () {
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson('/api/v1/admin/personas', [
-                         'apellido' => 'GOMEZ',
-                         'nombre' => 'PEDRO',
-                         'documento_tipo_id' => 1,
-                         'documento_numero' => '87654321',
-                         'email' => 'pedro@example.com',
-                     ]);
+        ->postJson('/api/v1/admin/personas', [
+            'apellido' => 'GOMEZ',
+            'nombre' => 'PEDRO',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '87654321',
+            'email' => 'pedro@example.com',
+        ]);
 
     $response->assertStatus(201);
     $this->assertDatabaseHas('contactos', ['email' => 'pedro@example.com']);
 });
-
 
 // ### Test 16 - Admin puede actualizar una persona (update)
 
@@ -207,16 +203,16 @@ test('admin puede actualizar datos básicos de una persona', function () {
     $persona = Persona::factory()->create(['nombre' => 'JUAN']);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->putJson("/api/v1/admin/personas/{$persona->id}", [
-                         'apellido' => $persona->apellido,
-                         'nombre' => 'CARLOS',
-                         'documento_tipo_id' => $persona->documento_tipo_id,
-                         'documento_numero' => $persona->getRawOriginal('documento_numero'),
-                     ]);
+        ->putJson("/api/v1/admin/personas/{$persona->id}", [
+            'apellido' => $persona->apellido,
+            'nombre' => 'CARLOS',
+            'documento_tipo_id' => $persona->documento_tipo_id,
+            'documento_numero' => $persona->getRawOriginal('documento_numero'),
+        ]);
 
     $response->assertStatus(200)
-             ->assertJsonPath('message', 'Registro de persona actualizado con éxito.');
-    
+        ->assertJsonPath('message', 'Registro de persona actualizado con éxito.');
+
     expect($persona->fresh()->nombre)->toBe('CARLOS');
 });
 
@@ -226,11 +222,11 @@ test('admin puede eliminar una persona', function () {
     $persona = Persona::factory()->create();
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->deleteJson("/api/v1/admin/personas/{$persona->id}");
+        ->deleteJson("/api/v1/admin/personas/{$persona->id}");
 
     $response->assertStatus(200)
-             ->assertJsonPath('message', 'Registro de persona eliminado con éxito.');
-    
+        ->assertJsonPath('message', 'Registro de persona eliminado con éxito.');
+
     $this->assertSoftDeleted($persona);
 });
 
@@ -240,14 +236,29 @@ test('no puede crear persona con documento duplicado', function () {
     Persona::factory()->create(['documento_numero' => '12345678']);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson('/api/v1/admin/personas', [
-                         'apellido' => 'PEREZ',
-                         'nombre' => 'JUAN',
-                         'documento_tipo_id' => 1,
-                         'documento_numero' => '12345678',
-                     ]);
+        ->postJson('/api/v1/admin/personas', [
+            'apellido' => 'PEREZ',
+            'nombre' => 'JUAN',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '12345678',
+        ]);
 
     $response->assertStatus(422);
+});
+
+test('puede crear persona indocumentada autogenerando el identificador', function () {
+    $response = $this->actingAs($this->admin, 'sanctum')
+        ->postJson('/api/v1/admin/personas', [
+            'apellido' => 'SINNOMBRE',
+            'nombre' => 'NN',
+            'documento_tipo_id' => 7,
+        ]);
+
+    $response->assertStatus(201);
+    $this->assertDatabaseHas('personas', [
+        'documento_tipo_id' => 7,
+        'documento_numero' => 'IND-000001',
+    ]);
 });
 
 // =========================================================================
@@ -260,7 +271,7 @@ test('superuser puede reenviar activacion', function () {
     $persona->update(['usuario_id' => $user->id]);
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/resend-activation");
+        ->postJson("/api/v1/admin/personas/{$persona->id}/resend-activation");
 
     $response->assertStatus(200);
 });
@@ -273,7 +284,7 @@ test('resend activacion falla si persona no tiene usuario vinculado', function (
     $persona = Persona::factory()->create();
 
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/resend-activation");
+        ->postJson("/api/v1/admin/personas/{$persona->id}/resend-activation");
 
     $response->assertStatus(422);
 });
@@ -286,11 +297,10 @@ test('usuario sin permisos no puede reenviar activacion', function () {
     $persona->update(['usuario_id' => $user->id]);
 
     $response = $this->actingAs($this->usuarioSinPermisos, 'sanctum')
-                     ->postJson("/api/v1/admin/personas/{$persona->id}/resend-activation");
+        ->postJson("/api/v1/admin/personas/{$persona->id}/resend-activation");
 
     $response->assertStatus(403);
 });
-
 
 // ### Test 22 - Superuser puede remover un rol institucional de una persona vinculada
 
