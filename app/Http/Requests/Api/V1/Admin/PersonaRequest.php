@@ -20,7 +20,11 @@ class PersonaRequest extends FormRequest
         if ($this->has('apellido')) {
             $this->merge(['apellido' => mb_strtoupper($this->apellido, 'UTF-8')]);
         }
+        if ($this->has('nombre_alternativo')) {
+            $this->merge(['nombre_alternativo' => mb_strtoupper($this->nombre_alternativo, 'UTF-8')]);
+        }
     }
+
 
     public function rules(): array
     {
@@ -34,9 +38,9 @@ class PersonaRequest extends FormRequest
         $esFallecida = in_array($this->input('vive_si'), [0, '0', false], true);
 
         $rules = [
-            'apellido' => ['required', 'string', 'max:255'],
-            'nombre' => ['required', 'string', 'max:255'],
-            'nombre_alternativo' => ['nullable', 'string', 'max:255'],
+            'apellido' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
+            'nombre' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
+            'nombre_alternativo' => ['nullable', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
             'sexo_id' => ['nullable', 'integer', Rule::exists('sexos', 'id')],
             'genero_id' => ['nullable', 'integer', Rule::exists('generos', 'id')],
             'nacionalidad_nacion_id' => ['nullable', 'integer', Rule::exists('nacions', 'id')],
@@ -75,8 +79,11 @@ class PersonaRequest extends FormRequest
             'documento_tipo_id.required' => 'El tipo de documento es obligatorio.',
             'documento_numero.required_unless' => 'El número de documento es obligatorio salvo que la persona sea INDOCUMENTADA (tipo 7).',
             'documento_numero.unique' => 'Este número de documento ya se encuentra registrado en el padrón de personas.',
-            'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.'
+            'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.',
+            'apellido.regex' => 'El campo :attribute solo puede contener letras, espacios, guiones y apóstrofes.',
+            'nombre.regex' => 'El campo :attribute solo puede contener letras, espacios, guiones y apóstrofes.',
+            'nombre_alternativo.regex' => 'El campo :attribute solo puede contener letras, espacios, guiones y apóstrofes.'
         ];
-
     }
+
 }
