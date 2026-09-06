@@ -134,6 +134,8 @@ Route::prefix('v1')->group(function () {
         Route::get('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'getFoto']);
         Route::post('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'uploadFoto']);
         Route::delete('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'deleteFoto']);
+        Route::get('personas/{persona}/domicilio-contacto', [\App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'getDomicilioContacto']);
+        Route::put('personas/{persona}/domicilio-contacto', [\App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'syncDomicilioContacto']);
 
         Route::apiResource('cupofs', App\Http\Controllers\Api\V1\CupofController::class);
         Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);

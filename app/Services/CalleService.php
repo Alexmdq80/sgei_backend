@@ -4,16 +4,15 @@ namespace App\Services;
 
 use App\Models\Calle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-
+use App\Models\Localidad;
 class CalleService
 {
     /**
      * Get paginated calles with their census locality.
      */
-    public function getAll(?string $search = null, int $perPage = 15): LengthAwarePaginator
+    public function getAll(?string $search = null, int $perPage = 15, ?int $localidadId = null): LengthAwarePaginator
     {
-        $query = Calle::with(['localidadCensal'])
-            ->orderBy('nombre');
+        $query = Calle::with(['localidadCensal'])->orderBy('nombre');
 
         if ($search) {
             $query->where('nombre', 'like', "%{$search}%")
@@ -22,9 +21,17 @@ class CalleService
                 });
         }
 
+        if ($localidadId) {
+            $query->whereHas('localidadCensal', function ($q) use ($localidadId) {
+                $q->whereIn(
+                    'id',
+                    Localidad::where('id', $localidadId)->pluck('localidad_censal_id')
+                );
+            });
+        }
+
         return $query->paginate($perPage);
     }
-
     /**
      * Get a calle by ID.
      */

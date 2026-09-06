@@ -7,6 +7,7 @@ namespace App\Services;
 use App\DTOs\Persona\CreatePersonaDTO;
 use App\DTOs\Persona\PersonaFilterDTO;
 use App\DTOs\Persona\UpdatePersonaDTO;
+use App\DTOs\Persona\PersonaDomicilioContactoDTO;
 use App\Models\EscuelaPersona;
 use App\Models\Persona;
 use App\Models\Usuario;
@@ -36,7 +37,7 @@ class PersonaService
                 $personaData['documento_numero'] = self::generarIdentificadorProvisorio();
             }
             // Handle raw CUIL string if formatted as XX-XXXXXXXX-X
-            if (! empty($cuilRaw)) {
+            if (!empty($cuilRaw)) {
                 $parts = explode('-', str_replace([' ', '.'], '', $cuilRaw));
                 if (count($parts) === 3) {
                     $personaData['CUIL_prefijo'] = $parts[0];
@@ -47,7 +48,7 @@ class PersonaService
             $persona = Persona::create($personaData);
 
             $emailToSave = $dto->email ?? $requestEmail;
-            if (! empty($emailToSave)) {
+            if (!empty($emailToSave)) {
                 $persona->contacto()->create([
                     'email' => $emailToSave,
                 ]);
@@ -74,7 +75,7 @@ class PersonaService
             $siguiente = ((int) $match[1]) + 1;
         }
 
-        return 'IND-'.str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
+        return 'IND-' . str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -121,7 +122,7 @@ class PersonaService
 
             // Update or clear contact email
             if ($hasEmailInPayload) {
-                $newEmail = ! empty($dto->email) ? $dto->email : null;
+                $newEmail = !empty($dto->email) ? $dto->email : null;
                 $persona->contacto()->updateOrCreate(
                     ['persona_id' => $persona->id],
                     ['email' => $newEmail]
@@ -259,16 +260,16 @@ class PersonaService
         return DB::transaction(function () use ($persona) {
             $persona->loadMissing('contacto');
 
-            if (! $persona->contacto || ! $persona->contacto->email) {
+            if (!$persona->contacto || !$persona->contacto->email) {
                 throw new \Exception('La persona debe tener un email de contacto registrado para crear una cuenta de usuario.');
             }
 
             // Check if a user with this email already exists but is not linked
             $user = Usuario::where('email', $persona->contacto->email)->first();
 
-            if (! $user) {
+            if (!$user) {
                 $user = Usuario::create([
-                    'nombre' => $persona->nombre.' '.$persona->apellido,
+                    'nombre' => $persona->nombre . ' ' . $persona->apellido,
                     'documento_tipo_id' => $persona->documento_tipo_id,
                     'documento_numero' => $persona->documento_numero,
                     'email' => $persona->contacto->email,
@@ -335,7 +336,7 @@ class PersonaService
     {
         $user = $persona->usuario;
 
-        if (! $user) {
+        if (!$user) {
             throw new \Exception('La persona no tiene un usuario vinculado.', 404);
         }
 
@@ -352,7 +353,7 @@ class PersonaService
     public function resendActivation(Persona $persona): Usuario
     {
         $user = $persona->usuario;
-        if (! $user) {
+        if (!$user) {
             throw new \Exception('La persona no tiene una cuenta de usuario vinculada.');
         }
 
@@ -375,6 +376,33 @@ class PersonaService
         });
 
         return $user->fresh();
+    }
+
+    /**
+     * Sincroniza el domicilio y el contacto de una persona con `updateOrCreate`.
+     * Descarta valores null para no pisar datos previos.
+     */
+    public function syncDomicilioYContacto(Persona $persona, PersonaDomicilioContactoDTO $dto): Persona
+    {
+        return DB::transaction(function () use ($persona, $dto) {
+            $persona->contacto()->updateOrCreate(
+                ['persona_id' => $persona->id],
+                $dto->contactoArray()
+            );
+
+            $persona->domicilio()->updateOrCreate(
+                ['persona_id' => $persona->id],
+                $dto->domicilioArray()
+            );
+
+            return $persona->fresh([
+                'domicilio.localidad',
+                'domicilio.calle',
+                'domicilio.entreCalle1',
+                'domicilio.entreCalle2',
+                'contacto',
+            ]);
+        });
     }
 
     /**

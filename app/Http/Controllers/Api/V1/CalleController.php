@@ -13,18 +13,27 @@ class CalleController extends Controller
 {
     public function __construct(
         protected CalleService $calleService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): JsonResponse
     {
-        $search = $request->query('search');
-        $perPage = $request->query('per_page', 15);
-        
-        return response()->json($this->calleService->getAll($search, (int)$perPage));
+        $search = $request->query('q', $request->query('search'));
+        $perPage = $request->query('per_page', 20);
+        $localidadId = $request->filled('localidad_id') ? (int) $request->localidad_id : null;
+
+        return response()->json(
+            $this->calleService->getAll(
+                is_string($search) ? $search : null,
+                (int) $perPage,
+                $localidadId
+            )
+        );
     }
+
 
     /**
      * Store a newly created resource in storage.

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\DTOs\Persona\PersonaDomicilioContactoDTO;
+use App\Http\Requests\Api\V1\Admin\PersonaDomicilioContactoRequest;
+use App\Http\Resources\DomicilioContactoResource;
 use App\Http\Controllers\Controller;
 use App\Models\Persona;
 use Illuminate\Http\Request;
@@ -280,6 +283,46 @@ class PersonaController extends Controller
         }
 
     }
+
+    /**
+     * Devuelve los datos actuales de domicilio y contacto de la persona.
+     */
+    public function getDomicilioContacto(Persona $persona): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('view', $persona);
+
+        return response()->json(new DomicilioContactoResource([
+            'domicilio' => $persona->domicilio?->loadMissing([
+                'localidad',
+                'calle',
+                'entreCalle1',
+                'entreCalle2',
+            ]),
+            'contacto' => $persona->contacto,
+        ]));
+    }
+
+    /**
+     * Crea o actualiza el domicilio y el contacto de la persona.
+     */
+    public function syncDomicilioContacto(PersonaDomicilioContactoRequest $request, Persona $persona): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('update', $persona);
+
+        $persona = $this->personaService->syncDomicilioYContacto(
+            $persona,
+            PersonaDomicilioContactoDTO::fromRequest($request)
+        );
+
+        return response()->json([
+            'message' => 'Domicilio y contacto actualizados con éxito.',
+            'data' => new DomicilioContactoResource([
+                'domicilio' => $persona->domicilio,
+                'contacto' => $persona->contacto,
+            ]),
+        ]);
+    }
+
     /**
      * Stream a Persona's profile photo (authorized, private storage).
      */
