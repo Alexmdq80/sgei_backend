@@ -28,7 +28,8 @@ readonly class CreatePersonaDTO
         public ?string $cuilPrefijo = null,
         public ?string $cuilSufijo = null,
         public ?bool $viveSi = null,
-        public ?string $email = null
+        public ?string $email = null,
+        public ?string $observaciones = null
     ) {
     }
 
@@ -71,6 +72,7 @@ readonly class CreatePersonaDTO
             cuilSufijo: isset($data['CUIL_sufijo']) ? (string) $data['CUIL_sufijo'] : null,
             viveSi: isset($data['vive_si']) ? (bool) $data['vive_si'] : null,
             email: isset($data['email']) ? (string) $data['email'] : null,
+            observaciones: isset($data['observaciones']) && $data['observaciones'] !== '' ? (string) $data['observaciones'] : null,
         );
     }
 
@@ -95,6 +97,7 @@ readonly class CreatePersonaDTO
             'CUIL_sufijo' => $this->cuilSufijo,
             'vive_si' => $this->viveSi,
             'email' => $this->email,
+            'observaciones' => $this->observaciones,
         ];
 
         if ($this->documentoIdentidad !== null) {

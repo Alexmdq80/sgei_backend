@@ -38,6 +38,7 @@ class PersonaDomicilioContactoRequest extends FormRequest
             'torre' => ['nullable', 'string', 'max:10'],
             'codigo_postal' => ['nullable', 'string', 'max:10'],
             'otros' => ['nullable', 'string', 'max:255'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

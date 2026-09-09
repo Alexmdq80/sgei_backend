@@ -68,6 +68,7 @@ class PersonaRequest extends FormRequest
                 : ['nullable', 'email', 'max:255', Rule::unique('contactos', 'email')->ignore($contactoId)],
             'vive_si' => ['nullable', 'boolean'],
             'confirmed' => ['sometimes', 'boolean'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
         ];
 
         return $rules;

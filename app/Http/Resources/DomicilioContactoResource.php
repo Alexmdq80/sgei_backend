@@ -40,6 +40,7 @@ class DomicilioContactoResource extends JsonResource
                 'celular_codigo_area' => $contacto->celular_codigo_area,
                 'celular' => $contacto->celular,
                 'email' => $contacto->email,
+                'observaciones' => $contacto?->observaciones,
             ] : null,
         ];
     }

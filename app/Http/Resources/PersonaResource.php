@@ -62,6 +62,7 @@ class PersonaResource extends JsonResource
             'genero_id' => $this->genero_id,
             // 'genero' ya está definido más abajo como objeto {id, nombre} ✓
             'nacionalidad_nacion_id' => $this->nacionalidad_nacion_id,
+            'observaciones' => $this->observaciones,    
             'nacion_id' => $this->nacion_id,
             'provincia_id' => $this->provincia_id,
             'departamento_id' => $this->departamento_id,
@@ -98,6 +99,7 @@ class PersonaResource extends JsonResource
                 'telefono_fijo' => $this->contacto->telefono_fijo,
                 'telefono_movil' => $this->contacto->telefono_movil,
                 'email' => $this->contacto->email,
+                'observaciones' => $this->contacto?->observaciones,
             ]),
             'relaciones' => $this->getRelacionesInstitucionales(),
             'created_at' => $this->created_at?->toIso8601String(),

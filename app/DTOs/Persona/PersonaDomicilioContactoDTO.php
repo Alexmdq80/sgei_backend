@@ -24,17 +24,25 @@ readonly class PersonaDomicilioContactoDTO
         public ?string $torre = null,
         public ?string $codigoPostal = null,
         public ?string $otros = null,
-    ) {
-    }
+        public ?string $observaciones = null,
+        public ?bool $observacionesProvided = false,
+    ) {}
 
     public static function fromRequest(Request $request): self
     {
+        $observacionesProvided = array_key_exists('observaciones', $request->all());
         return new self(
             telefonoCodigoArea: $request->filled('telefono_codigo_area') ? (string) $request->telefono_codigo_area : null,
             telefono: $request->filled('telefono') ? (string) $request->telefono : null,
             celularCodigoArea: $request->filled('celular_codigo_area') ? (string) $request->celular_codigo_area : null,
             celular: $request->filled('celular') ? (string) $request->celular : null,
             email: $request->filled('email') ? (string) $request->email : null,
+            observaciones: $observacionesProvided
+                ? (($request->observaciones !== null && $request->observaciones !== '')
+                    ? (string) $request->observaciones
+                    : null)
+                : null,
+            observacionesProvided: $observacionesProvided,
             localidadId: $request->filled('localidad_id') ? (int) $request->localidad_id : null,
             calleId: $request->filled('calle_id') ? (int) $request->calle_id : null,
             calleEntre1Id: $request->filled('calle_entre_1_id') ? (int) $request->calle_entre_1_id : null,
@@ -50,13 +58,20 @@ readonly class PersonaDomicilioContactoDTO
 
     public function contactoArray(): array
     {
-        return $this->filtrarNulos([
+        $data = $this->filtrarNulos([
             'telefono_codigo_area' => $this->telefonoCodigoArea,
             'telefono' => $this->telefono,
             'celular_codigo_area' => $this->celularCodigoArea,
             'celular' => $this->celular,
             'email' => $this->email,
         ]);
+
+        // Si el frontend envió la clave (aunque sea vacía) => se incluye (null = limpiar)
+        if ($this->observacionesProvided) {
+            $data['observaciones'] = $this->observaciones;
+        }
+
+        return $data;
     }
 
     public function domicilioArray(): array

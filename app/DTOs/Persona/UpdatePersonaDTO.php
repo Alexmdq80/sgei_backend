@@ -34,8 +34,9 @@ readonly class UpdatePersonaDTO
         public ?string $cuilPrefijo = null,
         public ?string $cuilSufijo = null,
         public ?bool $viveSi = null,
-    ) {
-    }
+        public ?string $observaciones = null,
+        public ?bool $observacionesProvided = false
+    ) {}
 
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
@@ -81,6 +82,10 @@ readonly class UpdatePersonaDTO
             cuilSufijo: isset($data['CUIL_sufijo']) ? (string) $data['CUIL_sufijo'] : null,
             viveSi: isset($data['vive_si']) ? (bool) $data['vive_si'] : null,
             confirmed: (bool) ($data['confirmed'] ?? false),
+            observaciones: array_key_exists('observaciones', $data)
+                ? (($data['observaciones'] !== null && $data['observaciones'] !== '') ? (string) $data['observaciones'] : null)
+                : null,
+            observacionesProvided: array_key_exists('observaciones', $data),
         );
     }
 
@@ -131,6 +136,9 @@ readonly class UpdatePersonaDTO
             $data['CUIL_sufijo'] = $this->cuilSufijo;
         if ($this->viveSi !== null)
             $data['vive_si'] = $this->viveSi;
+        if ($this->observacionesProvided !== false || $this->observaciones !== null) {
+            $data['observaciones'] = $this->observaciones;
+        }
 
         return $data;
     }

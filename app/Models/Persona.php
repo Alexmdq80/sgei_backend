@@ -36,6 +36,7 @@ use App\Casts\DocumentoIdentidadCast;
  * @property \Illuminate\Support\Carbon|null $nacimiento_fecha
  * @property string|null $created_by
  * @property string|null $updated_by
+ * @property string|null $observaciones
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -142,7 +143,8 @@ class Persona extends Model
         "vive_si",
         "CUIL_prefijo",
         "CUIL_sufijo",
-        "nacimiento_fecha"
+        "nacimiento_fecha",
+        "observaciones"
     ];
 
     /**

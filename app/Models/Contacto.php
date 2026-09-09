@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string|null $celular_codigo_area
  * @property string|null $celular
  * @property string|null $email
+ * @property string|null $observaciones
  * @property string|null $created_by
  * @property string|null $updated_by
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -59,7 +60,8 @@ class Contacto extends Model
         "telefono",
         "celular_codigo_area",
         "celular",
-        "email"
+        "email",
+        "observaciones"
     ];
 
     /**
