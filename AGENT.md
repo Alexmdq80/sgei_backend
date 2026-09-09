@@ -6,14 +6,11 @@
 
 - Modo de trabajo: Primero explica la propuesta de la tarea a realizar, y espera la confirmación para aplicar los cambios de código.
 
-- Memoria: recuerda que debes usar de la memoria de Engram lo referido al Sistema de Gestión Escolar (SGEI).
-
 ## Stack Tecnológico
 
 - **Backend:** Laravel 13.
 - **Base de Datos:** MySQL
 - **Autenticación:** middleware('auth:sanctum')
-- **Persistencia de Memoria:** Engram (usar herramientas `mem_*`).
 - **Timestamps:** todos los modelos deben usarlo.
 - **SoftDeletes:** algunos las modelos deben emplearo.
 
@@ -39,13 +36,8 @@
 
 ## Flujo de Trabajo (Gentleman AI Stack)
 
-- **Memoria:** Tras finalizar una tarea o decidir un cambio arquitectónico, ejecutar `mem_save` en Engram.
 - **Testing:** Ejecutar exclusivamente php artisan test. Antes de cada suite de pruebas, ejecutar obligatoriamente php artisan config:clear para prevenir colisiones con la base de datos de desarrollo. Priorizar Pest PHP y asegurar que el entorno reportado sea testing.
-- **Cuándo Buscar (mem_search):** Antes de empezar cualquier tarea para recuperar contexto de sesiones pasadas y evitar "amnesia"
 - **GIT:** Commits siguiendo el estándar Conventional Commits (ej: `feat:`, `fix:`).
-- **Cierre:** de Sesión: Antes de terminar, el agente debe ejecutar siempre mem_session_summary para que la próxima vez sepa exactamente dónde quedó
-- **Recuperación tras Compacción:** Si la conversación es larga y el modelo "compacta" el contexto, el agente debe llamar inmediatamente a mem_context para recuperar los puntos clave
-- **Uso de read_file**: el agente siempre debe usar la herramienta read_file antes de proponer cambios para garantizar que su propuesta se basa en el código actual y no en alucinaciones
 
 ## Protocolo de Testing y Seguridad de Datos
 
