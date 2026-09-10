@@ -1,16 +1,65 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\Admin\ComunidadEducativaController;
+use App\Http\Controllers\Api\V1\Admin\EscuelaPersonaController;
+use App\Http\Controllers\Api\V1\Admin\PersonaController;
+use App\Http\Controllers\Api\V1\AgenteController;
+use App\Http\Controllers\Api\V1\AmbitoController;
+use App\Http\Controllers\Api\V1\AnioController;
+use App\Http\Controllers\Api\V1\AsignaturaController;
+use App\Http\Controllers\Api\V1\Auth\EscuelaJoinController;
+use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\ProfileController;
-use App\Http\Controllers\Api\V1\Auth\VerificationController;
-use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
-use App\Http\Controllers\Api\V1\DocumentoTipoController;
-use App\Http\Controllers\Api\V1\EscuelaController;
-use App\Http\Controllers\Api\V1\GeografiaController;
-
 use App\Http\Controllers\Api\V1\Auth\RegisterController;
+use App\Http\Controllers\Api\V1\Auth\VerificationController;
+use App\Http\Controllers\Api\V1\CalleController;
+use App\Http\Controllers\Api\V1\CargoController;
+use App\Http\Controllers\Api\V1\CierreCausaController;
+use App\Http\Controllers\Api\V1\CondicionController;
+use App\Http\Controllers\Api\V1\ContinenteController;
+use App\Http\Controllers\Api\V1\CupofController;
+use App\Http\Controllers\Api\V1\DepartamentoController;
+use App\Http\Controllers\Api\V1\DependenciaController;
+use App\Http\Controllers\Api\V1\DocumentoSituacionController;
+use App\Http\Controllers\Api\V1\DocumentoTipoController;
+use App\Http\Controllers\Api\V1\EscalafonController;
+use App\Http\Controllers\Api\V1\EscuelaController;
+use App\Http\Controllers\Api\V1\EscuelaTipoController;
+use App\Http\Controllers\Api\V1\EscuelaUbicacionController;
+use App\Http\Controllers\Api\V1\GeneroController;
+use App\Http\Controllers\Api\V1\GeografiaController;
+use App\Http\Controllers\Api\V1\GeorefCategoriaController;
+use App\Http\Controllers\Api\V1\GeorefFuenteController;
+use App\Http\Controllers\Api\V1\GeorefFuncionController;
+use App\Http\Controllers\Api\V1\JornadaController;
+use App\Http\Controllers\Api\V1\LectivoController;
+use App\Http\Controllers\Api\V1\LocalidadCensalController;
+use App\Http\Controllers\Api\V1\LocalidadController;
+use App\Http\Controllers\Api\V1\ModalidadController;
+use App\Http\Controllers\Api\V1\ModalidadNivelController;
+use App\Http\Controllers\Api\V1\MunicipioController;
+use App\Http\Controllers\Api\V1\NacionController;
+use App\Http\Controllers\Api\V1\NivelController;
+use App\Http\Controllers\Api\V1\OfertaController;
+use App\Http\Controllers\Api\V1\PlanController;
+use App\Http\Controllers\Api\V1\PropuestaController;
+use App\Http\Controllers\Api\V1\ProvinciaController;
+use App\Http\Controllers\Api\V1\PuestoTipoController;
+use App\Http\Controllers\Api\V1\RegionController;
+use App\Http\Controllers\Api\V1\RolEscolarController;
+use App\Http\Controllers\Api\V1\SexoController;
+use App\Http\Controllers\Api\V1\TurnoController;
+use App\Http\Controllers\Api\V1\UsuarioController;
+use App\Http\Controllers\Api\V1\UsuarioPersonaController;
+use App\Http\Controllers\Api\V1\VinculoController;
+use App\Http\Controllers\Api\V1\VinculoTipoController;
+use App\Models\AnioPlan;
+use App\Models\Jornada;
+use App\Models\PlanCiclo;
+use App\Models\Turno;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,7 +72,6 @@ use App\Http\Controllers\Api\V1\Auth\RegisterController;
 |
 */
 
-
 Route::prefix('v1')->group(function () {
     // RUTA DE PRUEBA
     Route::get('/check-id', function (Request $request) {
@@ -31,7 +79,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Catálogos Públicos
-    Route::get('/rol-escolares', [App\Http\Controllers\Api\V1\RolEscolarController::class, 'index']);
+    Route::get('/rol-escolares', [RolEscolarController::class, 'index']);
     Route::get('/documento-tipos', [DocumentoTipoController::class, 'index']);
     Route::get('/escuelas', [EscuelaController::class, 'index']);
     Route::get('/niveles', [EscuelaController::class, 'niveles']);
@@ -52,7 +100,7 @@ Route::prefix('v1')->group(function () {
 
         // Esta ruta existe solo para que Laravel no de error al generar notificaciones (Route [password.reset] not defined)
         Route::get('/reset-password', function () {
-            return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/reset-password?' . http_build_query(request()->all()));
+            return redirect(env('FRONTEND_URL', 'http://localhost:5173').'/reset-password?'.http_build_query(request()->all()));
         })->name('password.reset');
 
         Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('api.password.reset');
@@ -68,8 +116,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/me', [ProfileController::class, 'me']);
 
             // Solicitudes para unirse a Escuelas (Autoservicio)
-            Route::post('/escuelas/join', [App\Http\Controllers\Api\V1\Auth\EscuelaJoinController::class, 'join']);
-            Route::post('/escuelas/cancel-join', [App\Http\Controllers\Api\V1\Auth\EscuelaJoinController::class, 'cancelJoin']);
+            Route::post('/escuelas/join', [EscuelaJoinController::class, 'join']);
+            Route::post('/escuelas/cancel-join', [EscuelaJoinController::class, 'cancelJoin']);
 
             // Reenvío de Verificación (Permitido sin verificar email obviamente)
             Route::post('/verify/resend', [VerificationController::class, 'resend'])->middleware('throttle:resend-verification');
@@ -89,35 +137,35 @@ Route::prefix('v1')->group(function () {
     // Rutas Protegidas Generales (Fuera del prefijo 'admin')
 
     Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-        Route::get('/cargos', [App\Http\Controllers\Api\V1\CargoController::class, 'index']);
-        Route::get('/usuarios/{usuario}/avatar', [App\Http\Controllers\Api\V1\UsuarioController::class, 'getAvatar']);
+        Route::get('/cargos', [CargoController::class, 'index']);
+        Route::get('/usuarios/{usuario}/avatar', [UsuarioController::class, 'getAvatar']);
 
-        Route::apiResource('planes', App\Http\Controllers\Api\V1\PlanController::class);
+        Route::apiResource('planes', PlanController::class);
 
         // Gestión de Asignaturas
-        Route::get('anio-plan/{id}/asignaturas', [App\Http\Controllers\Api\V1\AsignaturaController::class, 'indexByAnioPlan']);
-        Route::apiResource('asignaturas', App\Http\Controllers\Api\V1\AsignaturaController::class)->except(['index']);
+        Route::get('anio-plan/{id}/asignaturas', [AsignaturaController::class, 'indexByAnioPlan']);
+        Route::apiResource('asignaturas', AsignaturaController::class)->except(['index']);
 
         // Gestión de Propuestas Institucionales
-        Route::get('propuestas/escuelas-autorizadas', [App\Http\Controllers\Api\V1\PropuestaController::class, 'getAuthorizedSchools']);
-        Route::apiResource('propuestas', App\Http\Controllers\Api\V1\PropuestaController::class);
+        Route::get('propuestas/escuelas-autorizadas', [PropuestaController::class, 'getAuthorizedSchools']);
+        Route::apiResource('propuestas', PropuestaController::class);
 
         // Catálogos relacionados
         Route::get('/planes-ciclos', function () {
-            return response()->json(\App\Models\PlanCiclo::all());
+            return response()->json(PlanCiclo::all());
         });
         Route::get('/turnos', function () {
-            return response()->json(\App\Models\Turno::all());
+            return response()->json(Turno::all());
         });
         Route::get('/jornadas', function () {
-            return response()->json(\App\Models\Jornada::all());
+            return response()->json(Jornada::all());
         });
-        Route::get('/lectivos', [App\Http\Controllers\Api\V1\LectivoController::class, 'index']);
+        Route::get('/lectivos', [LectivoController::class, 'index']);
         Route::get('/anio-planes', function () {
-            return response()->json(\App\Models\AnioPlan::with(['plan', 'anio'])->get());
+            return response()->json(AnioPlan::with(['plan', 'anio'])->get());
         });
-        Route::get('/escalafones', [App\Http\Controllers\Api\V1\EscalafonController::class, 'index']);
-        Route::get('/puesto-tipos', [App\Http\Controllers\Api\V1\PuestoTipoController::class, 'index']);
+        Route::get('/escalafones', [EscalafonController::class, 'index']);
+        Route::get('/puesto-tipos', [PuestoTipoController::class, 'index']);
 
     });
 
@@ -126,78 +174,80 @@ Route::prefix('v1')->group(function () {
 
         // --- RUTAS DE ACCESO INSTITUCIONAL (Accesibles por Directivos y Jefaturas) ---
         // Protegidas individualmente por Policies
-        Route::apiResource('escuela-personas', App\Http\Controllers\Api\V1\Admin\EscuelaPersonaController::class);
-        Route::apiResource('personas', App\Http\Controllers\Api\V1\Admin\PersonaController::class);
-        Route::post('personas/{persona}/resend-activation', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'resendActivation']);
-        Route::post('personas/{persona}/link-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'tryLinkUser']);
-        Route::post('personas/{persona}/unlink-user', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'unlinkUser']);
-        Route::get('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'getFoto']);
-        Route::post('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'uploadFoto']);
-        Route::delete('personas/{persona}/foto', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'deleteFoto']);
-        Route::get('personas/{persona}/domicilio-contacto', [\App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'getDomicilioContacto']);
-        Route::put('personas/{persona}/domicilio-contacto', [\App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'syncDomicilioContacto']);
+        Route::apiResource('escuela-personas', EscuelaPersonaController::class);
+        Route::apiResource('personas', PersonaController::class);
+        Route::post('personas/{persona}/resend-activation', [PersonaController::class, 'resendActivation']);
+        Route::post('personas/{persona}/link-user', [PersonaController::class, 'tryLinkUser']);
+        Route::post('personas/{persona}/unlink-user', [PersonaController::class, 'unlinkUser']);
+        Route::get('personas/{persona}/foto', [PersonaController::class, 'getFoto']);
+        Route::post('personas/{persona}/foto', [PersonaController::class, 'uploadFoto']);
+        Route::delete('personas/{persona}/foto', [PersonaController::class, 'deleteFoto']);
+        Route::get('personas/{persona}/domicilio', [PersonaController::class, 'getDomicilio']);
+        Route::put('personas/{persona}/domicilio', [PersonaController::class, 'syncDomicilio']);
+        Route::get('personas/{persona}/contacto', [PersonaController::class, 'getContacto']);
+        Route::put('personas/{persona}/contacto', [PersonaController::class, 'syncContacto']);
 
-        Route::apiResource('cupofs', App\Http\Controllers\Api\V1\CupofController::class);
-        Route::apiResource('agentes', App\Http\Controllers\Api\V1\AgenteController::class)->only(['index', 'store']);
+        Route::apiResource('cupofs', CupofController::class);
+        Route::apiResource('agentes', AgenteController::class)->only(['index', 'store']);
         Route::apiResource('escuelas', App\Http\Controllers\Api\V1\Admin\EscuelaController::class);
-        Route::post('cupofs/{cupof}/assign', [App\Http\Controllers\Api\V1\CupofController::class, 'assign']);
-        Route::post('cupofs/{cupof}/release', [App\Http\Controllers\Api\V1\CupofController::class, 'release']);
+        Route::post('cupofs/{cupof}/assign', [CupofController::class, 'assign']);
+        Route::post('cupofs/{cupof}/release', [CupofController::class, 'release']);
 
-        Route::get('comunidad-educativa', [App\Http\Controllers\Api\V1\Admin\ComunidadEducativaController::class, 'index']);
+        Route::get('comunidad-educativa', [ComunidadEducativaController::class, 'index']);
 
         // --- RUTAS DE ADMINISTRACIÓN GLOBAL (Requieren permiso sistema.usuarios) ---
         Route::middleware('permission:sistema.usuarios')->group(function () {
-            Route::post('/usuarios/{usuario}/confirm-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'confirmPersona']);
-            Route::get('/usuarios/{usuario}/candidatos-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'candidatosPersona']);
-            Route::post('/usuarios/{usuario}/vincular-persona/{persona}', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'vincularPersona']);
-            Route::post('/usuarios/{usuario}/desvincular-persona', [App\Http\Controllers\Api\V1\UsuarioPersonaController::class, 'desvincularPersona']);
-            Route::post('/usuarios/{usuario}/resend-activation', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendActivation']);
-            Route::post('/usuarios/{usuario}/resend-verification', [App\Http\Controllers\Api\V1\UsuarioController::class, 'resendEmailVerification']);
+            Route::post('/usuarios/{usuario}/confirm-persona', [UsuarioPersonaController::class, 'confirmPersona']);
+            Route::get('/usuarios/{usuario}/candidatos-persona', [UsuarioPersonaController::class, 'candidatosPersona']);
+            Route::post('/usuarios/{usuario}/vincular-persona/{persona}', [UsuarioPersonaController::class, 'vincularPersona']);
+            Route::post('/usuarios/{usuario}/desvincular-persona', [UsuarioPersonaController::class, 'desvincularPersona']);
+            Route::post('/usuarios/{usuario}/resend-activation', [UsuarioController::class, 'resendActivation']);
+            Route::post('/usuarios/{usuario}/resend-verification', [UsuarioController::class, 'resendEmailVerification']);
 
-            Route::apiResource('usuarios', App\Http\Controllers\Api\V1\UsuarioController::class)->except(['store']);
+            Route::apiResource('usuarios', UsuarioController::class)->except(['store']);
 
-            Route::delete('personas/{persona}/roles/{role}', [App\Http\Controllers\Api\V1\Admin\PersonaController::class, 'removeRole']);
+            Route::delete('personas/{persona}/roles/{role}', [PersonaController::class, 'removeRole']);
 
             // Catálogo de Cargos (CRUD de maestro, el index es público vía /api/v1/cargos)
-            Route::apiResource('cargos', App\Http\Controllers\Api\V1\CargoController::class)->except(['index']);
+            Route::apiResource('cargos', CargoController::class)->except(['index']);
 
             // Gestión de Ciclos Lectivos (Panel Maestro)
-            Route::apiResource('lectivos', App\Http\Controllers\Api\V1\LectivoController::class)->except(['index']);
-            Route::apiResource('anios', App\Http\Controllers\Api\V1\AnioController::class);
-            Route::apiResource('ambitos', App\Http\Controllers\Api\V1\AmbitoController::class);
-            Route::apiResource('cierre-causas', App\Http\Controllers\Api\V1\CierreCausaController::class);
-            Route::apiResource('condiciones', App\Http\Controllers\Api\V1\CondicionController::class);
-            Route::apiResource('vinculo-tipos', App\Http\Controllers\Api\V1\VinculoTipoController::class);
-            Route::apiResource('vinculos', App\Http\Controllers\Api\V1\VinculoController::class);
-            Route::apiResource('dependencias', App\Http\Controllers\Api\V1\DependenciaController::class);
-            Route::apiResource('escuela-tipos', App\Http\Controllers\Api\V1\EscuelaTipoController::class);
-            Route::apiResource('niveles', App\Http\Controllers\Api\V1\NivelController::class);
-            Route::apiResource('modalidades', App\Http\Controllers\Api\V1\ModalidadController::class);
-            Route::apiResource('jornadas', App\Http\Controllers\Api\V1\JornadaController::class);
-            Route::apiResource('turnos', App\Http\Controllers\Api\V1\TurnoController::class);
-            Route::apiResource('escalafones', App\Http\Controllers\Api\V1\EscalafonController::class);
-            Route::apiResource('puesto-tipos', App\Http\Controllers\Api\V1\PuestoTipoController::class);
-            Route::apiResource('escuela-ubicaciones', App\Http\Controllers\Api\V1\EscuelaUbicacionController::class);
-            Route::apiResource('modalidad-niveles', App\Http\Controllers\Api\V1\ModalidadNivelController::class);
-            Route::apiResource('ofertas', App\Http\Controllers\Api\V1\OfertaController::class);
-            Route::apiResource('documento-situacions', App\Http\Controllers\Api\V1\DocumentoSituacionController::class);
-            Route::apiResource('documento-tipos', App\Http\Controllers\Api\V1\DocumentoTipoController::class);
-            Route::apiResource('generos', App\Http\Controllers\Api\V1\GeneroController::class);
-            Route::apiResource('sexos', App\Http\Controllers\Api\V1\SexoController::class);
-            Route::apiResource('continentes', App\Http\Controllers\Api\V1\ContinenteController::class);
-            Route::apiResource('naciones', App\Http\Controllers\Api\V1\NacionController::class);
-            Route::apiResource('provincias', App\Http\Controllers\Api\V1\ProvinciaController::class);
-            Route::apiResource('regiones', App\Http\Controllers\Api\V1\RegionController::class);
-            Route::apiResource('departamentos', App\Http\Controllers\Api\V1\DepartamentoController::class);
-            Route::apiResource('municipios', App\Http\Controllers\Api\V1\MunicipioController::class);
-            Route::apiResource('localidades', App\Http\Controllers\Api\V1\LocalidadController::class);
-            Route::apiResource('localidad-censals', App\Http\Controllers\Api\V1\LocalidadCensalController::class);
-            Route::apiResource('calles', App\Http\Controllers\Api\V1\CalleController::class);
+            Route::apiResource('lectivos', LectivoController::class)->except(['index']);
+            Route::apiResource('anios', AnioController::class);
+            Route::apiResource('ambitos', AmbitoController::class);
+            Route::apiResource('cierre-causas', CierreCausaController::class);
+            Route::apiResource('condiciones', CondicionController::class);
+            Route::apiResource('vinculo-tipos', VinculoTipoController::class);
+            Route::apiResource('vinculos', VinculoController::class);
+            Route::apiResource('dependencias', DependenciaController::class);
+            Route::apiResource('escuela-tipos', EscuelaTipoController::class);
+            Route::apiResource('niveles', NivelController::class);
+            Route::apiResource('modalidades', ModalidadController::class);
+            Route::apiResource('jornadas', JornadaController::class);
+            Route::apiResource('turnos', TurnoController::class);
+            Route::apiResource('escalafones', EscalafonController::class);
+            Route::apiResource('puesto-tipos', PuestoTipoController::class);
+            Route::apiResource('escuela-ubicaciones', EscuelaUbicacionController::class);
+            Route::apiResource('modalidad-niveles', ModalidadNivelController::class);
+            Route::apiResource('ofertas', OfertaController::class);
+            Route::apiResource('documento-situacions', DocumentoSituacionController::class);
+            Route::apiResource('documento-tipos', DocumentoTipoController::class);
+            Route::apiResource('generos', GeneroController::class);
+            Route::apiResource('sexos', SexoController::class);
+            Route::apiResource('continentes', ContinenteController::class);
+            Route::apiResource('naciones', NacionController::class);
+            Route::apiResource('provincias', ProvinciaController::class);
+            Route::apiResource('regiones', RegionController::class);
+            Route::apiResource('departamentos', DepartamentoController::class);
+            Route::apiResource('municipios', MunicipioController::class);
+            Route::apiResource('localidades', LocalidadController::class);
+            Route::apiResource('localidad-censals', LocalidadCensalController::class);
+            Route::apiResource('calles', CalleController::class);
 
             // Catálogos Georef
-            Route::apiResource('georef-fuentes', App\Http\Controllers\Api\V1\GeorefFuenteController::class);
-            Route::apiResource('georef-categorias', App\Http\Controllers\Api\V1\GeorefCategoriaController::class);
-            Route::apiResource('georef-funcions', App\Http\Controllers\Api\V1\GeorefFuncionController::class);
+            Route::apiResource('georef-fuentes', GeorefFuenteController::class);
+            Route::apiResource('georef-categorias', GeorefCategoriaController::class);
+            Route::apiResource('georef-funcions', GeorefFuncionController::class);
         });
     });
 });

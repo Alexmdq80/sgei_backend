@@ -2,28 +2,37 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\DTOs\Persona\PersonaDomicilioContactoDTO;
-use App\Http\Requests\Api\V1\Admin\PersonaDomicilioContactoRequest;
-use App\Http\Resources\DomicilioContactoResource;
+use App\DTOs\Persona\CreatePersonaDTO;
+use App\DTOs\Persona\PersonaContactoDTO;
+use App\DTOs\Persona\PersonaDomicilioDTO;
+use App\DTOs\Persona\PersonaFilterDTO;
+use App\DTOs\Persona\UpdatePersonaDTO;
+use App\Exceptions\ConfirmationRequiredException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\PersonaContactoRequest;
+use App\Http\Requests\Api\V1\Admin\PersonaDomicilioRequest;
+use App\Http\Requests\Api\V1\Admin\PersonaRequest;
+use App\Http\Resources\ContactoResource;
+use App\Http\Resources\DomicilioResource;
+use App\Http\Resources\PersonaResource;
 use App\Models\Persona;
+use App\Models\Usuario;
+use App\Notifications\UserLinkedNotification;
+use App\Services\CupofService;
+use App\Services\PersonaService;
+use App\Services\UserService;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use App\Http\Resources\PersonaResource;
-use App\Services\UserService;
-use App\Services\PersonaService;
-use App\Services\CupofService;
-use App\Http\Requests\Api\V1\Admin\PersonaRequest;
-use App\DTOs\Persona\CreatePersonaDTO;
-use App\DTOs\Persona\UpdatePersonaDTO;
-use App\DTOs\Persona\PersonaFilterDTO;
-use App\Exceptions\ConfirmationRequiredException;
-use App\Notifications\UserLinkedNotification;
 use Illuminate\Support\Facades\Storage;
+
 class PersonaController extends Controller
 {
     protected UserService $userService;
+
     protected PersonaService $personaService;
+
     protected CupofService $cupofService;
 
     public function __construct(
@@ -68,14 +77,14 @@ class PersonaController extends Controller
             'nacimientoDepartamento',
             'nacimientoLocalidad',
             'domicilio.calle',
-            'contacto'
+            'contacto',
         ]));
     }
 
     /**
      * Store a newly created person in storage.
      */
-    public function store(PersonaRequest $request): \Illuminate\Http\JsonResponse
+    public function store(PersonaRequest $request): JsonResponse
     {
         $this->authorize('create', Persona::class);
 
@@ -88,14 +97,14 @@ class PersonaController extends Controller
 
         return response()->json([
             'message' => 'Persona registrada con éxito en el padrón.',
-            'data' => new PersonaResource($persona)
+            'data' => new PersonaResource($persona),
         ], 201);
     }
 
     /**
      * Update the specified person in storage.
      */
-    public function update(PersonaRequest $request, Persona $persona): \Illuminate\Http\JsonResponse
+    public function update(PersonaRequest $request, Persona $persona): JsonResponse
     {
         $this->authorize('update', $persona);
 
@@ -111,33 +120,34 @@ class PersonaController extends Controller
             throw $e; // Dejar que Laravel invoque render() y devuelva HTTP 409
         } catch (\Exception $e) {
             $code = $e->getCode() === 403 ? 403 : 422;
+
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => $code
+                'code' => $code,
             ], $code);
         }
 
         return response()->json([
             'message' => 'Registro de persona actualizado con éxito.',
-            'data' => new PersonaResource($updatedPersona)
+            'data' => new PersonaResource($updatedPersona),
         ]);
     }
 
-    public function destroy(Persona $persona): \Illuminate\Http\JsonResponse
+    public function destroy(Persona $persona): JsonResponse
     {
         $this->authorize('delete', $persona);
 
         $this->personaService->deletePersona($persona);
 
         return response()->json([
-            'message' => 'Registro de persona eliminado con éxito.'
+            'message' => 'Registro de persona eliminado con éxito.',
         ]);
     }
 
     /**
      * Manually resends the activation email for a Persona.
      */
-    public function resendActivation(Persona $persona): \Illuminate\Http\JsonResponse
+    public function resendActivation(Persona $persona): JsonResponse
     {
         // Se aplican las mismas reglas que para link-user o asignación de roles
         $performer = auth()->user();
@@ -145,51 +155,52 @@ class PersonaController extends Controller
         $canResend = $performer->hasRole('superuser')
             || $performer->es_administrador;
 
-        if (!$canResend) {
+        if (! $canResend) {
             return response()->json([
                 'error' => 'Acceso Denegado: No tienes los privilegios necesarios para realizar esta acción administrativa.',
-                'code' => 403
+                'code' => 403,
             ], 403);
         }
 
         if ($persona->usuario && ($persona->usuario->es_administrador || $persona->usuario->hasRole('superuser'))) {
             return response()->json([
                 'error' => 'Acceso Denegado: No se puede reenviar la activación a un superusuario.',
-                'code' => 403
+                'code' => 403,
             ], 403);
         }
 
         try {
             $this->personaService->resendActivation($persona);
+
             return response()->json([
-                'message' => 'Invitación de activación reenviada con éxito al correo registrado.'
+                'message' => 'Invitación de activación reenviada con éxito al correo registrado.',
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
     }
 
-    public function tryLinkUser(Persona $persona): \Illuminate\Http\JsonResponse
+    public function tryLinkUser(Persona $persona): JsonResponse
     {
         $performer = auth()->user();
         $isSuperUser = $performer->hasRole('superuser') || $performer->es_administrador;
 
-        if (!$isSuperUser) {
+        if (! $isSuperUser) {
             return response()->json([
                 'error' => 'Acceso Denegado: No tienes los privilegios necesarios para confirmar vinculaciones de identidad.',
-                'code' => 403
+                'code' => 403,
             ], 403);
         }
-        if (!$persona->vive_si) {
+        if (! $persona->vive_si) {
             return response()->json([
                 'error' => 'Acción no permitida: la persona está registrada como fallecida y no puede vincularse a un usuario.',
-                'code' => 409
+                'code' => 409,
             ], 409);
         }
 
         if ($persona->usuario_id) {
             $existingUser = $persona->usuario;
-            if (!$existingUser || $existingUser->estado !== 'vinculacion_pendiente') {
+            if (! $existingUser || $existingUser->estado !== 'vinculacion_pendiente') {
                 return response()->json(['error' => 'Esta persona ya tiene un usuario vinculado y activo.'], 422);
             }
             // Si el usuario existe y está pendiente, permitimos que el flujo continúe para validación jerárquica y activación
@@ -198,18 +209,18 @@ class PersonaController extends Controller
             $documentoNumeroRaw = $persona->getRawOriginal('documento_numero');
             $contactoEmail = $persona->contacto?->email;
 
-            $matchingUser = \App\Models\Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
+            $matchingUser = Usuario::where('documento_tipo_id', $persona->documento_tipo_id)
                 ->where('documento_numero', $documentoNumeroRaw)
                 ->where('email', $contactoEmail)
                 ->with(['roles'])
                 ->first();
         }
 
-        if (!$matchingUser) {
+        if (! $matchingUser) {
             return response()->json(['error' => 'No se encontró ningún usuario con el mismo documento y correo electrónico coincidente.'], 404);
         }
 
-        if (!$matchingUser->email_verified_at) {
+        if (! $matchingUser->email_verified_at) {
             return response()->json(['error' => 'Se encontró un usuario coincidente, pero aún no ha verificado su cuenta de correo electrónico.'], 422);
         }
 
@@ -222,7 +233,7 @@ class PersonaController extends Controller
         $matchingUser->update(['estado' => 'activo']);
 
         // Sincronizar roles basados en CUPOF ahora que hay vínculo de identidad
-        if (!$persona->relationLoaded('movimientosCupofActivos')) {
+        if (! $persona->relationLoaded('movimientosCupofActivos')) {
             $persona->load(['movimientosCupofActivos.cupof']);
         }
 
@@ -232,51 +243,52 @@ class PersonaController extends Controller
 
         return response()->json([
             'message' => 'Usuario vinculado con éxito.',
-            'usuario_email' => $matchingUser->email
+            'usuario_email' => $matchingUser->email,
         ]);
     }
 
     /**
      * Desvincula el usuario de una persona.
      */
-    public function unlinkUser(Persona $persona): \Illuminate\Http\JsonResponse
+    public function unlinkUser(Persona $persona): JsonResponse
     {
         $performer = auth()->user();
         $isSuperUser = $performer->hasRole('superuser') || $performer->es_administrador;
 
-        if (!$persona->usuario_id) {
+        if (! $persona->usuario_id) {
             return response()->json(['error' => 'Esta persona no tiene ningún usuario vinculado.'], 422);
         }
 
         $linkedUser = $persona->usuario;
         $linkedUser->loadMissing(['roles']);
 
-        if (!$isSuperUser) {
+        if (! $isSuperUser) {
             return response()->json([
                 'error' => 'Acceso Denegado: No tienes los privilegios necesarios para desvincular usuarios.',
-                'code' => 403
+                'code' => 403,
             ], 403);
         }
         $this->personaService->unlinkUser($persona);
 
         return response()->json([
-            'message' => 'Usuario desvinculado con éxito.'
+            'message' => 'Usuario desvinculado con éxito.',
         ]);
     }
 
     /**
      * Removes an administrative role from a persona.
      */
-    public function removeRole(Request $request, Persona $persona, string $role): \Illuminate\Http\JsonResponse
+    public function removeRole(Request $request, Persona $persona, string $role): JsonResponse
     {
         $performer = auth()->user();
 
-        if (!$performer->hasRole('superuser') && !$performer->es_administrador) {
+        if (! $performer->hasRole('superuser') && ! $performer->es_administrador) {
             return response()->json(['error' => 'Rol no válido para esta operación administrativa.'], 422);
         }
 
         try {
             $this->personaService->removeAdministrativeRole($persona, $role);
+
             return response()->json(['message' => 'Rol administrativo revocado con éxito.']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -285,41 +297,62 @@ class PersonaController extends Controller
     }
 
     /**
-     * Devuelve los datos actuales de domicilio y contacto de la persona.
+     * Devuelve el domicilio actual de la persona.
      */
-    public function getDomicilioContacto(Persona $persona): \Illuminate\Http\JsonResponse
+    public function getDomicilio(Persona $persona): JsonResponse
     {
         $this->authorize('view', $persona);
 
-        return response()->json(new DomicilioContactoResource([
-            'domicilio' => $persona->domicilio?->loadMissing([
-                'localidad',
-                'calle',
-                'entreCalle1',
-                'entreCalle2',
-            ]),
-            'contacto' => $persona->contacto,
-        ]));
+        return response()->json(new DomicilioResource(
+            $this->personaService->getDomicilio($persona)
+        ));
     }
 
     /**
-     * Crea o actualiza el domicilio y el contacto de la persona.
+     * Devuelve el contacto actual de la persona.
      */
-    public function syncDomicilioContacto(PersonaDomicilioContactoRequest $request, Persona $persona): \Illuminate\Http\JsonResponse
+    public function getContacto(Persona $persona): JsonResponse
+    {
+        $this->authorize('view', $persona);
+
+        return response()->json(new ContactoResource(
+            $this->personaService->getContacto($persona)
+        ));
+    }
+
+    /**
+     * Crea o actualiza el domicilio de la persona.
+     */
+    public function syncDomicilio(PersonaDomicilioRequest $request, Persona $persona): JsonResponse
     {
         $this->authorize('update', $persona);
 
-        $persona = $this->personaService->syncDomicilioYContacto(
+        $persona = $this->personaService->syncDomicilio(
             $persona,
-            PersonaDomicilioContactoDTO::fromRequest($request)
+            PersonaDomicilioDTO::fromRequest($request)
         );
 
         return response()->json([
-            'message' => 'Domicilio y contacto actualizados con éxito.',
-            'data' => new DomicilioContactoResource([
-                'domicilio' => $persona->domicilio,
-                'contacto' => $persona->contacto,
-            ]),
+            'message' => 'Domicilio actualizado con éxito.',
+            'data' => new DomicilioResource($persona->domicilio),
+        ]);
+    }
+
+    /**
+     * Crea o actualiza el contacto de la persona.
+     */
+    public function syncContacto(PersonaContactoRequest $request, Persona $persona): JsonResponse
+    {
+        $this->authorize('update', $persona);
+
+        $persona = $this->personaService->syncContacto(
+            $persona,
+            PersonaContactoDTO::fromRequest($request)
+        );
+
+        return response()->json([
+            'message' => 'Contacto actualizado con éxito.',
+            'data' => new ContactoResource($persona->contacto),
         ]);
     }
 
@@ -330,10 +363,10 @@ class PersonaController extends Controller
     {
         $this->authorize('viewFoto', $persona);
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('local');
 
-        if (!$persona->foto_path || !$disk->exists($persona->foto_path)) {
+        if (! $persona->foto_path || ! $disk->exists($persona->foto_path)) {
             return response()->json(['error' => 'Foto no encontrada.'], 404);
         }
 
@@ -343,7 +376,7 @@ class PersonaController extends Controller
     /**
      * Upload / replace a Persona's profile photo.
      */
-    public function uploadFoto(Request $request, Persona $persona): \Illuminate\Http\JsonResponse
+    public function uploadFoto(Request $request, Persona $persona): JsonResponse
     {
         $this->authorize('update', $persona);
 
@@ -362,7 +395,7 @@ class PersonaController extends Controller
     /**
      * Delete a Persona's profile photo.
      */
-    public function deleteFoto(Persona $persona): \Illuminate\Http\JsonResponse
+    public function deleteFoto(Persona $persona): JsonResponse
     {
         $this->authorize('update', $persona);
 
@@ -373,5 +406,4 @@ class PersonaController extends Controller
             'foto_url' => null,
         ]);
     }
-
 }

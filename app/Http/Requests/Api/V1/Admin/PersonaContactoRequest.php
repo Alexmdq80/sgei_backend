@@ -7,21 +7,13 @@ namespace App\Http\Requests\Api\V1\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class PersonaDomicilioContactoRequest extends FormRequest
+class PersonaContactoRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Higiene mínima del campo observaciones (texto libre, opcional):
-     * - Normaliza saltos de línea (CRLF/CR -> LF).
-     * - Descarta caracteres de control (excepto \n y \t).
-     * - Aplica trim().
-     *
-     * Si llega null (borrado intencional del campo) se respeta intacto.
-     */
     protected function prepareForValidation(): void
     {
         if ($this->has('observaciones') && is_string($value = $this->input('observaciones'))) {
@@ -43,18 +35,6 @@ class PersonaDomicilioContactoRequest extends FormRequest
             'celular_codigo_area' => ['nullable', 'string', 'max:10', 'regex:/^[0-9]+$/'],
             'celular' => ['nullable', 'string', 'max:20', 'regex:/^[0-9]+$/'],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('contactos', 'email')->ignore($contactoId)],
-
-            // Domicilio
-            'localidad_id' => ['nullable', 'integer', Rule::exists('localidads', 'id')],
-            'calle_id' => ['nullable', 'integer', Rule::exists('calles', 'id')],
-            'calle_entre_1_id' => ['nullable', 'integer', Rule::exists('calles', 'id')],
-            'calle_entre_2_id' => ['nullable', 'integer', Rule::exists('calles', 'id')],
-            'numero' => ['nullable', 'string', 'max:20'],
-            'piso' => ['nullable', 'string', 'max:10'],
-            'departamento' => ['nullable', 'string', 'max:10'],
-            'torre' => ['nullable', 'string', 'max:10'],
-            'codigo_postal' => ['nullable', 'string', 'max:10'],
-            'otros' => ['nullable', 'string', 'max:255'],
             'observaciones' => ['nullable', 'string', 'max:1000'],
         ];
     }
