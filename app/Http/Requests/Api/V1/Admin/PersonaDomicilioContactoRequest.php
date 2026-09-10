@@ -14,6 +14,23 @@ class PersonaDomicilioContactoRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Higiene mínima del campo observaciones (texto libre, opcional):
+     * - Normaliza saltos de línea (CRLF/CR -> LF).
+     * - Descarta caracteres de control (excepto \n y \t).
+     * - Aplica trim().
+     *
+     * Si llega null (borrado intencional del campo) se respeta intacto.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('observaciones') && is_string($value = $this->input('observaciones'))) {
+            $sanitized = str_replace(["\r\n", "\r"], "\n", $value);
+            $sanitized = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $sanitized) ?? $sanitized;
+            $this->merge(['observaciones' => trim($sanitized)]);
+        }
+    }
+
     public function rules(): array
     {
         $persona = $this->route('persona');

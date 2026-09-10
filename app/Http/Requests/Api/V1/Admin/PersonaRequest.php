@@ -23,8 +23,8 @@ class PersonaRequest extends FormRequest
         if ($this->has('nombre_alternativo')) {
             $this->merge(['nombre_alternativo' => mb_strtoupper($this->nombre_alternativo, 'UTF-8')]);
         }
+        $this->sanitizeObservaciones();
     }
-
 
     public function rules(): array
     {
@@ -52,7 +52,7 @@ class PersonaRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('personas', 'documento_numero')->ignore($id)
+                Rule::unique('personas', 'documento_numero')->ignore($id),
             ],
             'tramite' => ['nullable', 'string', 'max:50'],
             'CUIL_prefijo' => ['nullable', 'string', 'max:2'],
@@ -74,6 +74,23 @@ class PersonaRequest extends FormRequest
         return $rules;
     }
 
+    /**
+     * Higiene mínima del campo observaciones (texto libre, opcional):
+     * - Normaliza saltos de línea (CRLF/CR -> LF) para consistencia multiplataforma.
+     * - Descarta caracteres de control (excepto \n y \t) que no aportan valor.
+     * - Aplica trim() para eliminar espacios y saltos sobrantes al inicio/fin.
+     *
+     * Si llega null (borrado intencional del campo) se respeta intacto.
+     */
+    protected function sanitizeObservaciones(): void
+    {
+        if ($this->has('observaciones') && is_string($value = $this->input('observaciones'))) {
+            $sanitized = str_replace(["\r\n", "\r"], "\n", $value);
+            $sanitized = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $sanitized) ?? $sanitized;
+            $this->merge(['observaciones' => trim($sanitized)]);
+        }
+    }
+
     public function messages(): array
     {
         return [
@@ -83,8 +100,7 @@ class PersonaRequest extends FormRequest
             'email.unique' => 'Este correo electrónico ya está asignado a otra persona en el padrón.',
             'apellido.regex' => 'El campo :attribute solo puede contener letras, espacios, guiones y apóstrofes.',
             'nombre.regex' => 'El campo :attribute solo puede contener letras, espacios, guiones y apóstrofes.',
-            'nombre_alternativo.regex' => 'El campo :attribute solo puede contener letras, espacios, guiones y apóstrofes.'
+            'nombre_alternativo.regex' => 'El campo :attribute solo puede contener letras, espacios, guiones y apóstrofes.',
         ];
     }
-
 }
