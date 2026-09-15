@@ -6,3 +6,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | database/migrations/** | .ai/rules/migrations.md |
 | sgei_frontend/src/pages/** | .ai/rules/pages.md |
+| fe/src/pages/Admin/PersonaManagement/** | .ai/rules/persona-management.md |
