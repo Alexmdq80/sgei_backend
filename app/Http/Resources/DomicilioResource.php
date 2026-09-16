@@ -22,6 +22,12 @@ class DomicilioResource extends JsonResource
         }
 
         return [
+            'nacion_id' => $domicilio->nacion_id,
+            'nacion_nombre' => $domicilio->nacion?->nombre,
+            'provincia_id' => $domicilio->localidad?->departamento?->provincia_id,
+            'provincia_nombre' => $domicilio->localidad?->departamento?->provincia?->nombre,
+            'departamento_id' => $domicilio->localidad?->departamento_id,
+            'departamento_nombre' => $domicilio->localidad?->departamento?->nombre,
             'localidad_id' => $domicilio->localidad_id,
             'localidad_nombre' => $domicilio->localidad?->nombre,
             'calle_id' => $domicilio->calle_id,
@@ -35,7 +41,7 @@ class DomicilioResource extends JsonResource
             'departamento' => $domicilio->departamento,
             'torre' => $domicilio->torre,
             'codigo_postal' => $domicilio->codigo_postal,
-            'otros' => $domicilio->otros,
+            'observaciones' => $domicilio->observaciones,
         ];
     }
 }

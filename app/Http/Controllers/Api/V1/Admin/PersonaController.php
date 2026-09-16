@@ -147,10 +147,10 @@ class PersonaController extends Controller
     /**
      * Manually resends the activation email for a Persona.
      */
-    public function resendActivation(Persona $persona): JsonResponse
+    public function resendActivation(Request $request, Persona $persona): JsonResponse
     {
         // Se aplican las mismas reglas que para link-user o asignación de roles
-        $performer = auth()->user();
+        $performer = $request->user();
 
         $canResend = $performer->hasRole('superuser')
             || $performer->es_administrador;
@@ -180,9 +180,9 @@ class PersonaController extends Controller
         }
     }
 
-    public function tryLinkUser(Persona $persona): JsonResponse
+    public function tryLinkUser(Request $request, Persona $persona): JsonResponse
     {
-        $performer = auth()->user();
+        $performer = $request->user();
         $isSuperUser = $performer->hasRole('superuser') || $performer->es_administrador;
 
         if (! $isSuperUser) {
@@ -250,9 +250,9 @@ class PersonaController extends Controller
     /**
      * Desvincula el usuario de una persona.
      */
-    public function unlinkUser(Persona $persona): JsonResponse
+    public function unlinkUser(Request $request, Persona $persona): JsonResponse
     {
-        $performer = auth()->user();
+        $performer = $request->user();
         $isSuperUser = $performer->hasRole('superuser') || $performer->es_administrador;
 
         if (! $persona->usuario_id) {
@@ -280,7 +280,7 @@ class PersonaController extends Controller
      */
     public function removeRole(Request $request, Persona $persona, string $role): JsonResponse
     {
-        $performer = auth()->user();
+        $performer = $request->user();
 
         if (! $performer->hasRole('superuser') && ! $performer->es_administrador) {
             return response()->json(['error' => 'Rol no válido para esta operación administrativa.'], 422);
@@ -303,9 +303,11 @@ class PersonaController extends Controller
     {
         $this->authorize('view', $persona);
 
-        return response()->json(new DomicilioResource(
-            $this->personaService->getDomicilio($persona)
-        ));
+        $domicilio = $this->personaService->getDomicilio($persona);
+
+        return response()->json([
+            'data' => $domicilio ? new DomicilioResource($domicilio) : null,
+        ]);
     }
 
     /**
@@ -314,10 +316,12 @@ class PersonaController extends Controller
     public function getContacto(Persona $persona): JsonResponse
     {
         $this->authorize('view', $persona);
+        
+        $contacto = $this->personaService->getContacto($persona);
 
-        return response()->json(new ContactoResource(
-            $this->personaService->getContacto($persona)
-        ));
+        return response()->json([
+            'data' => $contacto ? new ContactoResource($contacto) : null,
+        ]);
     }
 
     /**

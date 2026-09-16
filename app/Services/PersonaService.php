@@ -33,7 +33,8 @@ class PersonaService
     public function getDomicilio(Persona $persona): ?Domicilio
     {
         return $persona->domicilio?->loadMissing([
-            'localidad',
+            'nacion',
+            'localidad.departamento.provincia',
             'calle',
             'entreCalle1',
             'entreCalle2',
@@ -426,20 +427,22 @@ class PersonaService
     public function syncDomicilio(Persona $persona, PersonaDomicilioDTO $dto): Persona
     {
         return DB::transaction(function () use ($persona, $dto) {
+            $data = $dto->blanquear ? $dto->toBlankArray() : $dto->toArray();
+
             $persona->domicilio()->updateOrCreate(
                 ['persona_id' => $persona->id],
-                $dto->toArray()
+                $data
             );
 
             return $persona->fresh([
-                'domicilio.localidad',
+                'domicilio.nacion',
+                'domicilio.localidad.departamento.provincia',
                 'domicilio.calle',
                 'domicilio.entreCalle1',
                 'domicilio.entreCalle2',
             ]);
         });
     }
-
     /**
      * Store (or replace) a Persona's profile photo in private storage.
      */

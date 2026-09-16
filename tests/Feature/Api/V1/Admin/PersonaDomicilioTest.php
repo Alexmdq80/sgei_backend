@@ -4,6 +4,9 @@ use App\Models\Calle;
 use App\Models\Localidad;
 use App\Models\Persona;
 use App\Models\Usuario;
+use App\Models\Nacion;
+use App\Models\Provincia;
+use App\Models\Departamento;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -82,3 +85,91 @@ test('admin actualiza domicilio sin pisar valores previos (filtra null)', functi
         'numero' => '777',
     ]);
 });
+
+test('admin crea domicilio con nacion_id y observaciones', function () {
+    $persona = Persona::factory()->create();
+    $nacion = Nacion::create(['nombre' => 'ARGENTINA']);
+    $localidad = Localidad::factory()->create();
+
+    $this->actingAs($this->admin, 'sanctum')
+        ->putJson("/api/v1/admin/personas/{$persona->id}/domicilio", [
+            'nacion_id' => $nacion->id,
+            'localidad_id' => $localidad->id,
+            'calle_id' => Calle::create(['nombre' => 'AV. RIVADAVIA'])->id,
+            'numero' => '123',
+            'observaciones' => 'Vive en casa propia',
+        ])->assertOk();
+
+    $this->assertDatabaseHas('domicilios', [
+        'persona_id' => $persona->id,
+        'nacion_id' => $nacion->id,
+        'numero' => '123',
+        'observaciones' => 'VIVE EN CASA PROPIA',
+    ]);
+});
+
+test('admin declara domicilio desconocido y blanquea campos geográficos', function () {
+    $persona = Persona::factory()->create();
+    // La persona ya tenía un domicilio previo completo
+    $nacion = Nacion::create(['nombre' => 'ARGENTINA']);
+    $localidad = Localidad::factory()->create();
+    $persona->domicilio()->create([
+        'nacion_id' => $nacion->id,
+        'localidad_id' => $localidad->id,
+        'numero' => '99',
+    ]);
+
+    $this->actingAs($this->admin, 'sanctum')
+        ->putJson("/api/v1/admin/personas/{$persona->id}/domicilio", [
+            'blanquear' => true,
+            'observaciones' => 'Se desconoce el domicilio actual',
+        ])->assertOk();
+
+    $this->assertDatabaseHas('domicilios', [
+        'persona_id' => $persona->id,
+        'nacion_id' => null,
+        'localidad_id' => null,
+        'calle_id' => null,
+        'numero' => null,
+        'observaciones' => 'SE DESCONOCE EL DOMICILIO ACTUAL',
+    ]);
+});
+
+test('GET domicilio expone la jerarquía geográfica completa', function () {
+    $persona = Persona::factory()->create();
+    $nacion = Nacion::create(['nombre' => 'ARGENTINA']);
+    $provincia = Provincia::factory()->create(['nacion_id' => $nacion->id]);
+    $departamento = Departamento::factory()->create(['provincia_id' => $provincia->id]);
+    $localidad = Localidad::factory()->create(['departamento_id' => $departamento->id]);
+    $calle = Calle::create(['nombre' => 'AV. RIVADAVIA']);
+
+    $persona->domicilio()->create([
+        'nacion_id' => $nacion->id,
+        'localidad_id' => $localidad->id,
+        'calle_id' => $calle->id,
+        'numero' => '123',
+        'observaciones' => 'Casa',
+    ]);
+
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/personas/{$persona->id}/domicilio")
+        ->assertOk()
+        ->assertJsonPath('data.nacion_id', $nacion->id)
+        ->assertJsonPath('data.nacion_nombre', 'ARGENTINA')
+        ->assertJsonPath('data.provincia_id', $provincia->id)
+        ->assertJsonPath('data.departamento_id', $departamento->id)
+        ->assertJsonPath('data.localidad_id', $localidad->id)
+        ->assertJsonPath('data.calle_id', $calle->id)
+        ->assertJsonPath('data.observaciones', 'CASA');
+});
+
+test('valida nacion_id inexistente', function () {
+    $persona = Persona::factory()->create();
+    $this->actingAs($this->admin, 'sanctum')
+        ->putJson("/api/v1/admin/personas/{$persona->id}/domicilio", [
+            'nacion_id' => 999999,
+        ])->assertStatus(422)
+        ->assertJsonValidationErrors('nacion_id');
+});
+
+

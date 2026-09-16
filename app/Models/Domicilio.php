@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 /**
  * @property int $id
  * @property int|null $persona_id
+ * @property int|null $nacion_id
  * @property int|null $localidad_id
  * @property int|null $calle_id
  * @property int|null $calle_entre_1_id
@@ -19,13 +20,15 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string|null $piso
  * @property string|null $torre
  * @property string|null $departamento
- * @property string|null $otros
+ * @property string|null $observaciones
  * @property string|null $codigo_postal
  * @property string|null $created_by
  * @property string|null $updated_by
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Persona|null $persona
+ * @property-read \App\Models\Nacion|null $nacion
  * @property-read \App\Models\Calle|null $calle
  * @property-read \App\Models\Calle|null $entreCalle1
  * @property-read \App\Models\Calle|null $entreCalle2
@@ -53,6 +56,9 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio withoutTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereNacionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereObservaciones($value)
+($value)
  * @mixin \Eloquent
  */
 class Domicilio extends Model
@@ -68,6 +74,7 @@ class Domicilio extends Model
      */
     protected $fillable = [
         "persona_id",
+        "nacion_id",
         "localidad_id",
         "calle_id",
         "calle_entre_1_id",
@@ -76,7 +83,7 @@ class Domicilio extends Model
         "piso",
         "torre",
         "departamento",
-        "otros",
+        "observaciones",
         "codigo_postal"
     ];
 
@@ -121,9 +128,9 @@ class Domicilio extends Model
     }
 
     /**
-     * Mutator for otros (Uppercase).
+     * Mutator for observaciones (Uppercase).
      */
-    protected function otros(): Attribute
+    protected function observaciones(): Attribute
     {
         return Attribute::make(
             set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
@@ -132,13 +139,23 @@ class Domicilio extends Model
 
     /**
      * Relationship to the person.
-...
+    */
     public function persona(): BelongsTo
     {
         return $this->belongsTo(Persona::class);
     }
 
     /**
+     * Relationship to the nation of residence.
+     * null => domicilio en Argentina (se aplica la cascada geográfica INDEC).
+     */
+    public function nacion(): BelongsTo
+    {
+        return $this->belongsTo(Nacion::class);
+    }
+
+    /**
+     * 
      * Relationship to the locality.
      */
     public function localidad(): BelongsTo

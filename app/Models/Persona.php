@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Casts\DocumentoIdentidadCast;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * @property int $id

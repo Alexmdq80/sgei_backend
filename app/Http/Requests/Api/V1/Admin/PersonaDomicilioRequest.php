@@ -18,6 +18,7 @@ class PersonaDomicilioRequest extends FormRequest
     {
         return [
             // Domicilio
+            'nacion_id' => ['nullable', 'integer', Rule::exists('nacions', 'id')],
             'localidad_id' => ['nullable', 'integer', Rule::exists('localidads', 'id')],
             'calle_id' => ['nullable', 'integer', Rule::exists('calles', 'id')],
             'calle_entre_1_id' => ['nullable', 'integer', Rule::exists('calles', 'id')],
@@ -27,7 +28,7 @@ class PersonaDomicilioRequest extends FormRequest
             'departamento' => ['nullable', 'string', 'max:10'],
             'torre' => ['nullable', 'string', 'max:10'],
             'codigo_postal' => ['nullable', 'string', 'max:10'],
-            'otros' => ['nullable', 'string', 'max:255'],
+            'observaciones' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }
