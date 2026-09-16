@@ -9,41 +9,54 @@ use Illuminate\Http\Request;
 readonly class PersonaDomicilioDTO
 {
     public function __construct(
+        public bool $nacionProvided = false,
+        public bool $provinciaProvided = false,
+        public bool $departamentoProvided = false,
+        public bool $localidadProvided = false,
         public ?int $nacionId = null,
+        public ?int $provinciaId = null,
+        public ?int $departamentoId = null,
         public ?int $localidadId = null,
         public ?int $calleId = null,
         public ?int $calleEntre1Id = null,
         public ?int $calleEntre2Id = null,
         public ?string $numero = null,
         public ?string $piso = null,
-        public ?string $departamento = null,
+        public ?string $unidad = null,
         public ?string $torre = null,
         public ?string $codigoPostal = null,
-        public ?string $observaciones  = null,
+        public ?string $observaciones = null,
         public bool $observacionesProvided = false,
         public bool $blanquear = false,
-    ) {}
+    ) {
+    }
 
     public static function fromRequest(Request $request): self
     {
         $observacionesProvided = array_key_exists('observaciones', $request->all());
 
         return new self(
+            nacionProvided: $request->has('nacion_id'),
+            provinciaProvided: $request->has('provincia_id'),
+            departamentoProvided: $request->has('departamento_id'),
+            localidadProvided: $request->has('localidad_id'),
             nacionId: $request->filled('nacion_id') ? (int) $request->nacion_id : null,
+            provinciaId: $request->filled('provincia_id') ? (int) $request->provincia_id : null,
+            departamentoId: $request->filled('departamento_id') ? (int) $request->departamento_id : null,
             localidadId: $request->filled('localidad_id') ? (int) $request->localidad_id : null,
             calleId: $request->filled('calle_id') ? (int) $request->calle_id : null,
             calleEntre1Id: $request->filled('calle_entre_1_id') ? (int) $request->calle_entre_1_id : null,
             calleEntre2Id: $request->filled('calle_entre_2_id') ? (int) $request->calle_entre_2_id : null,
             numero: $request->filled('numero') ? (string) $request->numero : null,
             piso: $request->filled('piso') ? (string) $request->piso : null,
-            departamento: $request->filled('departamento') ? (string) $request->departamento : null,
+            unidad: $request->filled('unidad') ? (string) $request->unidad : null,
             torre: $request->filled('torre') ? (string) $request->torre : null,
             codigoPostal: $request->filled('codigo_postal') ? (string) $request->codigo_postal : null,
             observaciones: $observacionesProvided
-                ? (($request->observaciones !== null && $request->observaciones !== '')
-                    ? (string) $request->observaciones
-                    : null)
-                : null,
+            ? (($request->observaciones !== null && $request->observaciones !== '')
+                ? (string) $request->observaciones
+                : null)
+            : null,
             observacionesProvided: $observacionesProvided,
             blanquear: filter_var($request->input('blanquear', false), FILTER_VALIDATE_BOOL),
         );
@@ -52,25 +65,36 @@ readonly class PersonaDomicilioDTO
     /** Actualización parcial: descarta null para NO pisar valores previos. */
     public function toArray(): array
     {
-        $data = $this->filtrarNulos([
-            'nacion_id' => $this->nacionId,
-            'localidad_id' => $this->localidadId,
+        $data = [];
+        if ($this->nacionProvided) {
+            $data['nacion_id'] = $this->nacionId;
+        }
+        if ($this->provinciaProvided) {
+            $data['provincia_id'] = $this->provinciaId;
+        }
+        if ($this->departamentoProvided) {
+            $data['departamento_id'] = $this->departamentoId;
+        }
+        if ($this->localidadProvided) {
+            $data['localidad_id'] = $this->localidadId;
+        }
+
+        $data = array_merge($data, $this->filtrarNulos([
             'calle_id' => $this->calleId,
             'calle_entre_1_id' => $this->calleEntre1Id,
             'calle_entre_2_id' => $this->calleEntre2Id,
             'numero' => $this->numero,
             'piso' => $this->piso,
-            'departamento' => $this->departamento,
+            'unidad' => $this->unidad,
             'torre' => $this->torre,
             'codigo_postal' => $this->codigoPostal,
-        ]);
+        ]));
 
-        // Si el frontend envió la clave (aunque sea vacía) => se include (null = limpiar)
         if ($this->observacionesProvided) {
             $data['observaciones'] = $this->observaciones;
         }
-
         return $data;
+
     }
 
     /** Blanqueo total ("Domicilio Desconocido"): TODOS los campos geográficos a null. */
@@ -78,13 +102,15 @@ readonly class PersonaDomicilioDTO
     {
         $data = [
             'nacion_id' => null,
+            'provincia_id' => null,
+            'departamento_id' => null,
             'localidad_id' => null,
             'calle_id' => null,
             'calle_entre_1_id' => null,
             'calle_entre_2_id' => null,
             'numero' => null,
             'piso' => null,
-            'departamento' => null,
+            'unidad' => null,
             'torre' => null,
             'codigo_postal' => null,
         ];
@@ -99,6 +125,6 @@ readonly class PersonaDomicilioDTO
     /** Descarta claves null para NO pisar valores previos en la BD. */
     private function filtrarNulos(array $datos): array
     {
-        return array_filter($datos, fn ($valor) => $valor !== null);
+        return array_filter($datos, fn($valor) => $valor !== null);
     }
 }

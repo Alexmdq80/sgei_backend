@@ -62,7 +62,7 @@ class PersonaResource extends JsonResource
             'genero_id' => $this->genero_id,
             // 'genero' ya está definido más abajo como objeto {id, nombre} ✓
             'nacionalidad_nacion_id' => $this->nacionalidad_nacion_id,
-            'observaciones' => $this->observaciones,    
+            'observaciones' => $this->observaciones,
             'nacion_id' => $this->nacion_id,
             'provincia_id' => $this->provincia_id,
             'departamento_id' => $this->departamento_id,
@@ -92,8 +92,8 @@ class PersonaResource extends JsonResource
                 'calle' => $this->domicilio->calle?->nombre,
                 'numero' => $this->domicilio->numero,
                 'piso' => $this->domicilio->piso,
-                'depto' => $this->domicilio->depto,
-                'barrio' => $this->domicilio->barrio,
+                'unidad' => $this->domicilio->unidad,
+                'torre' => $this->domicilio->torre,
             ]),
             'contacto' => $this->whenLoaded('contacto', fn() => [
                 'telefono_fijo' => $this->contacto->telefono_fijo,

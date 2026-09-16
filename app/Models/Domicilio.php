@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property int $id
  * @property int|null $persona_id
  * @property int|null $nacion_id
+ * @property int|null $provincia_id
+ * @property int|null $departamento_id
  * @property int|null $localidad_id
  * @property int|null $calle_id
  * @property int|null $calle_entre_1_id
@@ -19,7 +21,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string|null $numero
  * @property string|null $piso
  * @property string|null $torre
- * @property string|null $departamento
+ * @property string|null $unidad
  * @property string|null $observaciones
  * @property string|null $codigo_postal
  * @property string|null $created_by
@@ -29,10 +31,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Persona|null $persona
  * @property-read \App\Models\Nacion|null $nacion
+ * @property-read \App\Models\Provincia|null $provincia
+ * @property-read \App\Models\Departamento|null $departamento
+ * @property-read \App\Models\Localidad|null $localidad
  * @property-read \App\Models\Calle|null $calle
  * @property-read \App\Models\Calle|null $entreCalle1
  * @property-read \App\Models\Calle|null $entreCalle2
- * @property-read \App\Models\Localidad|null $localidad
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio onlyTrashed()
@@ -75,6 +79,8 @@ class Domicilio extends Model
     protected $fillable = [
         "persona_id",
         "nacion_id",
+        "provincia_id",
+        "departamento_id",
         "localidad_id",
         "calle_id",
         "calle_entre_1_id",
@@ -82,7 +88,7 @@ class Domicilio extends Model
         "numero",
         "piso",
         "torre",
-        "departamento",
+        "unidad",
         "observaciones",
         "codigo_postal"
     ];
@@ -93,7 +99,7 @@ class Domicilio extends Model
     protected function numero(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -103,7 +109,7 @@ class Domicilio extends Model
     protected function piso(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -113,17 +119,17 @@ class Domicilio extends Model
     protected function torre(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
     /**
      * Mutator for departamento (Uppercase).
      */
-    protected function departamento(): Attribute
+    protected function unidad(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -133,13 +139,13 @@ class Domicilio extends Model
     protected function observaciones(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
     /**
      * Relationship to the person.
-    */
+     */
     public function persona(): BelongsTo
     {
         return $this->belongsTo(Persona::class);
@@ -152,6 +158,21 @@ class Domicilio extends Model
     public function nacion(): BelongsTo
     {
         return $this->belongsTo(Nacion::class);
+    }
+    /**
+     * Relación con la provincia de residencia (catálogo geográfico).
+     */
+    public function provincia(): BelongsTo
+    {
+        return $this->belongsTo(Provincia::class);
+    }
+    /**
+     * Relación con el departamento (división administrativa) de residencia.
+     * Sin ambigüedad: la unidad funcional (Dpto) vive en la columna `unidad`.
+     */
+    public function departamento(): BelongsTo
+    {
+        return $this->belongsTo(Departamento::class, 'departamento_id');
     }
 
     /**

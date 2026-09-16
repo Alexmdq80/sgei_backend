@@ -34,6 +34,8 @@ class PersonaService
     {
         return $persona->domicilio?->loadMissing([
             'nacion',
+            'provincia',
+            'departamento',
             'localidad.departamento.provincia',
             'calle',
             'entreCalle1',
@@ -63,7 +65,7 @@ class PersonaService
                 $personaData['documento_numero'] = self::generarIdentificadorProvisorio();
             }
             // Handle raw CUIL string if formatted as XX-XXXXXXXX-X
-            if (! empty($cuilRaw)) {
+            if (!empty($cuilRaw)) {
                 $parts = explode('-', str_replace([' ', '.'], '', $cuilRaw));
                 if (count($parts) === 3) {
                     $personaData['CUIL_prefijo'] = $parts[0];
@@ -74,7 +76,7 @@ class PersonaService
             $persona = Persona::create($personaData);
 
             $emailToSave = $dto->email ?? $requestEmail;
-            if (! empty($emailToSave)) {
+            if (!empty($emailToSave)) {
                 $persona->contacto()->create([
                     'email' => $emailToSave,
                 ]);
@@ -101,7 +103,7 @@ class PersonaService
             $siguiente = ((int) $match[1]) + 1;
         }
 
-        return 'IND-'.str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
+        return 'IND-' . str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -148,7 +150,7 @@ class PersonaService
 
             // Update or clear contact email
             if ($hasEmailInPayload) {
-                $newEmail = ! empty($dto->email) ? $dto->email : null;
+                $newEmail = !empty($dto->email) ? $dto->email : null;
                 $persona->contacto()->updateOrCreate(
                     ['persona_id' => $persona->id],
                     ['email' => $newEmail]
@@ -286,16 +288,16 @@ class PersonaService
         return DB::transaction(function () use ($persona) {
             $persona->loadMissing('contacto');
 
-            if (! $persona->contacto || ! $persona->contacto->email) {
+            if (!$persona->contacto || !$persona->contacto->email) {
                 throw new \Exception('La persona debe tener un email de contacto registrado para crear una cuenta de usuario.');
             }
 
             // Check if a user with this email already exists but is not linked
             $user = Usuario::where('email', $persona->contacto->email)->first();
 
-            if (! $user) {
+            if (!$user) {
                 $user = Usuario::create([
-                    'nombre' => $persona->nombre.' '.$persona->apellido,
+                    'nombre' => $persona->nombre . ' ' . $persona->apellido,
                     'documento_tipo_id' => $persona->documento_tipo_id,
                     'documento_numero' => $persona->documento_numero,
                     'email' => $persona->contacto->email,
@@ -362,7 +364,7 @@ class PersonaService
     {
         $user = $persona->usuario;
 
-        if (! $user) {
+        if (!$user) {
             throw new \Exception('La persona no tiene un usuario vinculado.', 404);
         }
 
@@ -379,7 +381,7 @@ class PersonaService
     public function resendActivation(Persona $persona): Usuario
     {
         $user = $persona->usuario;
-        if (! $user) {
+        if (!$user) {
             throw new \Exception('La persona no tiene una cuenta de usuario vinculada.');
         }
 
@@ -436,6 +438,8 @@ class PersonaService
 
             return $persona->fresh([
                 'domicilio.nacion',
+                'domicilio.provincia',
+                'domicilio.departamento',
                 'domicilio.localidad.departamento.provincia',
                 'domicilio.calle',
                 'domicilio.entreCalle1',

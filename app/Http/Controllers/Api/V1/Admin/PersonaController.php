@@ -76,6 +76,10 @@ class PersonaController extends Controller
             'nacimientoProvincia',
             'nacimientoDepartamento',
             'nacimientoLocalidad',
+            'domicilio.nacion',
+            'domicilio.provincia',
+            'domicilio.departamento',
+            'domicilio.localidad',
             'domicilio.calle',
             'contacto',
         ]));
@@ -155,7 +159,7 @@ class PersonaController extends Controller
         $canResend = $performer->hasRole('superuser')
             || $performer->es_administrador;
 
-        if (! $canResend) {
+        if (!$canResend) {
             return response()->json([
                 'error' => 'Acceso Denegado: No tienes los privilegios necesarios para realizar esta acción administrativa.',
                 'code' => 403,
@@ -185,13 +189,13 @@ class PersonaController extends Controller
         $performer = $request->user();
         $isSuperUser = $performer->hasRole('superuser') || $performer->es_administrador;
 
-        if (! $isSuperUser) {
+        if (!$isSuperUser) {
             return response()->json([
                 'error' => 'Acceso Denegado: No tienes los privilegios necesarios para confirmar vinculaciones de identidad.',
                 'code' => 403,
             ], 403);
         }
-        if (! $persona->vive_si) {
+        if (!$persona->vive_si) {
             return response()->json([
                 'error' => 'Acción no permitida: la persona está registrada como fallecida y no puede vincularse a un usuario.',
                 'code' => 409,
@@ -200,7 +204,7 @@ class PersonaController extends Controller
 
         if ($persona->usuario_id) {
             $existingUser = $persona->usuario;
-            if (! $existingUser || $existingUser->estado !== 'vinculacion_pendiente') {
+            if (!$existingUser || $existingUser->estado !== 'vinculacion_pendiente') {
                 return response()->json(['error' => 'Esta persona ya tiene un usuario vinculado y activo.'], 422);
             }
             // Si el usuario existe y está pendiente, permitimos que el flujo continúe para validación jerárquica y activación
@@ -216,11 +220,11 @@ class PersonaController extends Controller
                 ->first();
         }
 
-        if (! $matchingUser) {
+        if (!$matchingUser) {
             return response()->json(['error' => 'No se encontró ningún usuario con el mismo documento y correo electrónico coincidente.'], 404);
         }
 
-        if (! $matchingUser->email_verified_at) {
+        if (!$matchingUser->email_verified_at) {
             return response()->json(['error' => 'Se encontró un usuario coincidente, pero aún no ha verificado su cuenta de correo electrónico.'], 422);
         }
 
@@ -233,7 +237,7 @@ class PersonaController extends Controller
         $matchingUser->update(['estado' => 'activo']);
 
         // Sincronizar roles basados en CUPOF ahora que hay vínculo de identidad
-        if (! $persona->relationLoaded('movimientosCupofActivos')) {
+        if (!$persona->relationLoaded('movimientosCupofActivos')) {
             $persona->load(['movimientosCupofActivos.cupof']);
         }
 
@@ -255,14 +259,14 @@ class PersonaController extends Controller
         $performer = $request->user();
         $isSuperUser = $performer->hasRole('superuser') || $performer->es_administrador;
 
-        if (! $persona->usuario_id) {
+        if (!$persona->usuario_id) {
             return response()->json(['error' => 'Esta persona no tiene ningún usuario vinculado.'], 422);
         }
 
         $linkedUser = $persona->usuario;
         $linkedUser->loadMissing(['roles']);
 
-        if (! $isSuperUser) {
+        if (!$isSuperUser) {
             return response()->json([
                 'error' => 'Acceso Denegado: No tienes los privilegios necesarios para desvincular usuarios.',
                 'code' => 403,
@@ -282,7 +286,7 @@ class PersonaController extends Controller
     {
         $performer = $request->user();
 
-        if (! $performer->hasRole('superuser') && ! $performer->es_administrador) {
+        if (!$performer->hasRole('superuser') && !$performer->es_administrador) {
             return response()->json(['error' => 'Rol no válido para esta operación administrativa.'], 422);
         }
 
@@ -316,7 +320,7 @@ class PersonaController extends Controller
     public function getContacto(Persona $persona): JsonResponse
     {
         $this->authorize('view', $persona);
-        
+
         $contacto = $this->personaService->getContacto($persona);
 
         return response()->json([
@@ -370,7 +374,7 @@ class PersonaController extends Controller
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('local');
 
-        if (! $persona->foto_path || ! $disk->exists($persona->foto_path)) {
+        if (!$persona->foto_path || !$disk->exists($persona->foto_path)) {
             return response()->json(['error' => 'Foto no encontrada.'], 404);
         }
 

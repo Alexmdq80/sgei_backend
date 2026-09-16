@@ -194,7 +194,7 @@ class PersonasUsuariosPruebaSeeder extends Seeder
                 'calle_id' => $calle?->id,
                 'numero' => (string) $faker->numberBetween(1, 5000),
                 'piso' => $faker->optional(0.5)->numberBetween(1, 15),
-                'departamento' => $faker->optional(0.5)->randomLetter(),
+                'unidad' => $faker->optional(0.5)->randomLetter(),
                 'codigo_postal' => $faker->numerify('####'),
             ]
         );

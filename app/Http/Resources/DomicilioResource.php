@@ -17,17 +17,17 @@ class DomicilioResource extends JsonResource
     public function toArray(Request $request): ?array
     {
         $domicilio = $this->resource;
-        if (! ($domicilio instanceof Domicilio)) {
+        if (!($domicilio instanceof Domicilio)) {
             return null;
         }
 
         return [
             'nacion_id' => $domicilio->nacion_id,
             'nacion_nombre' => $domicilio->nacion?->nombre,
-            'provincia_id' => $domicilio->localidad?->departamento?->provincia_id,
-            'provincia_nombre' => $domicilio->localidad?->departamento?->provincia?->nombre,
-            'departamento_id' => $domicilio->localidad?->departamento_id,
-            'departamento_nombre' => $domicilio->localidad?->departamento?->nombre,
+            'provincia_id' => $domicilio->provincia_id ?? $domicilio->localidad?->departamento?->provincia_id,
+            'provincia_nombre' => $domicilio->provincia?->nombre ?? $domicilio->localidad?->departamento?->provincia?->nombre,
+            'departamento_id' => $domicilio->departamento_id ?? $domicilio->localidad?->departamento_id,
+            'departamento_nombre' => $domicilio->departamento?->nombre ?? $domicilio->localidad?->departamento?->nombre,
             'localidad_id' => $domicilio->localidad_id,
             'localidad_nombre' => $domicilio->localidad?->nombre,
             'calle_id' => $domicilio->calle_id,
@@ -38,7 +38,7 @@ class DomicilioResource extends JsonResource
             'calle_entre_2_nombre' => $domicilio->entreCalle2?->nombre,
             'numero' => $domicilio->numero,
             'piso' => $domicilio->piso,
-            'departamento' => $domicilio->departamento,
+            'unidad' => $domicilio->unidad,
             'torre' => $domicilio->torre,
             'codigo_postal' => $domicilio->codigo_postal,
             'observaciones' => $domicilio->observaciones,
