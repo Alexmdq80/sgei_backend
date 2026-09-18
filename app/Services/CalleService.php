@@ -3,8 +3,9 @@
 namespace App\Services;
 
 use App\Models\Calle;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Models\Localidad;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
 class CalleService
 {
     /**
@@ -14,13 +15,17 @@ class CalleService
     {
         $query = Calle::with(['localidadCensal'])->orderBy('nombre');
 
+        // 1) Búsqueda SIEMPRE agrupada: evita que orWhereHas anule los AND posteriores.
         if ($search) {
-            $query->where('nombre', 'like', "%{$search}%")
-                ->orWhereHas('localidadCensal', function ($q) use ($search) {
-                    $q->where('nombre', 'like', "%{$search}%");
-                });
+            $query->where(function ($sub) use ($search) {
+                $sub->where('nombre', 'like', "%{$search}%")
+                    ->orWhereHas('localidadCensal', function ($q) use ($search) {
+                        $q->where('nombre', 'like', "%{$search}%");
+                    });
+            });
         }
 
+        // 2) Filtro ESTRICTO por localidad censal (AND independiente del search).
         if ($localidadId) {
             $query->whereHas('localidadCensal', function ($q) use ($localidadId) {
                 $q->whereIn(
@@ -32,6 +37,7 @@ class CalleService
 
         return $query->paginate($perPage);
     }
+
     /**
      * Get a calle by ID.
      */

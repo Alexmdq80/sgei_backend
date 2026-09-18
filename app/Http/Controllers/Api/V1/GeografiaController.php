@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Provincia;
+use App\Http\Requests\Api\V1\GeografiaRequest;
 use App\Models\Departamento;
 use App\Models\Localidad;
-use App\Http\Requests\Api\V1\GeografiaRequest;
-use Illuminate\Http\Request;
+use App\Models\Provincia;
+use App\Models\Region;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class GeografiaController extends Controller
 {
@@ -18,6 +19,7 @@ class GeografiaController extends Controller
     public function provincias(): JsonResponse
     {
         $provincias = Provincia::orderBy('nombre')->get(['id', 'nombre']);
+
         return response()->json($provincias);
     }
 
@@ -38,12 +40,31 @@ class GeografiaController extends Controller
     }
 
     /**
-     * List localities by department or educational region.
+     * List localities by department, educational region, or free-text search (omnibox).
      */
     public function localidades(Request $request): JsonResponse
     {
         $query = Localidad::orderBy('nombre');
 
+        // --- Modo Omnibox: búsqueda por término con jerarquía completa ---
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+            $limit = (int) $request->input('limit', $request->input('per_page', 15));
+            $limit = max(1, min($limit, 100)); // protección contra límites abusivos
+
+            if ($search !== '') {
+                $query->where('nombre', 'like', "%{$search}%");
+            }
+
+            return response()->json(
+                $query
+                    ->with(['departamento.provincia.nacion'])
+                    ->limit($limit)
+                    ->get(['id', 'nombre', 'departamento_id'])
+            );
+        }
+
+        // --- Comportamiento legacy: filtros por departamento / región educativa ---
         if ($request->filled('departamento_id')) {
             $query->where('departamento_id', $request->departamento_id);
         } elseif ($request->filled('region_id')) {
@@ -60,13 +81,14 @@ class GeografiaController extends Controller
      */
     public function regiones(GeografiaRequest $request): JsonResponse
     {
-        $query = \App\Models\Region::query();
+        $query = Region::query();
 
         if ($request->has('provincia_id')) {
             $query->where('provincia_id', $request->provincia_id);
         }
 
         $regiones = $query->orderBy('numero')->get(['id', 'numero', 'provincia_id']);
+
         return response()->json($regiones);
     }
 }
