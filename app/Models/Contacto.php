@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,10 +20,11 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string|null $observaciones
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Persona|null $persona
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Persona|null $persona
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto onlyTrashed()
@@ -34,6 +36,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto whereObservaciones($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto wherePersonaId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto whereTelefono($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto whereTelefonoCodigoArea($value)
@@ -41,13 +44,14 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Contacto withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Contacto extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "entities";
+    protected $auditGroup = 'entities';
 
     /**
      * The attributes that are mass assignable.
@@ -55,13 +59,13 @@ class Contacto extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "persona_id",
-        "telefono_codigo_area",
-        "telefono",
-        "celular_codigo_area",
-        "celular",
-        "email",
-        "observaciones"
+        'persona_id',
+        'telefono_codigo_area',
+        'telefono',
+        'celular_codigo_area',
+        'celular',
+        'email',
+        'observaciones',
     ];
 
     /**

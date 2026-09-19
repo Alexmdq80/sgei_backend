@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\ActualizaVersionCatalogo;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -23,21 +26,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $distrito_numero
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\GeorefAsentamiento> $georefAsentamientos
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, GeorefAsentamiento> $georefAsentamientos
  * @property-read int|null $georef_asentamientos_count
- * @property-read \App\Models\GeorefCategoria|null $georefCategoria
- * @property-read \App\Models\GeorefFuente|null $georefFuente
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\GeorefLocalidad> $georefLocalidades
+ * @property-read GeorefCategoria|null $georefCategoria
+ * @property-read GeorefFuente|null $georefFuente
+ * @property-read Collection<int, GeorefLocalidad> $georefLocalidades
  * @property-read int|null $georef_localidades_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Localidad> $localidades
+ * @property-read Collection<int, Localidad> $localidades
  * @property-read int|null $localidades_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Persona> $personas
+ * @property-read Collection<int, Persona> $personas
  * @property-read int|null $personas_count
- * @property-read \App\Models\Provincia|null $provincia
- * @property-read \App\Models\Region|null $region
+ * @property-read Provincia|null $provincia
+ * @property-read Region|null $region
+ *
  * @method static \Database\Factories\DepartamentoFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento newQuery()
@@ -62,11 +66,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Departamento withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Departamento extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use ActualizaVersionCatalogo, AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -74,17 +79,17 @@ class Departamento extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "id_georef",
-        "provincia_id",
-        "georef_fuente",
-        "georef_categoria",
-        "nombre",
-        "nombre_completo",
-        "centroide_lat",
-        "centroide_lon",
-        "provincia_interseccion",
-        "region_id",
-        "distrito_numero"
+        'id_georef',
+        'provincia_id',
+        'georef_fuente',
+        'georef_categoria',
+        'nombre',
+        'nombre_completo',
+        'centroide_lat',
+        'centroide_lon',
+        'provincia_interseccion',
+        'region_id',
+        'distrito_numero',
     ];
 
     /**

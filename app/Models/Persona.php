@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Casts\DocumentoIdentidadCast;
+use App\ValueObjects\DocumentoIdentidad;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use App\Casts\DocumentoIdentidadCast;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -25,7 +27,7 @@ use Illuminate\Support\Facades\Auth;
  * @property int|null $provincia_id
  * @property int|null $departamento_id
  * @property int|null $localidad_id
- * @property \App\ValueObjects\DocumentoIdentidad|null $documento_numero
+ * @property DocumentoIdentidad|null $documento_numero
  * @property string|null $apellido
  * @property string|null $nombre
  * @property string|null $foto_path
@@ -34,42 +36,43 @@ use Illuminate\Support\Facades\Auth;
  * @property int|null $vive_si
  * @property string|null $CUIL_prefijo
  * @property string|null $CUIL_sufijo
- * @property \Illuminate\Support\Carbon|null $nacimiento_fecha
+ * @property Carbon|null $nacimiento_fecha
+ * @property string|null $observaciones
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property string|null $observaciones
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Contacto|null $contacto
- * @property-read \App\Models\DocumentoSituacion|null $documentoSituacion
- * @property-read \App\Models\DocumentoTipo|null $documentoTipo
- * @property-read \App\Models\Domicilio|null $domicilio
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EscuelaPersona> $escuelasPersonas
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Contacto|null $contacto
+ * @property-read DocumentoSituacion|null $documentoSituacion
+ * @property-read DocumentoTipo|null $documentoTipo
+ * @property-read Domicilio|null $domicilio
+ * @property-read Collection<int, EscuelaPersona> $escuelasPersonas
  * @property-read int|null $escuelas_personas_count
- * @property-read \App\Models\Genero|null $genero
+ * @property-read Genero|null $genero
  * @property-read string|null $foto_url
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\HistorialInscripcion> $historialInscripciones
+ * @property-read Collection<int, HistorialInscripcion> $historialInscripciones
  * @property-read int|null $historial_inscripciones_count
- * @property-read \App\Models\Inscripcion|null $inscripcion
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Legajo> $legajos
+ * @property-read Inscripcion|null $inscripcion
+ * @property-read Collection<int, Legajo> $legajos
  * @property-read int|null $legajos_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CupofMovimiento> $movimientosCupof
+ * @property-read Collection<int, CupofMovimiento> $movimientosCupof
  * @property-read int|null $movimientos_cupof_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CupofMovimiento> $movimientosCupofActivos
+ * @property-read Collection<int, CupofMovimiento> $movimientosCupofActivos
  * @property-read int|null $movimientos_cupof_activos_count
- * @property-read \App\Models\Departamento|null $nacimientoDepartamento
- * @property-read \App\Models\Localidad|null $nacimientoLocalidad
- * @property-read \App\Models\Nacion|null $nacimientoPais
- * @property-read \App\Models\Provincia|null $nacimientoProvincia
- * @property-read \App\Models\Nacion|null $nacionalidad
- * @property-read \App\Models\Sexo|null $sexo
- * @property-read \App\Models\Usuario|null $usuario
- * @property-read \App\Models\PersonaVinculoPersona|null $pivot
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Persona> $vinculosComoAdulto
+ * @property-read Departamento|null $nacimientoDepartamento
+ * @property-read Localidad|null $nacimientoLocalidad
+ * @property-read Nacion|null $nacimientoPais
+ * @property-read Provincia|null $nacimientoProvincia
+ * @property-read Nacion|null $nacionalidad
+ * @property-read Sexo|null $sexo
+ * @property-read Usuario|null $usuario
+ * @property-read PersonaVinculoPersona|null $pivot
+ * @property-read Collection<int, Persona> $vinculosComoAdulto
  * @property-read int|null $vinculos_como_adulto_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Persona> $vinculosComoEstudiante
+ * @property-read Collection<int, Persona> $vinculosComoEstudiante
  * @property-read int|null $vinculos_como_estudiante_count
+ *
  * @method static \Database\Factories\PersonaFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona inDepartamento(int $departamentoId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona inProvincia(int $provinciaId)
@@ -97,6 +100,7 @@ use Illuminate\Support\Facades\Auth;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNacionalidadNacionId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNombre($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereNombreAlternativo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereObservaciones($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereProvinciaId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereSexoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereTramite($value)
@@ -106,11 +110,12 @@ use Illuminate\Support\Facades\Auth;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona whereViveSi($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Persona withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Persona extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * Group for segmented auditing.
@@ -125,27 +130,27 @@ class Persona extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "usuario_id",
-        "documento_tipo_id",
-        "documento_situacion_id",
-        "sexo_id",
-        "genero_id",
-        "nacionalidad_nacion_id",
-        "nacion_id",
-        "provincia_id",
-        "departamento_id",
-        "localidad_id",
-        "documento_numero",
-        "apellido",
-        "nombre",
-        "nombre_alternativo",
-        "tramite",
-        "foto_path",
-        "vive_si",
-        "CUIL_prefijo",
-        "CUIL_sufijo",
-        "nacimiento_fecha",
-        "observaciones"
+        'usuario_id',
+        'documento_tipo_id',
+        'documento_situacion_id',
+        'sexo_id',
+        'genero_id',
+        'nacionalidad_nacion_id',
+        'nacion_id',
+        'provincia_id',
+        'departamento_id',
+        'localidad_id',
+        'documento_numero',
+        'apellido',
+        'nombre',
+        'nombre_alternativo',
+        'tramite',
+        'foto_path',
+        'vive_si',
+        'CUIL_prefijo',
+        'CUIL_sufijo',
+        'nacimiento_fecha',
+        'observaciones',
     ];
 
     /**
@@ -153,7 +158,6 @@ class Persona extends Model
      *
      * @var array<string, string>
      */
-
     protected $casts = [
         'documento_numero' => DocumentoIdentidadCast::class,
         'nacimiento_fecha' => 'datetime',
@@ -172,7 +176,7 @@ class Persona extends Model
     protected function apellido(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -182,7 +186,7 @@ class Persona extends Model
     protected function nombre(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -192,7 +196,7 @@ class Persona extends Model
     protected function nombreAlternativo(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -202,9 +206,10 @@ class Persona extends Model
     protected function tramite(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
+
     /**
      * Get the full URL to the (private, authenticated) profile photo.
      */
@@ -212,6 +217,7 @@ class Persona extends Model
     {
         return $this->foto_path ? url("/api/v1/admin/personas/{$this->id}/foto") : null;
     }
+
     /**
      * Relationship to the user.
      */
@@ -219,6 +225,7 @@ class Persona extends Model
     {
         return $this->belongsTo(Usuario::class);
     }
+
     /**
      * Relationship to school associations via the pivot model.
      */
@@ -236,6 +243,7 @@ class Persona extends Model
     {
         return $this->getRawOriginal('documento_numero');
     }
+
     /**
      * Relationship to the document type.
      */
@@ -273,7 +281,7 @@ class Persona extends Model
      */
     public function nacionalidad(): BelongsTo
     {
-        return $this->belongsTo(Nacion::class, "nacionalidad_nacion_id");
+        return $this->belongsTo(Nacion::class, 'nacionalidad_nacion_id');
     }
 
     /**
@@ -281,7 +289,7 @@ class Persona extends Model
      */
     public function nacimientoPais(): BelongsTo
     {
-        return $this->belongsTo(Nacion::class, "nacion_id");
+        return $this->belongsTo(Nacion::class, 'nacion_id');
     }
 
     /**
@@ -289,7 +297,7 @@ class Persona extends Model
      */
     public function nacimientoProvincia(): BelongsTo
     {
-        return $this->belongsTo(Provincia::class, "provincia_id");
+        return $this->belongsTo(Provincia::class, 'provincia_id');
     }
 
     /**
@@ -297,7 +305,7 @@ class Persona extends Model
      */
     public function nacimientoDepartamento(): BelongsTo
     {
-        return $this->belongsTo(Departamento::class, "departamento_id");
+        return $this->belongsTo(Departamento::class, 'departamento_id');
     }
 
     /**
@@ -305,7 +313,7 @@ class Persona extends Model
      */
     public function nacimientoLocalidad(): BelongsTo
     {
-        return $this->belongsTo(Localidad::class, "localidad_id");
+        return $this->belongsTo(Localidad::class, 'localidad_id');
     }
 
     /**
@@ -329,7 +337,7 @@ class Persona extends Model
      */
     public function inscripcion(): HasOne
     {
-        return $this->hasOne(Inscripcion::class, "persona_id", "id");
+        return $this->hasOne(Inscripcion::class, 'persona_id', 'id');
     }
 
     /**
@@ -337,7 +345,7 @@ class Persona extends Model
      */
     public function historialInscripciones(): HasMany
     {
-        return $this->hasMany(HistorialInscripcion::class, "persona_id", "id");
+        return $this->hasMany(HistorialInscripcion::class, 'persona_id', 'id');
     }
 
     /**
@@ -437,5 +445,4 @@ class Persona extends Model
                 });
         });
     }
-
 }

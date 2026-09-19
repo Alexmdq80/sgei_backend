@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\ActualizaVersionCatalogo;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -14,11 +17,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $vigente
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Persona> $personas
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Persona> $personas
  * @property-read int|null $personas_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Genero newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Genero newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Genero onlyTrashed()
@@ -34,11 +38,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Genero whereVigente($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Genero withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Genero withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Genero extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use ActualizaVersionCatalogo, AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -46,9 +51,9 @@ class Genero extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "nombre",
-        "orden",
-        "vigente"
+        'nombre',
+        'orden',
+        'vigente',
     ];
 
     /**

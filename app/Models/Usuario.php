@@ -2,34 +2,40 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Permission\Traits\HasRoles;
-
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Services\UserService;
-use Carbon\CarbonInterface;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\DatabaseNotificationCollection;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Laravel\Sanctum\HasApiTokens;
+use Laravel\Sanctum\PersonalAccessToken;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property string $id
- * @property CarbonInterface|Carbon|null $verification_token_created_at
- * @property CarbonInterface|Carbon|null $email_verified_at
  * @property string $nombre
  * @property int|null $documento_tipo_id
  * @property string|null $documento_numero
  * @property bool $es_administrador
  * @property string $estado
  * @property string $email
+ * @property Carbon|null $email_verified_at
  * @property string|null $avatar_path
  * @property string $password
  * @property bool $password_set
  * @property string|null $verification_token
+ * @property Carbon|null $verification_token_created_at
  * @property string|null $remember_token
  * @property Carbon|null $email_set_at
  * @property int $email_correction_attempts
@@ -38,20 +44,21 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read \App\Models\DocumentoTipo|null $documentoTipo
+ * @property-read DocumentoTipo|null $documentoTipo
  * @property-read string|null $avatar_url
  * @property-read bool $has_password
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
+ * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions
+ * @property-read Collection<int, Permission> $permissions
  * @property-read int|null $permissions_count
- * @property-read \App\Models\Persona|null $persona
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\RefreshToken> $refreshTokens
+ * @property-read Persona|null $persona
+ * @property-read Collection<int, RefreshToken> $refreshTokens
  * @property-read int|null $refresh_tokens_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Role> $roles
+ * @property-read Collection<int, Role> $roles
  * @property-read int|null $roles_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens
+ * @property-read Collection<int, PersonalAccessToken> $tokens
  * @property-read int|null $tokens_count
+ *
  * @method static \Database\Factories\UsuarioFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Usuario newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Usuario newQuery()
@@ -84,12 +91,12 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Usuario withoutPermission($permissions)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Usuario withoutRole($roles, ?string $guard = null)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Usuario withoutTrashed()
+ *
  * @mixin \Eloquent
  */
-
 class Usuario extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids, AuditableTrait, HasRoles;
+    use AuditableTrait, HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
 
     /**
      * Group for segmented auditing.
@@ -100,7 +107,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
 
     /**
      * Specified guard for Spatie roles and permissions.
-     * 
+     *
      * @var string
      */
     protected $guard_name = 'sanctum';
@@ -114,7 +121,6 @@ class Usuario extends Authenticatable implements MustVerifyEmail
      * Roles del equipo de conducción (directivos) en escuelas.
      */
     public const ROLES_EQUIPO_CONDUCCION = ['director', 'vicedirector', 'secretario', 'prosecretario'];
-
 
     /**
      * The attributes that are mass assignable.
@@ -134,13 +140,13 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         'verification_token',
         'verification_token_created_at',
         'avatar_path',
-        'estado'
+        'estado',
     ];
 
     /**
      * Relationship to the document type.
      */
-    public function documentoTipo(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function documentoTipo(): BelongsTo
     {
         return $this->belongsTo(DocumentoTipo::class);
     }
@@ -148,7 +154,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     /**
      * Relationship to the persona based on the explicit usuario_id in personas table.
      */
-    public function persona(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function persona(): HasOne
     {
         return $this->hasOne(Persona::class, 'usuario_id');
     }
@@ -175,6 +181,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     {
         return (bool) $this->password_set;
     }
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -205,7 +212,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
      */
     public function isVerificationTokenExpired(): bool
     {
-        if (!$this->verification_token_created_at) {
+        if (! $this->verification_token_created_at) {
             return true;
         }
 
@@ -243,5 +250,4 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(RefreshToken::class);
     }
-
 }

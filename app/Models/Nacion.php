@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\ActualizaVersionCatalogo;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,16 +19,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $nacionalidad
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Continente|null $continente
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Persona> $nacionalidadPersonas
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Continente|null $continente
+ * @property-read Collection<int, Persona> $nacionalidadPersonas
  * @property-read int|null $nacionalidad_personas_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Persona> $personas
+ * @property-read Collection<int, Persona> $personas
  * @property-read int|null $personas_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Provincia> $provincias
+ * @property-read Collection<int, Provincia> $provincias
  * @property-read int|null $provincias_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Nacion newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Nacion newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Nacion onlyTrashed()
@@ -42,11 +46,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Nacion whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Nacion withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Nacion withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Nacion extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use ActualizaVersionCatalogo, AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -54,10 +59,10 @@ class Nacion extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "id_georef",
-        "continente_id",
-        "nombre",
-        "nacionalidad"
+        'id_georef',
+        'continente_id',
+        'nombre',
+        'nacionalidad',
     ];
 
     /**
@@ -89,6 +94,6 @@ class Nacion extends Model
      */
     public function nacionalidadPersonas(): HasMany
     {
-        return $this->hasMany(Persona::class, "nacionalidad_nacion_id", "id");
+        return $this->hasMany(Persona::class, 'nacionalidad_nacion_id', 'id');
     }
 }

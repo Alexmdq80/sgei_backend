@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -26,17 +27,18 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string|null $codigo_postal
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Persona|null $persona
- * @property-read \App\Models\Nacion|null $nacion
- * @property-read \App\Models\Provincia|null $provincia
- * @property-read \App\Models\Departamento|null $departamento
- * @property-read \App\Models\Localidad|null $localidad
- * @property-read \App\Models\Calle|null $calle
- * @property-read \App\Models\Calle|null $entreCalle1
- * @property-read \App\Models\Calle|null $entreCalle2
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Calle|null $calle
+ * @property-read Departamento|null $departamento
+ * @property-read Calle|null $entreCalle1
+ * @property-read Calle|null $entreCalle2
+ * @property-read Localidad|null $localidad
+ * @property-read Nacion|null $nacion
+ * @property-read Persona|null $persona
+ * @property-read Provincia|null $provincia
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio onlyTrashed()
@@ -48,28 +50,29 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereCreatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereDeletedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereDepartamento($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereDepartamentoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereLocalidadId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereNacionId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereNumero($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereOtros($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereObservaciones($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio wherePersonaId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio wherePiso($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereProvinciaId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereTorre($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereUnidad($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio withoutTrashed()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereNacionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Domicilio whereObservaciones($value)
-($value)
+ *
  * @mixin \Eloquent
  */
 class Domicilio extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "entities";
+    protected $auditGroup = 'entities';
 
     /**
      * The attributes that are mass assignable.
@@ -77,20 +80,20 @@ class Domicilio extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "persona_id",
-        "nacion_id",
-        "provincia_id",
-        "departamento_id",
-        "localidad_id",
-        "calle_id",
-        "calle_entre_1_id",
-        "calle_entre_2_id",
-        "numero",
-        "piso",
-        "torre",
-        "unidad",
-        "observaciones",
-        "codigo_postal"
+        'persona_id',
+        'nacion_id',
+        'provincia_id',
+        'departamento_id',
+        'localidad_id',
+        'calle_id',
+        'calle_entre_1_id',
+        'calle_entre_2_id',
+        'numero',
+        'piso',
+        'torre',
+        'unidad',
+        'observaciones',
+        'codigo_postal',
     ];
 
     /**
@@ -99,7 +102,7 @@ class Domicilio extends Model
     protected function numero(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -109,7 +112,7 @@ class Domicilio extends Model
     protected function piso(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -119,7 +122,7 @@ class Domicilio extends Model
     protected function torre(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -129,7 +132,7 @@ class Domicilio extends Model
     protected function unidad(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -139,7 +142,7 @@ class Domicilio extends Model
     protected function observaciones(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -159,6 +162,7 @@ class Domicilio extends Model
     {
         return $this->belongsTo(Nacion::class);
     }
+
     /**
      * Relación con la provincia de residencia (catálogo geográfico).
      */
@@ -166,6 +170,7 @@ class Domicilio extends Model
     {
         return $this->belongsTo(Provincia::class);
     }
+
     /**
      * Relación con el departamento (división administrativa) de residencia.
      * Sin ambigüedad: la unidad funcional (Dpto) vive en la columna `unidad`.
@@ -176,7 +181,6 @@ class Domicilio extends Model
     }
 
     /**
-     * 
      * Relationship to the locality.
      */
     public function localidad(): BelongsTo
@@ -197,7 +201,7 @@ class Domicilio extends Model
      */
     public function entreCalle1(): BelongsTo
     {
-        return $this->belongsTo(Calle::class, "calle_entre_1_id");
+        return $this->belongsTo(Calle::class, 'calle_entre_1_id');
     }
 
     /**
@@ -205,6 +209,6 @@ class Domicilio extends Model
      */
     public function entreCalle2(): BelongsTo
     {
-        return $this->belongsTo(Calle::class, "calle_entre_2_id");
+        return $this->belongsTo(Calle::class, 'calle_entre_2_id');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\CatalogoVersion;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -262,10 +263,11 @@ class NacionsTableSeeder extends Seeder
         }
 
         // Ordenar por ID para facilitar la lectura en la DB si es necesario
-        usort($finalNaciones, fn($a, $b) => $a['id'] <=> $b['id']);
+        usort($finalNaciones, fn ($a, $b) => $a['id'] <=> $b['id']);
 
         foreach (array_chunk($finalNaciones, 50) as $chunk) {
             DB::table('nacions')->insert($chunk);
         }
+        CatalogoVersion::touchVersion('nacions');
     }
 }

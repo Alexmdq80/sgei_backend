@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\Auth\VerificationController;
 use App\Http\Controllers\Api\V1\CalleController;
 use App\Http\Controllers\Api\V1\CargoController;
+use App\Http\Controllers\Api\V1\CatalogoManifestController;
 use App\Http\Controllers\Api\V1\CierreCausaController;
 use App\Http\Controllers\Api\V1\CondicionController;
 use App\Http\Controllers\Api\V1\ContinenteController;
@@ -77,6 +78,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/check-id', function (Request $request) {
         return $request->hasSession() ? $request->session()->getId() : 'no-session';
     });
+    // RUTA DE MANIFESTO DE CATÁLOGOS
+    Route::get('/catalogos/manifest', [CatalogoManifestController::class, 'manifest']);
 
     // Catálogos Públicos
     Route::get('/rol-escolares', [RolEscolarController::class, 'index']);
