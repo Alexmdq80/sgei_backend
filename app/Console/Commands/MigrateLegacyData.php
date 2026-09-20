@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Role;
 
 class MigrateLegacyData extends Command
 {
@@ -35,11 +36,11 @@ class MigrateLegacyData extends Command
         $this->info('--- INICIANDO MIGRACIÓN DE DATOS LEGADOS ---');
 
         // Verificación de Roles (Crítico para escuela_persona)
-        $spatieRoles = \Spatie\Permission\Models\Role::all();
+        $spatieRoles = Role::all();
         if ($spatieRoles->count() <= 1) { // 'superuser' suele se ek único por defecto
             $this->warn('⚠️ La tabla de roles parece estar incompleta. Se recomienda ejecutar:');
             $this->warn('   php artisan db:seed --class=RolesAndPermissionsSeeder');
-            if (!$this->confirm('¿Desea continuar de todos modos?', false)) {
+            if (! $this->confirm('¿Desea continuar de todos modos?', false)) {
                 return;
             }
         }
@@ -125,6 +126,14 @@ class MigrateLegacyData extends Command
         $this->info('Recuerde ejecutar los seeders adicionales si es necesario:');
         $this->line(' - php artisan db:seed --class=AsignaturaSeeder');
         $this->line(' - php artisan db:seed --class=CargoSeeder');
+        // Las tablas se cargaron con Query Builder (truncate + insert), por lo que NO se
+        // dispararon los eventos de Eloquent. Refrescamos el versionado de los catálogos
+        // para invalidar la caché de catálogos del frontend.
+        if (Schema::hasTable('catalogo_versions')) {
+            $this->call('catalogos:touch-versions');
+        } else {
+            $this->warn('No se versionaron los catálogos: falta ejecutar la migración de catalogo_versions.');
+        }
     }
 
     /**
@@ -134,8 +143,8 @@ class MigrateLegacyData extends Command
 
     /**
      * Migra una tabla específica de legacy a default.
-     * 
-     * @param string $tableName El nombre de la tabla en la base de datos NUEVA.
+     *
+     * @param  string  $tableName  El nombre de la tabla en la base de datos NUEVA.
      */
     private function migrateTable(string $tableName): void
     {
@@ -149,18 +158,19 @@ class MigrateLegacyData extends Command
         // Mapeo de nombres de columnas (Destino => Origen Legacy)
         $columnMappings = [
             'escuela_persona' => [
-                'role_id' => 'usuario_tipo_id'
+                'role_id' => 'usuario_tipo_id',
             ],
             'propuestas' => [
-                'anio_plan_id' => 'plan_anio_id'
-            ]
+                'anio_plan_id' => 'plan_anio_id',
+            ],
         ];
 
         $legacyTableName = $tableMappings[$tableName] ?? $tableName;
 
         try {
-            if (!Schema::connection('legacy')->hasTable($legacyTableName)) {
+            if (! Schema::connection('legacy')->hasTable($legacyTableName)) {
                 $this->warn("   - Saltando: La tabla '{$legacyTableName}' no existe en la base de datos legacy.");
+
                 return;
             }
 
@@ -169,6 +179,7 @@ class MigrateLegacyData extends Command
 
             if ($legacyData->isEmpty()) {
                 $this->line("   - Tabla '{$legacyTableName}' vacía.");
+
                 return;
             }
 
@@ -191,12 +202,13 @@ class MigrateLegacyData extends Command
                         // Lógica Especial: Mapeo de Roles
                         if ($tableName === 'escuela_persona' && $column === 'role_id') {
                             $value = $this->roleMap[$value] ?? null;
-                            if (!$value)
+                            if (! $value) {
                                 return null;
+                            }
                         }
 
                         // Lógica Especial: Evitar duplicados y placeholders en emails
-                        if ($tableName === 'contactos' && $column === 'email' && !empty($value)) {
+                        if ($tableName === 'contactos' && $column === 'email' && ! empty($value)) {
                             $email = trim(strtolower($value));
                             $placeholders = ['ingresarcorreo@abc.gob.ar', 'no@tiene.com', 'sin@correo.com', 'test@test.com'];
 
@@ -249,7 +261,7 @@ class MigrateLegacyData extends Command
             $this->info("✓ Se migraron {$count} registros en '{$tableName}'.");
 
         } catch (\Exception $e) {
-            $this->error("Error en '{$tableName}': " . $e->getMessage());
+            $this->error("Error en '{$tableName}': ".$e->getMessage());
         }
     }
 }

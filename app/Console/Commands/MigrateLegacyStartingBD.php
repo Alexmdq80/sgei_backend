@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Role;
 
 class MigrateLegacyStartingBD extends Command
 {
@@ -35,11 +36,11 @@ class MigrateLegacyStartingBD extends Command
         $this->info('--- INICIANDO MIGRACIÓN DE DATOS LEGADOS ---');
 
         // Verificación de Roles (Crítico para escuela_persona)
-        $spatieRoles = \Spatie\Permission\Models\Role::all();
+        $spatieRoles = Role::all();
         if ($spatieRoles->count() <= 1) { // 'superuser' suele ser el único por defecto
             $this->warn('⚠️ La tabla de roles parece estar incompleta. Se recomienda ejecutar:');
             $this->warn('   php artisan db:seed --class=RolesAndPermissionsSeeder');
-            if (!$this->confirm('¿Desea continuar de todos modos?', false)) {
+            if (! $this->confirm('¿Desea continuar de todos modos?', false)) {
                 return;
             }
         }
@@ -102,10 +103,10 @@ class MigrateLegacyStartingBD extends Command
         ];
 
         // Pregunta si desea migrar las tablas 'espacios' y 'propuestas'
-        if (!$this->confirm('¿Desea migrar (y truncar) las tablas "espacios" y "propuestas"?', true)) {
+        if (! $this->confirm('¿Desea migrar (y truncar) las tablas "espacios" y "propuestas"?', true)) {
             $tablesToMigrate = array_values(array_filter(
                 $tablesToMigrate,
-                fn($t) => !in_array($t, ['espacios', 'propuestas'])
+                fn ($t) => ! in_array($t, ['espacios', 'propuestas'])
             ));
             $this->warn('Se omitirán las tablas "espacios" y "propuestas".');
         }
@@ -121,12 +122,21 @@ class MigrateLegacyStartingBD extends Command
         $this->info('Recuerde ejecutar los seeders adicionales si es necesario:');
         $this->line(' - php artisan db:seed --class=AsignaturaSeeder');
         $this->line(' - php artisan db:seed --class=CargoSeeder');
+
+        // Las tablas se cargaron con Query Builder (truncate + insert), por lo que NO se
+        // dispararon los eventos de Eloquent. Refrescamos el versionado de los catálogos
+        // para invalidar la caché de catálogos del frontend.
+        if (Schema::hasTable('catalogo_versions')) {
+            $this->call('catalogos:touch-versions');
+        } else {
+            $this->warn('No se versionaron los catálogos: falta ejecutar la migración de catalogo_versions.');
+        }
     }
 
     /**
      * Migra una tabla específica de legacy a default.
-     * 
-     * @param string $tableName El nombre de la tabla en la base de datos NUEVA.
+     *
+     * @param  string  $tableName  El nombre de la tabla en la base de datos NUEVA.
      */
     private function migrateTable(string $tableName): void
     {
@@ -140,15 +150,16 @@ class MigrateLegacyStartingBD extends Command
         // Mapeo de nombres de columnas (Destino => Origen Legacy)
         $columnMappings = [
             'propuestas' => [
-                'anio_plan_id' => 'plan_anio_id'
-            ]
+                'anio_plan_id' => 'plan_anio_id',
+            ],
         ];
 
         $legacyTableName = $tableMappings[$tableName] ?? $tableName;
 
         try {
-            if (!Schema::connection('legacy')->hasTable($legacyTableName)) {
+            if (! Schema::connection('legacy')->hasTable($legacyTableName)) {
                 $this->warn("   - Saltando: La tabla '{$legacyTableName}' no existe en la base de datos legacy.");
+
                 return;
             }
 
@@ -157,6 +168,7 @@ class MigrateLegacyStartingBD extends Command
 
             if ($legacyData->isEmpty()) {
                 $this->line("   - Tabla '{$legacyTableName}' vacía.");
+
                 return;
             }
 
@@ -206,7 +218,7 @@ class MigrateLegacyStartingBD extends Command
             $this->info("✓ Se migraron {$count} registros en '{$tableName}'.");
 
         } catch (\Exception $e) {
-            $this->error("Error en '{$tableName}': " . $e->getMessage());
+            $this->error("Error en '{$tableName}': ".$e->getMessage());
         }
     }
 }
