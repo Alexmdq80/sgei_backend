@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'sgei_frontend/src/pages/**'
+  - 'fe/src/pages/**'
 ---
 
 # Pages
