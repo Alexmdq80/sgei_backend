@@ -29,7 +29,7 @@ class CierreCausaRequest extends FormRequest
                 'required',
                 'string',
                 'max:150',
-                Rule::unique('cierre_causas', 'nombre')->ignore($id)
+                Rule::unique('cierre_causas', 'nombre')->ignore($id),
             ],
             'vigente' => ['nullable', 'boolean'],
         ];

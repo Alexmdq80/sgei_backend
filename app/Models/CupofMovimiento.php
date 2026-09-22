@@ -4,25 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $cupof_id
  * @property int $persona_id
  * @property string $situacion_revista
- * @property \Illuminate\Support\Carbon $fecha_inicio
- * @property \Illuminate\Support\Carbon|null $fecha_fin
+ * @property Carbon $fecha_inicio
+ * @property Carbon|null $fecha_fin
  * @property string|null $resolucion
  * @property bool $activo
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \App\Models\Cupof|null $cupof
- * @property-read \App\Models\Persona|null $persona
+ * @property Carbon|null $deleted_at
+ * @property-read Cupof|null $cupof
+ * @property-read Persona|null $persona
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CupofMovimiento newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CupofMovimiento newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CupofMovimiento onlyTrashed()
@@ -42,11 +44,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CupofMovimiento whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CupofMovimiento withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CupofMovimiento withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class CupofMovimiento extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     protected $table = 'cupof_movimientos';
 
@@ -59,13 +62,13 @@ class CupofMovimiento extends Model
         'fecha_inicio',
         'fecha_fin',
         'resolucion',
-        'activo'
+        'activo',
     ];
 
     protected $casts = [
         'fecha_inicio' => 'date',
         'fecha_fin' => 'date',
-        'activo' => 'boolean'
+        'activo' => 'boolean',
     ];
 
     /**

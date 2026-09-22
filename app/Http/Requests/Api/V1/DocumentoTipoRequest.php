@@ -29,9 +29,9 @@ class DocumentoTipoRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('documento_tipos', 'nombre')->ignore($id)
+                Rule::unique('documento_tipos', 'nombre')->ignore($id),
             ],
-            'vigente' => ['boolean']
+            'vigente' => ['boolean'],
         ];
     }
 }

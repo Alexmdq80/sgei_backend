@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Calle;
 use App\Models\CatalogoVersion;
 use App\Models\Departamento;
 use App\Models\DocumentoSituacion;
@@ -30,6 +31,7 @@ test('el manifiesto devuelve todas las claves de catálogos con su versión', fu
         'documento_situacions',
         'sexos',
         'generos',
+        'calles',
     ];
 
     $response->assertStatus(200)
@@ -39,14 +41,14 @@ test('el manifiesto devuelve todas las claves de catálogos con su versión', fu
 
     // Contrato estable con el frontend: mismas claves y en el mismo orden.
     expect(array_keys($payload))->toBe($clavesEsperadas)
-        ->and($payload)->toHaveCount(9);
+        ->and($payload)->toHaveCount(10);
 
     foreach ($payload as $clave => $version) {
         expect($version)->toBeString()->not->toBeEmpty("La versión de {$clave} está vacía");
     }
 
     // La migración deja la tabla poblada con los 9 catálogos.
-    expect(CatalogoVersion::query()->count())->toBe(9);
+    expect(CatalogoVersion::query()->count())->toBe(10);
 });
 
 test('el manifiesto se resuelve en una única consulta a catalogo_versiones', function () {
@@ -120,6 +122,10 @@ test('el trait versiona automáticamente cada catálogo maestro y no toca los de
         [
             'crear' => static fn () => Genero::create(['nombre' => 'GENERO DE PRUEBA', 'orden' => 99]),
             'afectadas' => ['generos'],
+        ],
+        [
+            'crear' => static fn () => Calle::create(['nombre' => 'CALLE DE PRUEBA']),
+            'afectadas' => ['calles'],
         ],
     ];
 

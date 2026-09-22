@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Api\V1\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class ProfileUpdateRequest extends FormRequest
 {
@@ -20,7 +20,7 @@ class ProfileUpdateRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('usuarios', 'nombre')->ignore(Auth::id())
+                Rule::unique('usuarios', 'nombre')->ignore(Auth::id()),
             ],
             'documento_tipo_id' => ['nullable', 'integer', Rule::exists('documento_tipos', 'id')],
             'documento_numero' => [
@@ -33,7 +33,7 @@ class ProfileUpdateRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('usuarios', 'email')->ignore(Auth::id())
+                Rule::unique('usuarios', 'email')->ignore(Auth::id()),
             ],
         ];
     }

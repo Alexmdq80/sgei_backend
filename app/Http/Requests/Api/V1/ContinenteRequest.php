@@ -29,9 +29,9 @@ class ContinenteRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('continentes', 'nombre')->ignore($id)
+                Rule::unique('continentes', 'nombre')->ignore($id),
             ],
-            'vigente' => ['boolean']
+            'vigente' => ['boolean'],
         ];
     }
 }

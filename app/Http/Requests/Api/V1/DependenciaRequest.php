@@ -29,7 +29,7 @@ class DependenciaRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('dependencias', 'nombre')->ignore($id)
+                Rule::unique('dependencias', 'nombre')->ignore($id),
             ],
             'vigente' => ['nullable', 'boolean'],
         ];

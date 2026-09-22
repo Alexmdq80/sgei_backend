@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\NivelRequest;
 use App\Models\Nivel;
 use App\Services\NivelService;
-use App\Http\Requests\Api\V1\NivelRequest;
 use Illuminate\Http\JsonResponse;
 
 class NivelController extends Controller
@@ -28,6 +28,7 @@ class NivelController extends Controller
     public function store(NivelRequest $request): JsonResponse
     {
         $nivel = $this->nivelService->create($request->validated());
+
         return response()->json($nivel, 201);
     }
 
@@ -45,6 +46,7 @@ class NivelController extends Controller
     public function update(NivelRequest $request, Nivel $nivel): JsonResponse
     {
         $nivel = $this->nivelService->update($nivel, $request->validated());
+
         return response()->json($nivel);
     }
 
@@ -54,6 +56,7 @@ class NivelController extends Controller
     public function destroy(Nivel $nivel): JsonResponse
     {
         $this->nivelService->delete($nivel);
+
         return response()->json(null, 204);
     }
 }

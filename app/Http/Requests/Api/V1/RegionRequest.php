@@ -20,21 +20,21 @@ class RegionRequest extends FormRequest
         return [
             'provincia_id' => ['required', Rule::exists('provincias', 'id')],
             'numero' => [
-                'required', 
-                'string', 
-                'max:50', 
+                'required',
+                'string',
+                'max:50',
                 Rule::unique('regions')->where(function ($query) {
                     return $query->where('provincia_id', $this->provincia_id);
-                })->ignore($id)
+                })->ignore($id),
             ],
-            'vigente' => ['boolean']
+            'vigente' => ['boolean'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'numero.unique' => 'Ya existe una región con este número para la provincia seleccionada.'
+            'numero.unique' => 'Ya existe una región con este número para la provincia seleccionada.',
         ];
     }
 }

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\NacionRequest;
 use App\Models\Nacion;
 use App\Services\NacionService;
-use App\Http\Requests\Api\V1\NacionRequest;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class NacionController extends Controller
 {
@@ -22,8 +22,8 @@ class NacionController extends Controller
     {
         $search = $request->query('search');
         $perPage = $request->query('per_page', 15);
-        
-        return response()->json($this->nacionService->getAll($search, (int)$perPage));
+
+        return response()->json($this->nacionService->getAll($search, (int) $perPage));
     }
 
     /**
@@ -32,6 +32,7 @@ class NacionController extends Controller
     public function store(NacionRequest $request): JsonResponse
     {
         $item = $this->nacionService->create($request->validated());
+
         return response()->json($item, 201);
     }
 
@@ -49,6 +50,7 @@ class NacionController extends Controller
     public function update(NacionRequest $request, Nacion $nacion): JsonResponse
     {
         $updated = $this->nacionService->update($nacion, $request->validated());
+
         return response()->json($updated);
     }
 
@@ -58,6 +60,7 @@ class NacionController extends Controller
     public function destroy(Nacion $nacion): JsonResponse
     {
         $this->nacionService->delete($nacion);
+
         return response()->json(null, 204);
     }
 }

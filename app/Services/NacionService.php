@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use App\Models\Nacion;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class NacionService
 {
     /**
      * Get paginated nations with their continent.
      */
-    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         $query = Nacion::with('continente')
             ->orderBy('nombre');

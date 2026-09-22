@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,11 +20,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $accion_ninguna
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\HistorialInscripcion|null $historialInscripcion
- * @property-read \App\Models\SalidaMotivo|null $salidaMotivo
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read HistorialInscripcion|null $historialInscripcion
+ * @property-read SalidaMotivo|null $salidaMotivo
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionBaja newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionBaja newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionBaja onlyTrashed()
@@ -44,13 +46,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionBaja whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionBaja withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionBaja withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class InscripcionBaja extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "academic";
+    protected $auditGroup = 'academic';
 
     /**
      * The attributes that are mass assignable.
@@ -58,14 +61,14 @@ class InscripcionBaja extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "historial_inscripcion_id",
-        "salida_motivo_id",
-        "otro_motivo",
-        "accion_contacto",
-        "accion_prevencion",
-        "accion_equipo",
-        "accion_otros",
-        "accion_ninguna"
+        'historial_inscripcion_id',
+        'salida_motivo_id',
+        'otro_motivo',
+        'accion_contacto',
+        'accion_prevencion',
+        'accion_equipo',
+        'accion_otros',
+        'accion_ninguna',
     ];
 
     /**

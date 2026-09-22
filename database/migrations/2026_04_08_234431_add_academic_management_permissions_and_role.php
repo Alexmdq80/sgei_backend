@@ -1,10 +1,9 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 return new class extends Migration
 {
@@ -14,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // 1. Crear Permisos Académicos
         $permissions = [
@@ -31,7 +30,7 @@ return new class extends Migration
 
         // 3. Asignar Permisos al Supervisor Curricular
         Permission::firstOrCreate(['name' => 'institucion.ver', 'guard_name' => 'sanctum']);
-        
+
         $supervisor->givePermissionTo([
             'planes.ver',
             'planes.gestionar',
@@ -48,7 +47,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // El rollback de roles/permisos suele ser manual o destructivo, 
+        // El rollback de roles/permisos suele ser manual o destructivo,
         // pero por seguridad aquí solo removemos el rol y permisos creados.
         Permission::whereIn('name', ['planes.ver', 'planes.gestionar'])->delete();
         Role::where('name', 'supervisor_curricular')->delete();

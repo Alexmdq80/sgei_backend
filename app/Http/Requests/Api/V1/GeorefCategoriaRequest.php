@@ -29,10 +29,10 @@ class GeorefCategoriaRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('georef_categorias', 'nombre')->ignore($id)
+                Rule::unique('georef_categorias', 'nombre')->ignore($id),
             ],
             'orden' => ['nullable', 'integer'],
-            'vigente' => ['boolean']
+            'vigente' => ['boolean'],
         ];
     }
 }

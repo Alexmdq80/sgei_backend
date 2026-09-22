@@ -3,9 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,11 +14,12 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property int $modalidad_nivel_id
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Escuela|null $escuela
- * @property-read \App\Models\ModalidadNivel|null $modalidadNivel
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Escuela|null $escuela
+ * @property-read ModalidadNivel|null $modalidadNivel
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaModalidadNivel newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaModalidadNivel newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaModalidadNivel onlyTrashed()
@@ -32,11 +34,12 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaModalidadNivel whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaModalidadNivel withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaModalidadNivel withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class EscuelaModalidadNivel extends Pivot
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -44,8 +47,8 @@ class EscuelaModalidadNivel extends Pivot
      * @var array<int, string>
      */
     protected $fillable = [
-        "escuela_id",
-        "modalidad_nivel_id"
+        'escuela_id',
+        'modalidad_nivel_id',
     ];
 
     /**

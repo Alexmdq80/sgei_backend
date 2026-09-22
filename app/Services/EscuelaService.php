@@ -2,23 +2,26 @@
 
 namespace App\Services;
 
-use App\Models\Escuela;
-use App\Models\Usuario;
-use App\Models\Persona;
-use App\Models\EscuelaPersona;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use App\DTOs\Escuela\CreateEscuelaDTO;
 use App\DTOs\Escuela\UpdateEscuelaDTO;
+use App\Models\Escuela;
+use App\Models\EscuelaPersona;
+use App\Models\Persona;
+use App\Models\Usuario;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class EscuelaService
 {
     public const HIERARCHICAL_ROLES = Usuario::ROLES_EQUIPO_CONDUCCION;
+
     /**
      * Get schools with search and filters.
      */
-    public function search(string $term = null, array $filters = []): Collection
+    public function search(?string $term = null, array $filters = []): Collection
     {
         $query = Escuela::query()
             ->select(['id', 'nombre', 'numero', 'cue_anexo', 'localidad_id', 'ambito_id', 'dependencia_id', 'sector_id', 'domicilio'])
@@ -34,8 +37,9 @@ class EscuelaService
 
         if ($filters) {
             foreach ($filters as $field => $value) {
-                if (!$value)
+                if (! $value) {
                     continue;
+                }
 
                 if ($field === 'departamento_id') {
                     $query->whereHas('localidad', function ($q) use ($value) {
@@ -64,14 +68,14 @@ class EscuelaService
      * Get all schools for admin panel with optional district filter, level, sector and pagination size.
      */
     public function getAllAdmin(
-        string $search = null,
+        ?string $search = null,
         ?int $departamentoId = null,
         int $perPage = 20,
         ?int $nivelId = null,
         ?int $sectorId = null,
         ?int $provinciaId = null,
         ?int $regionId = null
-    ): \Illuminate\Pagination\LengthAwarePaginator {
+    ): LengthAwarePaginator {
         $query = Escuela::with(['localidad.departamento', 'ambito', 'dependencia', 'sector']);
 
         if ($search) {
@@ -138,7 +142,7 @@ class EscuelaService
             ]);
 
             // Manejo opcional de niveles/modalidades via pivot si se envían
-            if (!empty($dto->modalidadesNivelesIds)) {
+            if (! empty($dto->modalidadesNivelesIds)) {
                 $escuela->modalidadesNiveles()->sync($dto->modalidadesNivelesIds);
             }
 
@@ -156,30 +160,42 @@ class EscuelaService
         return DB::transaction(function () use ($escuela, $dto) {
             $updateData = [];
 
-            if ($dto->nombre !== null)
+            if ($dto->nombre !== null) {
                 $updateData['nombre'] = $dto->nombre;
-            if ($dto->numero !== null)
+            }
+            if ($dto->numero !== null) {
                 $updateData['numero'] = $dto->numero;
-            if ($dto->cueAnexo !== null)
+            }
+            if ($dto->cueAnexo !== null) {
                 $updateData['cue_anexo'] = $dto->cueAnexo;
-            if ($dto->claveProvincial !== null)
+            }
+            if ($dto->claveProvincial !== null) {
                 $updateData['clave_provincial'] = $dto->claveProvincial;
-            if ($dto->localidadId !== null)
+            }
+            if ($dto->localidadId !== null) {
                 $updateData['localidad_id'] = $dto->localidadId;
-            if ($dto->ambitoId !== null)
+            }
+            if ($dto->ambitoId !== null) {
                 $updateData['ambito_id'] = $dto->ambitoId;
-            if ($dto->dependenciaId !== null)
+            }
+            if ($dto->dependenciaId !== null) {
                 $updateData['dependencia_id'] = $dto->dependenciaId;
-            if ($dto->sectorId !== null)
+            }
+            if ($dto->sectorId !== null) {
                 $updateData['sector_id'] = $dto->sectorId;
-            if ($dto->domicilio !== null)
+            }
+            if ($dto->domicilio !== null) {
                 $updateData['domicilio'] = $dto->domicilio;
-            if ($dto->telefono !== null)
+            }
+            if ($dto->telefono !== null) {
                 $updateData['telefono'] = $dto->telefono;
-            if ($dto->email !== null)
+            }
+            if ($dto->email !== null) {
                 $updateData['email'] = $dto->email;
-            if ($dto->codigoPostal !== null)
+            }
+            if ($dto->codigoPostal !== null) {
                 $updateData['codigo_postal'] = $dto->codigoPostal;
+            }
 
             $updateData['updated_by'] = auth()->id();
 
@@ -207,23 +223,23 @@ class EscuelaService
     public function validateAssignmentPermissions(int $escuelaId, int $roleId): void
     {
         $admin = auth()->user();
-        if (!$admin) {
-            throw new \Exception("Usuario no autenticado", 401);
+        if (! $admin) {
+            throw new \Exception('Usuario no autenticado', 401);
         }
 
         $isSuperUser = $admin->hasRole('superuser');
-        $role = \Spatie\Permission\Models\Role::findOrFail($roleId);
+        $role = Role::findOrFail($roleId);
 
         // NUNCA permitir asignar el rol de superuser a través de viculaciones escolares
         if ($role->name === 'superuser') {
-            throw new \Exception("El rol de Superusuario no puede ser asignado institucionalmente.", 403);
+            throw new \Exception('El rol de Superusuario no puede ser asignado institucionalmente.', 403);
         }
 
         $isTargetHierarchical = in_array($role->name, self::HIERARCHICAL_ROLES);
 
         // 2. Equipo de Conducción NO puede asignar cargos jerárquicos
         if ($isTargetHierarchical) {
-            throw new \Exception("Esta acción está reservada para el Superusuario.", 403);
+            throw new \Exception('Esta acción está reservada para el Superusuario.', 403);
         }
 
         // 3. Verificar si el admin tiene rol jerárquico en la escuela destino
@@ -237,8 +253,8 @@ class EscuelaService
             ->whereNotNull('verified_at')
             ->exists();
 
-        if (!$isAdminHierarchicalInSchool) {
-            throw new \Exception("No tienes autoridad (rol jerárquico) en esta institución para realizar asignaciones.", 403);
+        if (! $isAdminHierarchicalInSchool) {
+            throw new \Exception('No tienes autoridad (rol jerárquico) en esta institución para realizar asignaciones.', 403);
         }
     }
 
@@ -251,18 +267,19 @@ class EscuelaService
         $this->validateAssignmentPermissions($escuelaId, $roleId);
 
         $persona = $target instanceof Persona ? $target : $target->persona;
-        if (!$persona)
-            throw new \Exception("La persona o usuario no tiene un registro de persona válido.", 422);
+        if (! $persona) {
+            throw new \Exception('La persona o usuario no tiene un registro de persona válido.', 422);
+        }
 
         $link = EscuelaPersona::updateOrCreate(
             [
                 'persona_id' => $persona->id,
                 'escuela_id' => $escuelaId,
-                'role_id' => $roleId
+                'role_id' => $roleId,
             ],
             [
                 'verified_at' => now(),
-                'updated_by' => auth()->id()
+                'updated_by' => auth()->id(),
             ]
         );
 
@@ -280,8 +297,9 @@ class EscuelaService
     public function joinSchool(Usuario $user, int $escuelaId, int $roleId): EscuelaPersona
     {
         $persona = $user->persona;
-        if (!$persona)
-            throw new \Exception("El usuario no tiene una persona vinculada.", 422);
+        if (! $persona) {
+            throw new \Exception('El usuario no tiene una persona vinculada.', 422);
+        }
 
         // Check if already linked or pending
         $existing = EscuelaPersona::where('persona_id', $persona->id)
@@ -289,7 +307,7 @@ class EscuelaService
             ->first();
 
         if ($existing) {
-            throw new \Exception("Ya tienes una solicitud activa o vinculación con esta institución.", 422);
+            throw new \Exception('Ya tienes una solicitud activa o vinculación con esta institución.', 422);
         }
 
         return EscuelaPersona::create([
@@ -297,7 +315,7 @@ class EscuelaService
             'persona_id' => $persona->id,
             'escuela_id' => $escuelaId,
             'role_id' => $roleId,
-            'verified_at' => null // Pending admin confirmation
+            'verified_at' => null, // Pending admin confirmation
         ]);
     }
 
@@ -307,8 +325,9 @@ class EscuelaService
     public function cancelJoinRequest(Usuario $user, int $escuelaId): bool
     {
         $persona = $user->persona;
-        if (!$persona)
-            throw new \Exception("El usuario no tiene una persona vinculada.", 404);
+        if (! $persona) {
+            throw new \Exception('El usuario no tiene una persona vinculada.', 404);
+        }
 
         $link = EscuelaPersona::where('persona_id', $persona->id)
             ->where('escuela_id', $escuelaId)

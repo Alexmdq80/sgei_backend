@@ -29,7 +29,7 @@ class ModalidadRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('modalidads', 'nombre')->ignore($id)
+                Rule::unique('modalidads', 'nombre')->ignore($id),
             ],
             'vigente' => ['nullable', 'boolean'],
         ];

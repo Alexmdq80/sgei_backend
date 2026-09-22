@@ -3,69 +3,72 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Persona;
-use Illuminate\Http\Request;
 use App\Http\Resources\PersonaResource;
+use App\Models\Persona;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 class ComunidadEducativaController extends Controller
 {
     /**
      * Lista a toda la comunidad educativa vinculada a una escuela.
      *
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Http\JsonResponse
+     * @return AnonymousResourceCollection|JsonResponse
      */
     public function index(Request $request)
     {
         $schoolId = $request->input('escuela_id');
         $relacionFilter = $request->input('relacion');
 
-        if (!$schoolId) {
+        if (! $schoolId) {
             return response()->json(['error' => 'Debe especificar una institución educativa.'], 422);
         }
 
         // Validar permisos
-        \Illuminate\Support\Facades\Gate::authorize('view-comunidad', (int)$schoolId);
+        Gate::authorize('view-comunidad', (int) $schoolId);
 
         $query = Persona::with([
-            'documentoTipo', 
-            'usuario', 
-            'nacionalidad', 
-            'genero', 
+            'documentoTipo',
+            'usuario',
+            'nacionalidad',
+            'genero',
             'contacto',
-            'movimientosCupofActivos' => function($q) use ($schoolId) {
-                $q->whereHas('cupof', function($sq) use ($schoolId) {
+            'movimientosCupofActivos' => function ($q) use ($schoolId) {
+                $q->whereHas('cupof', function ($sq) use ($schoolId) {
                     $sq->where('escuela_id', $schoolId);
                 })->with(['cupof.escalafon', 'cupof.puestoTipo']);
             },
-            'inscripcion' => function($q) use ($schoolId) {
+            'inscripcion' => function ($q) use ($schoolId) {
                 $q->where('escuela_id', $schoolId);
             },
-            'vinculosComoAdulto' => function($q) use ($schoolId) {
-                $q->whereHas('inscripcion', function($sq) use ($schoolId) {
+            'vinculosComoAdulto' => function ($q) use ($schoolId) {
+                $q->whereHas('inscripcion', function ($sq) use ($schoolId) {
                     $sq->where('escuela_id', $schoolId);
                 });
-            }
+            },
         ])
-            ->where(function($q) use ($schoolId, $relacionFilter) {
+            ->where(function ($q) use ($schoolId, $relacionFilter) {
                 if ($relacionFilter) {
                     $this->applyRelacionFilter($q, $schoolId, $relacionFilter);
                 } else {
                     // 1. Personal de la escuela (CUPOF activo)
-                    $q->whereHas('movimientosCupof', function($sq) use ($schoolId) {
+                    $q->whereHas('movimientosCupof', function ($sq) use ($schoolId) {
                         $sq->where('activo', true)
-                          ->whereHas('cupof', function($ssq) use ($schoolId) {
-                              $ssq->where('escuela_id', $schoolId);
-                          });
+                            ->whereHas('cupof', function ($ssq) use ($schoolId) {
+                                $ssq->where('escuela_id', $schoolId);
+                            });
                     });
 
                     // 2. Alumnos inscritos (Inscripcion)
-                    $q->orWhereHas('inscripcion', function($sq) use ($schoolId) {
+                    $q->orWhereHas('inscripcion', function ($sq) use ($schoolId) {
                         $sq->where('escuela_id', $schoolId);
                     });
 
                     // 3. Familiares vinculados a alumnos de la escuela
-                    $q->orWhereHas('vinculosComoAdulto', function($sq) use ($schoolId) {
-                        $sq->whereHas('inscripcion', function($ssq) use ($schoolId) {
+                    $q->orWhereHas('vinculosComoAdulto', function ($sq) use ($schoolId) {
+                        $sq->whereHas('inscripcion', function ($ssq) use ($schoolId) {
                             $ssq->where('escuela_id', $schoolId);
                         });
                     });
@@ -75,10 +78,10 @@ class ComunidadEducativaController extends Controller
         // Búsqueda opcional
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
-                  ->orWhere('apellido', 'like', "%{$search}%")
-                  ->orWhere('documento_numero', 'like', "%{$search}%");
+                    ->orWhere('apellido', 'like', "%{$search}%")
+                    ->orWhere('documento_numero', 'like', "%{$search}%");
             });
         }
 
@@ -95,17 +98,17 @@ class ComunidadEducativaController extends Controller
         $relacion = mb_strtolower($relacion, 'UTF-8');
 
         if (str_contains($relacion, 'docente') || str_contains($relacion, 'auxiliar') || str_contains($relacion, 'administrativo')) {
-            $query->whereHas('movimientosCupof', function($q) use ($schoolId, $relacion) {
+            $query->whereHas('movimientosCupof', function ($q) use ($schoolId, $relacion) {
                 $q->where('activo', true)
-                  ->whereHas('cupof', function($sq) use ($schoolId, $relacion) {
-                      $sq->where('escuela_id', $schoolId)
-                        ->whereHas('escalafon', function($ssq) use ($relacion) {
-                            $ssq->where('nombre', 'like', "%{$relacion}%");
-                        });
-                  });
+                    ->whereHas('cupof', function ($sq) use ($schoolId, $relacion) {
+                        $sq->where('escuela_id', $schoolId)
+                            ->whereHas('escalafon', function ($ssq) use ($relacion) {
+                                $ssq->where('nombre', 'like', "%{$relacion}%");
+                            });
+                    });
             });
         } elseif ($relacion === 'estudiante') {
-            $query->whereHas('inscripcion', function($q) use ($schoolId) {
+            $query->whereHas('inscripcion', function ($q) use ($schoolId) {
                 $q->where('escuela_id', $schoolId);
             });
         } else {
@@ -113,14 +116,14 @@ class ComunidadEducativaController extends Controller
             // Debemos verificar que la persona tenga ese tipo de vínculo con AL MENOS UN estudiante de esta escuela.
             $query->whereExists(function ($ex) use ($schoolId, $relacion) {
                 $ex->select(\DB::raw(1))
-                   ->from('persona_vinculo_persona')
-                   ->join('vinculos', 'persona_vinculo_persona.vinculo_id', '=', 'vinculos.id')
-                   ->join('inscripcions', 'persona_vinculo_persona.persona_estudiante_id', '=', 'inscripcions.persona_id')
-                   ->whereColumn('persona_vinculo_persona.persona_adulto_id', 'personas.id')
-                   ->where('inscripcions.escuela_id', $schoolId)
-                   ->where('vinculos.nombre', 'like', "%{$relacion}%")
-                   ->whereNull('persona_vinculo_persona.deleted_at')
-                   ->whereNull('inscripcions.deleted_at');
+                    ->from('persona_vinculo_persona')
+                    ->join('vinculos', 'persona_vinculo_persona.vinculo_id', '=', 'vinculos.id')
+                    ->join('inscripcions', 'persona_vinculo_persona.persona_estudiante_id', '=', 'inscripcions.persona_id')
+                    ->whereColumn('persona_vinculo_persona.persona_adulto_id', 'personas.id')
+                    ->where('inscripcions.escuela_id', $schoolId)
+                    ->where('vinculos.nombre', 'like', "%{$relacion}%")
+                    ->whereNull('persona_vinculo_persona.deleted_at')
+                    ->whereNull('inscripcions.deleted_at');
             });
         }
     }

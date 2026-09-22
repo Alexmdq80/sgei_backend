@@ -26,7 +26,7 @@ class UsuarioResource extends JsonResource
                     $loads[] = 'persona.escuelasPersonas.role';
                 }
             }
-            if (!empty($loads)) {
+            if (! empty($loads)) {
                 $this->resource->loadMissing($loads);
             }
         }
@@ -44,19 +44,19 @@ class UsuarioResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
             'avatar_url' => $this->avatar_path
-                ? url("/api/v1/usuarios/{$this->id}/avatar") . '?v=' . ($this->updated_at?->timestamp ?? time())
+                ? url("/api/v1/usuarios/{$this->id}/avatar").'?v='.($this->updated_at?->timestamp ?? time())
                 : null,
             'roles' => RoleResource::collection($this->whenLoaded('roles')),
             'permissions' => $this->when(
                 $this->relationLoaded('permissions') || $this->relationLoaded('roles'),
-                fn() => $this->getAllPermissions()->pluck('name')
+                fn () => $this->getAllPermissions()->pluck('name')
             ),
             'documento_tipo' => $this->whenLoaded('documentoTipo'),
             'persona' => new PersonaResource($this->whenLoaded('persona')),
             'escuelas_personas' => $this->when(
                 $this->relationLoaded('persona') && $this->persona?->relationLoaded('escuelasPersonas'),
-                fn() => EscuelaPersonaResource::collection($this->persona->escuelasPersonas)
-            )
+                fn () => EscuelaPersonaResource::collection($this->persona->escuelasPersonas)
+            ),
         ];
     }
 }

@@ -2,30 +2,31 @@
 
 namespace App\Services;
 
-use App\Models\Usuario;
 use App\Models\AuthenticationAudit;
 use App\Models\RefreshToken;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Validation\ValidationException;
+use App\Models\Usuario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
     /**
      * Authenticate a user and create a token.
      *
-     * @param array<string, mixed> $credentials
-     * @param Request $request
+     * @param  array<string, mixed>  $credentials
+     * @param  Request  $request
      * @return array<string, mixed>
+     *
      * @throws ValidationException
      */
     public function __construct(
         protected UserService $userService
-    ) {
-    }
+    ) {}
 
     public function login(array $credentials, Request $request): array
     {
@@ -38,10 +39,10 @@ class AuthService
             $request->session()->regenerateToken();
         }
 
-        if (!Auth::guard('web')->attempt($credentials)) {
+        if (! Auth::guard('web')->attempt($credentials)) {
             $this->auditLogin($identifier, 'login_failed', $request);
 
-            \Illuminate\Support\Facades\Log::warning('Login fallido:', ['identifier' => $identifier]);
+            Log::warning('Login fallido:', ['identifier' => $identifier]);
 
             throw ValidationException::withMessages([
                 'login' => ['Las credenciales proporcionadas son incorrectas.'],
@@ -52,11 +53,11 @@ class AuthService
         /** @var Usuario $usuario */
         $usuario = Auth::guard('web')->user();
 
-        if (!$usuario) {
+        if (! $usuario) {
             throw new \Exception('Error crítico: No se pudo recuperar el usuario tras autenticación exitosa.');
         }
 
-        /* 
+        /*
         // VERIFICACIÓN DE EMAIL OBLIGATORIA (Comentado para permitir acceso al Perfil post-registro)
         if (!$usuario->hasVerifiedEmail()) {
             Auth::guard('web')->logout();
@@ -67,16 +68,16 @@ class AuthService
             ])->status(401);
         }
         */
-        \Illuminate\Support\Facades\Log::info('Login exitoso:', [
+        Log::info('Login exitoso:', [
             'identifier' => $identifier,
             'user_id' => $usuario->id,
-            'user_email' => $usuario->email
+            'user_email' => $usuario->email,
         ]);
 
-        \Illuminate\Support\Facades\Log::info('Login attempt successful', [
+        Log::info('Login attempt successful', [
             'attempted_identifier' => $identifier,
             'actual_user_email' => $usuario->email,
-            'actual_user_id' => $usuario->id
+            'actual_user_id' => $usuario->id,
         ]);
 
         if ($request->hasSession()) {
@@ -91,7 +92,7 @@ class AuthService
         return [
             'user' => $usuario,
             'token' => $token,
-            'refresh_token' => $refreshToken->token
+            'refresh_token' => $refreshToken->token,
         ];
     }
 
@@ -104,7 +105,7 @@ class AuthService
             'usuario_id' => $user->id,
             'token' => Str::random(64),
             'expires_at' => now()->addDays(7), // Long-lived (7 days)
-            'device_id' => request()->userAgent() // Simple device tracking
+            'device_id' => request()->userAgent(), // Simple device tracking
         ]);
     }
 
@@ -117,7 +118,7 @@ class AuthService
             ->where('expires_at', '>', now())
             ->first();
 
-        if (!$refreshToken) {
+        if (! $refreshToken) {
             throw ValidationException::withMessages([
                 'refresh_token' => ['El token de refresco es inválido o ha expirado.'],
             ])->status(401);
@@ -134,7 +135,7 @@ class AuthService
 
         return [
             'token' => $newAccessToken,
-            'refresh_token' => $newRefreshToken->token
+            'refresh_token' => $newRefreshToken->token,
         ];
     }
 
@@ -163,11 +164,11 @@ class AuthService
             $credentials,
             function (Usuario $user, string $password) {
                 $updates = [
-                    'password' => Hash::make($password)
+                    'password' => Hash::make($password),
                 ];
 
                 // Si el email no estaba verificado, la recuperación por email sirve como verificación
-                if (!$user->hasVerifiedEmail()) {
+                if (! $user->hasVerifiedEmail()) {
                     $updates['email_verified_at'] = now();
                     $updates['verification_token'] = null;
 
@@ -176,7 +177,7 @@ class AuthService
                     }
                 }
 
-                $user->forceFill($updates)->setRememberToken(\Illuminate\Support\Str::random(60));
+                $user->forceFill($updates)->setRememberToken(Str::random(60));
                 $user->save();
 
                 // Intentar vinculación con el padrón
@@ -195,7 +196,6 @@ class AuthService
 
         return __($status);
     }
-
 
     /**
      * Log out and invalidate the session.
@@ -225,12 +225,6 @@ class AuthService
 
     /**
      * Record an authentication attempt in the audit table.
-     *
-     * @param string $identifier
-     * @param string $event
-     * @param Request $request
-     * @param Usuario|null $usuario
-     * @return void
      */
     protected function auditLogin(string $identifier, string $event, Request $request, ?Usuario $usuario = null): void
     {
@@ -242,8 +236,8 @@ class AuthService
             'url' => $request->fullUrl(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'details' => !str_contains($identifier, '@') ? ['identifier' => $identifier] : null,
-            'audit_driver' => 'authentication'
+            'details' => ! str_contains($identifier, '@') ? ['identifier' => $identifier] : null,
+            'audit_driver' => 'authentication',
         ]);
     }
 }

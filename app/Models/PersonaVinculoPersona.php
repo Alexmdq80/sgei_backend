@@ -3,9 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,15 +14,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $persona_adulto_id
  * @property int $vinculo_id
  * @property string|null $detalle
- * @property \Illuminate\Support\Carbon|null $vencimiento_fecha
+ * @property Carbon|null $vencimiento_fecha
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Persona|null $adulto
- * @property-read \App\Models\Persona|null $estudiante
- * @property-read \App\Models\Vinculo|null $vinculo
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Persona|null $adulto
+ * @property-read Persona|null $estudiante
+ * @property-read Vinculo|null $vinculo
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PersonaVinculoPersona newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PersonaVinculoPersona newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PersonaVinculoPersona onlyTrashed()
@@ -39,18 +41,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PersonaVinculoPersona whereVinculoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PersonaVinculoPersona withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PersonaVinculoPersona withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class PersonaVinculoPersona extends Pivot
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = "persona_vinculo_persona";
+    protected $table = 'persona_vinculo_persona';
 
     /**
      * The attributes that are mass assignable.
@@ -58,11 +61,11 @@ class PersonaVinculoPersona extends Pivot
      * @var array<int, string>
      */
     protected $fillable = [
-        "persona_estudiante_id",
-        "persona_adulto_id",
-        "vinculo_id",
-        "detalle",
-        "vencimiento_fecha"
+        'persona_estudiante_id',
+        'persona_adulto_id',
+        'vinculo_id',
+        'detalle',
+        'vencimiento_fecha',
     ];
 
     /**
@@ -71,7 +74,7 @@ class PersonaVinculoPersona extends Pivot
      * @var array<string, string>
      */
     protected $casts = [
-        'vencimiento_fecha' => 'datetime'
+        'vencimiento_fecha' => 'datetime',
     ];
 
     /**
@@ -87,7 +90,7 @@ class PersonaVinculoPersona extends Pivot
      */
     public function estudiante(): BelongsTo
     {
-        return $this->belongsTo(Persona::class, "persona_estudiante_id");
+        return $this->belongsTo(Persona::class, 'persona_estudiante_id');
     }
 
     /**
@@ -95,6 +98,6 @@ class PersonaVinculoPersona extends Pivot
      */
     public function adulto(): BelongsTo
     {
-        return $this->belongsTo(Persona::class, "persona_adulto_id");
+        return $this->belongsTo(Persona::class, 'persona_adulto_id');
     }
 }

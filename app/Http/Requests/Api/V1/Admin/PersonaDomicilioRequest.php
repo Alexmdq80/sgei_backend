@@ -37,6 +37,7 @@ class PersonaDomicilioRequest extends FormRequest
             'observaciones' => ['nullable', 'string', 'max:1000'],
         ];
     }
+
     /**
      * Validación cruzada de jerarquía geográfica (contrato estricto de escritura):
      * - departamento ⇒ requiere provincia
@@ -48,7 +49,6 @@ class PersonaDomicilioRequest extends FormRequest
      * nivel para evitar registros parciales incoherentes. La lectura sigue
      * tolerando datos parciales (solo país / solo provincia).
      */
-
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $v): void {
@@ -61,20 +61,20 @@ class PersonaDomicilioRequest extends FormRequest
             $hayLocalidad = filled($data['localidad_id'] ?? null);
 
             // Si el país vino explícitamente en null, no puede haber geografía subnacional.
-            if ($nacionExplicita && !$hayNacion && ($hayProvincia || $hayDepartamento || $hayLocalidad)) {
+            if ($nacionExplicita && ! $hayNacion && ($hayProvincia || $hayDepartamento || $hayLocalidad)) {
                 $v->errors()->add(
                     'nacion_id',
                     'Debe indicarse el país cuando se informa provincia, departamento o localidad.'
                 );
             }
-            if ($hayDepartamento && !$hayProvincia) {
+            if ($hayDepartamento && ! $hayProvincia) {
                 $v->errors()->add(
                     'provincia_id',
                     'Debe indicarse la provincia cuando se informa el departamento.'
                 );
             }
 
-            if ($hayLocalidad && !$hayDepartamento) {
+            if ($hayLocalidad && ! $hayDepartamento) {
                 $v->errors()->add(
                     'departamento_id',
                     'Debe indicarse el departamento cuando se informa la localidad.'

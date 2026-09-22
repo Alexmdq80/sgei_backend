@@ -2,16 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\Persona;
-use App\Models\Usuario;
+use App\DTOs\Cupof\CreateCupofDTO;
 use App\Models\Cupof;
 use App\Models\CupofMovimiento;
+use App\Models\EscuelaPersona;
+use App\Models\Persona;
+use App\Models\Usuario;
 use App\Notifications\CupofAssignmentNotification;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Collection;
-use App\DTOs\Cupof\CreateCupofDTO;
+use Spatie\Permission\Models\Role;
 
 class CupofService
 {
@@ -21,8 +23,9 @@ class CupofService
     public function getAllCupofs(array $filters = []): Collection
     {
         $user = auth()->user();
-        if (!$user)
+        if (! $user) {
             return collect();
+        }
 
         $isSuperUser = $user->hasRole('superuser');
         $query = Cupof::with(['escuela', 'asignatura', 'escalafon', 'puestoTipo', 'movimientoActivo.persona']);
@@ -35,7 +38,7 @@ class CupofService
         else {
             $schoolIds = $user->escuelasPersonas()
                 ->whereHas('role', function ($q) {
-                    $q->whereIn('name', \App\Services\EscuelaService::HIERARCHICAL_ROLES);
+                    $q->whereIn('name', EscuelaService::HIERARCHICAL_ROLES);
                 })
                 ->whereNotNull('verified_at')
                 ->pluck('escuela_id');
@@ -43,43 +46,43 @@ class CupofService
             $query->whereIn('escuela_id', $schoolIds);
         }
 
-        if (isset($filters['escuela_id']) && !empty($filters['escuela_id'])) {
+        if (isset($filters['escuela_id']) && ! empty($filters['escuela_id'])) {
             $query->where('escuela_id', $filters['escuela_id']);
         }
 
-        if (isset($filters['estado_cupof']) && !empty($filters['estado_cupof'])) {
+        if (isset($filters['estado_cupof']) && ! empty($filters['estado_cupof'])) {
             $query->where('estado_cupof', $filters['estado_cupof']);
         }
 
-        if (isset($filters['escalafon_id']) && !empty($filters['escalafon_id'])) {
+        if (isset($filters['escalafon_id']) && ! empty($filters['escalafon_id'])) {
             $query->where('escalafon_id', $filters['escalafon_id']);
         }
 
-        if (isset($filters['localidad_id']) && !empty($filters['localidad_id'])) {
+        if (isset($filters['localidad_id']) && ! empty($filters['localidad_id'])) {
             $query->whereHas('escuela', function ($q) use ($filters) {
                 $q->where('localidad_id', $filters['localidad_id']);
             });
         }
 
-        if (isset($filters['nivel_id']) && !empty($filters['nivel_id'])) {
+        if (isset($filters['nivel_id']) && ! empty($filters['nivel_id'])) {
             $query->whereHas('escuela.modalidadesNiveles', function ($q) use ($filters) {
                 $q->where('nivel_id', $filters['nivel_id']);
             });
         }
 
-        if (isset($filters['sector_id']) && !empty($filters['sector_id'])) {
+        if (isset($filters['sector_id']) && ! empty($filters['sector_id'])) {
             $query->whereHas('escuela', function ($q) use ($filters) {
                 $q->where('sector_id', $filters['sector_id']);
             });
         }
 
-        if (isset($filters['numero']) && !empty($filters['numero'])) {
+        if (isset($filters['numero']) && ! empty($filters['numero'])) {
             $query->whereHas('escuela', function ($q) use ($filters) {
                 $q->where('numero', $filters['numero']);
             });
         }
 
-        if (isset($filters['school_name']) && !empty($filters['school_name'])) {
+        if (isset($filters['school_name']) && ! empty($filters['school_name'])) {
             $query->whereHas('escuela', function ($q) use ($filters) {
                 $q->where('nombre', 'like', "%{$filters['school_name']}%");
             });
@@ -148,7 +151,7 @@ class CupofService
 
         if ($email) {
             try {
-                $personaNombre = $persona->nombre . ' ' . $persona->apellido;
+                $personaNombre = $persona->nombre.' '.$persona->apellido;
                 if ($persona->usuario) {
                     $persona->usuario->notify(new CupofAssignmentNotification($cupof, $details['situacion_revista'], $personaNombre));
                 } else {
@@ -157,14 +160,14 @@ class CupofService
                 }
                 $notificationSent = true;
             } catch (\Exception $e) {
-                Log::error("Error enviando notificación de asignación CUPOF: " . $e->getMessage());
+                Log::error('Error enviando notificación de asignación CUPOF: '.$e->getMessage());
             }
         }
 
         return [
             'movimiento' => $movimiento,
             'notification_sent' => $notificationSent,
-            'email_found' => !empty($email)
+            'email_found' => ! empty($email),
         ];
     }
 
@@ -181,14 +184,14 @@ class CupofService
             // 1. Deactivate current occupant
             $cupof->movimientos()->where('activo', true)->update([
                 'activo' => false,
-                'fecha_fin' => now()
+                'fecha_fin' => now(),
             ]);
 
             // 2. Update CUPOF status
             $status = $motivoBaja ? 'baja' : 'disponible';
             $updated = $cupof->update([
                 'estado_cupof' => $status,
-                'motivo_baja' => $motivoBaja
+                'motivo_baja' => $motivoBaja,
             ]);
 
             // 3. Sync/Revoke School-User Link if persona exists
@@ -206,16 +209,18 @@ class CupofService
     private function validateHierarchicalAccess(string $nombreCargo, ?int $escuelaId = null): void
     {
         $user = auth()->user();
-        if (!$user)
-            throw new \Exception("Usuario no autenticado", 401);
+        if (! $user) {
+            throw new \Exception('Usuario no autenticado', 401);
+        }
 
         // Bypass for Superusers: Total access
-        if ($user->hasRole('superuser'))
+        if ($user->hasRole('superuser')) {
             return;
+        }
 
         $isHierarchical = false;
         $nombreCargoLower = mb_strtolower($nombreCargo, 'UTF-8');
-        foreach (\App\Services\EscuelaService::HIERARCHICAL_ROLES as $role) {
+        foreach (EscuelaService::HIERARCHICAL_ROLES as $role) {
             if (str_contains($nombreCargoLower, $role)) {
                 $isHierarchical = true;
                 break;
@@ -230,8 +235,9 @@ class CupofService
     private function syncEscuelaPersona(Cupof $cupof, Persona $persona, bool $isRelease = false): void
     {
         $usuario = $persona->usuario;
-        if (!$usuario)
+        if (! $usuario) {
             return;
+        }
 
         $escuelaId = $cupof->escuela_id;
 
@@ -244,15 +250,16 @@ class CupofService
                 })
                 ->exists();
 
-            if (!$hasOtherCupofs) {
+            if (! $hasOtherCupofs) {
                 // If no more CUPOFs, we mark the link as inactive (Soft Delete or verified_at null)
-                \App\Models\EscuelaPersona::where('persona_id', $persona->id)
+                EscuelaPersona::where('persona_id', $persona->id)
                     ->where('escuela_id', $escuelaId)
                     ->update(['verified_at' => null]);
             } else {
                 // Recalculate highest role if still has positions
                 $this->refreshUserRoleInSchool($usuario, $escuelaId, $persona);
             }
+
             return;
         }
 
@@ -267,8 +274,9 @@ class CupofService
     public function syncAllRolesFromCupof(Usuario $usuario): void
     {
         $persona = $usuario->persona;
-        if (!$persona)
+        if (! $persona) {
             return;
+        }
 
         $schoolIds = $persona->movimientosCupofActivos()
             ->join('cupofs', 'cupof_movimientos.cupof_id', '=', 'cupofs.id')
@@ -290,27 +298,29 @@ class CupofService
             $q->where('persona_id', $persona->id)->where('activo', true);
         })->where('escuela_id', $escuelaId)->get();
 
-        if ($activeCupofs->isEmpty())
+        if ($activeCupofs->isEmpty()) {
             return;
+        }
 
-        $uniqueRolesInSchool = $activeCupofs->map(fn($c) => $this->mapCupofToRole($c))->unique();
+        $uniqueRolesInSchool = $activeCupofs->map(fn ($c) => $this->mapCupofToRole($c))->unique();
 
         // 2. Map role names to Role IDs
-        $roleIds = \Spatie\Permission\Models\Role::whereIn('name', $uniqueRolesInSchool)
+        $roleIds = Role::whereIn('name', $uniqueRolesInSchool)
             ->where('guard_name', 'sanctum')
             ->pluck('id', 'name');
 
         // 3. For each unique role, ensure a verified link exists in escuela_usuario
         foreach ($uniqueRolesInSchool as $roleName) {
             $roleId = $roleIds[$roleName] ?? null;
-            if (!$roleId)
+            if (! $roleId) {
                 continue;
+            }
 
-            \App\Models\EscuelaPersona::updateOrCreate(
+            EscuelaPersona::updateOrCreate(
                 [
                     'persona_id' => $persona->id,
                     'escuela_id' => $escuelaId,
-                    'role_id' => $roleId
+                    'role_id' => $roleId,
                 ],
                 [
                     'verified_at' => now(), // Auto-verify administrative assignments
@@ -320,7 +330,7 @@ class CupofService
 
         // 4. Cleanup: Remove roles that the user NO LONGER has in this school via CUPOF
         $rolesToKeep = $roleIds->values()->toArray();
-        \App\Models\EscuelaPersona::where('persona_id', $persona->id)
+        EscuelaPersona::where('persona_id', $persona->id)
             ->where('escuela_id', $escuelaId)
             ->whereNotNull('role_id')
             ->whereNotIn('role_id', $rolesToKeep)
@@ -342,25 +352,32 @@ class CupofService
         $tipoPuesto = mb_strtolower($cupof->puestoTipo?->nombre ?? '', 'UTF-8');
         $escalafon = mb_strtolower($cupof->escalafon?->nombre ?? '', 'UTF-8');
 
-        $searchString = $cargo . ' ' . $tipoPuesto . ' ' . $escalafon;
+        $searchString = $cargo.' '.$tipoPuesto.' '.$escalafon;
 
         // Check hierarchical titles
-        if (str_contains($searchString, 'director'))
+        if (str_contains($searchString, 'director')) {
             return 'director';
-        if (str_contains($searchString, 'vice'))
+        }
+        if (str_contains($searchString, 'vice')) {
             return 'vicedirector';
-        if (str_contains($searchString, 'secretario'))
+        }
+        if (str_contains($searchString, 'secretario')) {
             return 'secretario';
-        if (str_contains($searchString, 'prosecretario'))
+        }
+        if (str_contains($searchString, 'prosecretario')) {
             return 'prosecretario';
-        if (str_contains($searchString, 'preceptor'))
+        }
+        if (str_contains($searchString, 'preceptor')) {
             return 'preceptor';
+        }
 
         // Fallback to escalafon
-        if (str_contains($escalafon, 'docente'))
+        if (str_contains($escalafon, 'docente')) {
             return 'profesor';
-        if (str_contains($escalafon, 'auxiliar'))
+        }
+        if (str_contains($escalafon, 'auxiliar')) {
             return 'auxiliar';
+        }
 
         return 'profesor';
     }

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Services\CargoService;
 use App\Http\Requests\Api\V1\CargoRequest;
 use App\Models\Cargo;
+use App\Services\CargoService;
 use Illuminate\Http\JsonResponse;
 
 class CargoController extends Controller
@@ -28,6 +28,7 @@ class CargoController extends Controller
     public function store(CargoRequest $request): JsonResponse
     {
         $cargo = $this->cargoService->store($request->validated());
+
         return response()->json($cargo, 201);
     }
 
@@ -45,6 +46,7 @@ class CargoController extends Controller
     public function update(CargoRequest $request, Cargo $cargo): JsonResponse
     {
         $updatedCargo = $this->cargoService->update($cargo, $request->validated());
+
         return response()->json($updatedCargo);
     }
 
@@ -54,6 +56,7 @@ class CargoController extends Controller
     public function destroy(Cargo $cargo): JsonResponse
     {
         $this->cargoService->delete($cargo);
+
         return response()->json(null, 204);
     }
 }

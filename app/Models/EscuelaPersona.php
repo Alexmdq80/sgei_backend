@@ -2,27 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
 
 /**
  * @property string $id
  * @property int $escuela_id
  * @property int $persona_id
- * @property \Illuminate\Support\Carbon|null $verified_at
+ * @property Carbon|null $verified_at
  * @property int|null $role_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property-read \App\Models\Escuela|null $escuela
- * @property-read \App\Models\Persona|null $persona
+ * @property-read Escuela|null $escuela
+ * @property-read Persona|null $persona
  * @property-read Role|null $role
+ *
  * @method static \Database\Factories\EscuelaPersonaFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaPersona newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaPersona newQuery()
@@ -40,11 +42,12 @@ use Spatie\Permission\Models\Role;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaPersona whereVerifiedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaPersona withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaPersona withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class EscuelaPersona extends Model
 {
-    use SoftDeletes, HasUuids, HasFactory, AuditableTrait;
+    use AuditableTrait, HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'escuela_persona';
 
@@ -60,17 +63,17 @@ class EscuelaPersona extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        "id",
-        "escuela_id",
-        "persona_id",
-        "verified_at",
-        "role_id",
-        "created_by",
-        "updated_by"
+        'id',
+        'escuela_id',
+        'persona_id',
+        'verified_at',
+        'role_id',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
-       'verified_at' => 'datetime'
+        'verified_at' => 'datetime',
     ];
 
     public function escuela(): BelongsTo

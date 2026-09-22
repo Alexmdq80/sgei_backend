@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -20,18 +22,19 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $cantidad
  * @property string $estado_cupof
  * @property string|null $motivo_baja
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \App\Models\Asignatura|null $asignatura
- * @property-read \App\Models\Escalafon|null $escalafon
- * @property-read \App\Models\Escuela|null $escuela
- * @property-read \App\Models\CupofMovimiento|null $movimientoActivo
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CupofMovimiento> $movimientos
+ * @property Carbon|null $deleted_at
+ * @property-read Asignatura|null $asignatura
+ * @property-read Escalafon|null $escalafon
+ * @property-read Escuela|null $escuela
+ * @property-read CupofMovimiento|null $movimientoActivo
+ * @property-read Collection<int, CupofMovimiento> $movimientos
  * @property-read int|null $movimientos_count
- * @property-read \App\Models\PuestoTipo|null $puestoTipo
+ * @property-read PuestoTipo|null $puestoTipo
+ *
  * @method static \Database\Factories\CupofFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cupof newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cupof newQuery()
@@ -54,11 +57,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cupof whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cupof withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cupof withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Cupof extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     protected $auditGroup = 'entities';
 
@@ -71,7 +75,7 @@ class Cupof extends Model
         'nombre_cargo',
         'cantidad',
         'estado_cupof',
-        'motivo_baja'
+        'motivo_baja',
     ];
 
     /**

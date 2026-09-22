@@ -29,7 +29,7 @@ class TurnoRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('turnos', 'nombre')->ignore($id)
+                Rule::unique('turnos', 'nombre')->ignore($id),
             ],
             'orden' => ['nullable', 'integer'],
         ];

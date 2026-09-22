@@ -23,7 +23,7 @@ test('can get authenticated user profile', function () {
                 'nombre' => $this->user->nombre,
                 'documento_numero' => $this->user->documento_numero,
                 'email' => $this->user->email,
-            ]
+            ],
         ]);
 });
 
@@ -99,12 +99,11 @@ test('can update authenticated user avatar', function () {
     expect($this->user->avatar_path)->not->toBeNull();
 
     // The filename should start with user_id_ and end with .jpg
-    expect($this->user->avatar_path)->toStartWith('avatars/' . $this->user->id . '_');
+    expect($this->user->avatar_path)->toStartWith('avatars/'.$this->user->id.'_');
     expect($this->user->avatar_path)->toEndWith('.jpg');
 
     Storage::disk('local')->assertExists($this->user->avatar_path);
 });
-
 
 test('old avatar is deleted when updating a new one', function () {
     Storage::fake('local');
@@ -128,10 +127,9 @@ test('old avatar is deleted when updating a new one', function () {
 
     $this->user->refresh();
     Storage::disk('local')->assertExists($this->user->avatar_path);
-    expect($this->user->avatar_path)->toStartWith('avatars/' . $this->user->id . '_');
+    expect($this->user->avatar_path)->toStartWith('avatars/'.$this->user->id.'_');
     expect($this->user->avatar_path)->toEndWith('.png');
 });
-
 
 test('cannot upload invalid avatar file', function () {
     Storage::fake('local');
@@ -180,7 +178,7 @@ test('cannot update password with incorrect current password', function () {
     $response->assertStatus(400)
         ->assertJson([
             'error' => 'La contraseña actual es incorrecta.',
-            'code' => 400
+            'code' => 400,
         ]);
 });
 

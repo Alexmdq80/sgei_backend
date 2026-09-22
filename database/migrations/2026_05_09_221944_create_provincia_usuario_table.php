@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('provincia_id')->constrained('provincias')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Auditoría
             $table->foreignUuid('created_by')->nullable()->constrained('usuarios');
             $table->foreignUuid('updated_by')->nullable()->constrained('usuarios');

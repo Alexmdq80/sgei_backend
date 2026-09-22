@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -15,15 +17,16 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property int|null $escuela_tipo_id
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\EscuelaTipo|null $escuelaTipo
- * @property-read \App\Models\EscuelaModalidadNivel|null $pivot
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Escuela> $escuelas
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read EscuelaTipo|null $escuelaTipo
+ * @property-read EscuelaModalidadNivel|null $pivot
+ * @property-read Collection<int, Escuela> $escuelas
  * @property-read int|null $escuelas_count
- * @property-read \App\Models\Modalidad|null $modalidad
- * @property-read \App\Models\Nivel|null $nivel
+ * @property-read Modalidad|null $modalidad
+ * @property-read Nivel|null $nivel
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ModalidadNivel newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ModalidadNivel newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ModalidadNivel onlyTrashed()
@@ -39,11 +42,12 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ModalidadNivel whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ModalidadNivel withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ModalidadNivel withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class ModalidadNivel extends Pivot
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -58,9 +62,9 @@ class ModalidadNivel extends Pivot
      * @var array<int, string>
      */
     protected $fillable = [
-        "nivel_id",
-        "modalidad_id",
-        "escuela_tipo_id"
+        'nivel_id',
+        'modalidad_id',
+        'escuela_tipo_id',
     ];
 
     /**
@@ -93,6 +97,6 @@ class ModalidadNivel extends Pivot
     public function escuelas(): BelongsToMany
     {
         return $this->belongsToMany(Escuela::class)
-                    ->using(EscuelaModalidadNivel::class);
+            ->using(EscuelaModalidadNivel::class);
     }
 }

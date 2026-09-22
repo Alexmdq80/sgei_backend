@@ -7,7 +7,7 @@ use App\Models\PlanCiclo;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Plan>
+ * @extends Factory<Plan>
  */
 class PlanFactory extends Factory
 {
@@ -25,7 +25,7 @@ class PlanFactory extends Factory
             'nombre' => $this->faker->words(4, true),
             'nombre_completo' => $this->faker->sentence(10),
             'duracion_anios' => $this->faker->numberBetween(1, 6),
-            'resolucion' => 'Res. ' . $this->faker->numberBetween(100, 999) . '/' . $this->faker->year(),
+            'resolucion' => 'Res. '.$this->faker->numberBetween(100, 999).'/'.$this->faker->year(),
             'orientacion' => $this->faker->word(),
         ];
     }

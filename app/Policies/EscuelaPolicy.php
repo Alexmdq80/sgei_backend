@@ -46,7 +46,7 @@ class EscuelaPolicy
 
         return $usuario->persona?->escuelasPersonas()
             ->where('escuela_id', $escuela->id)
-            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
+            ->whereHas('role', fn ($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at')
             ->exists() ?? false;
     }

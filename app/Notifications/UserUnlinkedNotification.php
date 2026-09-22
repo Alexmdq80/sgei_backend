@@ -12,6 +12,7 @@ class UserUnlinkedNotification extends Notification implements ShouldQueue
     use Queueable;
 
     protected string $personaNombre;
+
     protected string $personaApellido;
 
     public function __construct(string $personaNombre, string $personaApellido)
@@ -29,7 +30,7 @@ class UserUnlinkedNotification extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject('Vinculación revocada - SGEI')
-            ->greeting('¡Hola, ' . $notifiable->nombre . '!')
+            ->greeting('¡Hola, '.$notifiable->nombre.'!')
             ->line('Tu cuenta de usuario ha sido desvinculada de tu registro en el padrón.')
             ->line("**Persona desvinculada:** {$this->personaApellido}, {$this->personaNombre}")
             ->line('Tu estado ha sido actualizado. Si crees que esto es un error, por favor comunícate con la administración.')

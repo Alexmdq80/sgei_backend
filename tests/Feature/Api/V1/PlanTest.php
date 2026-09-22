@@ -3,8 +3,8 @@
 use App\Models\Plan;
 use App\Models\PlanCiclo;
 use App\Models\Usuario;
-use Tests\ProvidesRoles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\ProvidesRoles;
 
 uses(RefreshDatabase::class, ProvidesRoles::class);
 
@@ -92,4 +92,3 @@ test('la creacion de plan requiere campos obligatorios', function () {
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['nombre', 'nombre_completo', 'duracion_anios', 'plan_ciclo_id']);
 });
-

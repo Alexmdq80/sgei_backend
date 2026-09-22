@@ -10,6 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 readonly class CreateUserDTO
 {
     public int $documentoTipoId;
+
     public string $documentoNumero;
 
     public function __construct(
@@ -41,6 +42,7 @@ readonly class CreateUserDTO
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
         $data = array_merge($request->validated(), $overrides);
+
         return self::fromArray($data);
     }
 
@@ -68,8 +70,8 @@ readonly class CreateUserDTO
             'email' => $this->email,
             // Extraemos el string crudo del VO — nunca pasamos el objeto a Eloquent
             'documento_tipo_id' => $this->documentoIdentidad->tipoId(),
-            'documento_numero'  => $this->documentoIdentidad->numero(),
-            'es_administrador'  => $this->esAdministrador,
+            'documento_numero' => $this->documentoIdentidad->numero(),
+            'es_administrador' => $this->esAdministrador,
         ];
 
         if ($this->password !== null) {

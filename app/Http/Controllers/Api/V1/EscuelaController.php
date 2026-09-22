@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Nivel;
+use App\Models\Sector;
 use App\Services\EscuelaService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class EscuelaController extends Controller
 {
@@ -24,14 +26,14 @@ class EscuelaController extends Controller
         try {
             $term = $request->query('search');
             $filters = $request->only(['provincia_id', 'departamento_id', 'localidad_id', 'nivel_id', 'sector_id', 'numero']);
-            
+
             $escuelas = $this->escuelaService->search($term, $filters);
 
             return response()->json($escuelas);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error al buscar escuelas',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -41,7 +43,8 @@ class EscuelaController extends Controller
      */
     public function niveles(): JsonResponse
     {
-        $niveles = \App\Models\Nivel::where('vigente', true)->orderBy('id')->get(['id', 'nombre']);
+        $niveles = Nivel::where('vigente', true)->orderBy('id')->get(['id', 'nombre']);
+
         return response()->json($niveles);
     }
 
@@ -50,7 +53,8 @@ class EscuelaController extends Controller
      */
     public function sectores(): JsonResponse
     {
-        $sectores = \App\Models\Sector::where('vigente', true)->orderBy('nombre')->get(['id', 'nombre']);
+        $sectores = Sector::where('vigente', true)->orderBy('nombre')->get(['id', 'nombre']);
+
         return response()->json($sectores);
     }
 }

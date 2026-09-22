@@ -29,7 +29,7 @@ class PuestoTipoRequest extends FormRequest
                 'required',
                 'string',
                 'max:150',
-                Rule::unique('puesto_tipos', 'nombre')->ignore($id)
+                Rule::unique('puesto_tipos', 'nombre')->ignore($id),
             ],
             'orden' => ['nullable', 'integer'],
             'vigente' => ['boolean'],

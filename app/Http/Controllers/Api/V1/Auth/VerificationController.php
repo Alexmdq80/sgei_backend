@@ -3,20 +3,19 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Usuario;
-use App\Services\UserService;
-use App\Http\Requests\Api\V1\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
-
 use App\Http\Requests\Api\V1\Auth\CompleteSetupRequest;
+use App\Http\Requests\Api\V1\Auth\EmailVerificationRequest;
 use App\Http\Requests\Api\V1\Auth\ResendActivationRequest;
+use App\Models\Usuario;
 use App\Notifications\AccountInvitationNotification;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use App\Notifications\VerifyEmailNotification;
+use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class VerificationController extends Controller
 {
@@ -37,7 +36,7 @@ class VerificationController extends Controller
         if ($user->hasVerifiedEmail() || $user->estado === 'activo') {
             return response()->json([
                 'message' => 'Esta cuenta ya está activa.',
-                'code' => 200
+                'code' => 200,
             ]);
         }
 
@@ -55,7 +54,7 @@ class VerificationController extends Controller
 
         return response()->json([
             'message' => 'Se ha enviado un nuevo enlace de activación a tu correo electrónico.',
-            'code' => 200
+            'code' => 200,
         ]);
     }
 
@@ -70,7 +69,7 @@ class VerificationController extends Controller
         if ($user->verification_token !== $request->token) {
             return response()->json([
                 'error' => 'Token de activación inválido.',
-                'code' => 400
+                'code' => 400,
             ], 400);
         }
 
@@ -78,7 +77,7 @@ class VerificationController extends Controller
         if ($user->isVerificationTokenExpired()) {
             return response()->json([
                 'error' => 'El enlace de activación ha expirado.',
-                'code' => 400
+                'code' => 400,
             ], 400);
         }
 
@@ -93,7 +92,7 @@ class VerificationController extends Controller
 
         return response()->json([
             'message' => 'Cuenta activada con éxito. Ya puedes iniciar sesión.',
-            'code' => 200
+            'code' => 200,
         ]);
     }
 
@@ -108,7 +107,7 @@ class VerificationController extends Controller
         if ($user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'El correo electrónico ya ha sido verificado.',
-                'code' => 200
+                'code' => 200,
             ]);
         }
 
@@ -116,7 +115,7 @@ class VerificationController extends Controller
         if ($user->verification_token !== $request->token) {
             return response()->json([
                 'message' => 'Token de verificación inválido.',
-                'code' => 400
+                'code' => 400,
             ], 400);
         }
 
@@ -124,7 +123,7 @@ class VerificationController extends Controller
         if ($user->isVerificationTokenExpired()) {
             return response()->json([
                 'message' => 'El enlace de verificación ha expirado. Por favor, solicita uno nuevo.',
-                'code' => 400
+                'code' => 400,
             ], 400);
         }
 
@@ -132,7 +131,7 @@ class VerificationController extends Controller
 
         return response()->json([
             'message' => 'Correo electrónico verificado con éxito.',
-            'code' => 200
+            'code' => 200,
         ]);
     }
 
@@ -146,7 +145,7 @@ class VerificationController extends Controller
         if ($user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'El correo electrónico ya ha sido verificado.',
-                'code' => 200
+                'code' => 200,
             ]);
         }
 
@@ -154,7 +153,7 @@ class VerificationController extends Controller
 
         return response()->json([
             'message' => 'Se ha enviado un nuevo enlace de verificación a tu correo electrónico.',
-            'code' => 200
+            'code' => 200,
         ]);
     }
 }

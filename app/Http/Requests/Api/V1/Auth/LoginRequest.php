@@ -17,17 +17,17 @@ class LoginRequest extends FormRequest
         return [
             'email' => [
                 'required_without_all:documento_tipo_id,documento_numero',
-                'email'
+                'email',
             ],
             'documento_tipo_id' => [
                 'required_without:email',
                 'integer',
-                Rule::exists('documento_tipos', 'id')
+                Rule::exists('documento_tipos', 'id'),
             ],
             'documento_numero' => [
                 'required_without:email',
                 'numeric',
-                'digits_between:7,15'
+                'digits_between:7,15',
             ],
             'password' => ['required', 'string'],
         ];

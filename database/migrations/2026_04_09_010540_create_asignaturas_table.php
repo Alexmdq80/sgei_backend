@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('horas_semanales')->default(0);
             $table->string('codigo')->nullable();
             $table->integer('orden')->default(0);
-            
+
             // Auditoría y Sistema
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();

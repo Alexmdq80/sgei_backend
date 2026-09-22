@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\Usuario;
 use App\Models\Persona;
+use App\Models\Usuario;
 use App\Policies\Concerns\HasSuperUserAccess;
 
 class UsuarioPolicy
@@ -123,7 +123,7 @@ class UsuarioPolicy
             return false;
         }
 
-        if (!$model->persona) {
+        if (! $model->persona) {
             return false;
         }
 
@@ -149,7 +149,7 @@ class UsuarioPolicy
             return false;
         }
 
-        if (!$persona->vive_si) {
+        if (! $persona->vive_si) {
             return false;
         }
 
@@ -158,7 +158,7 @@ class UsuarioPolicy
         $dniCoincide = $persona->documento_tipo_id == $model->documento_tipo_id
             && $documentoNumeroRaw == $model->documento_numero;
 
-        if (!$emailCoincide || !$dniCoincide) {
+        if (! $emailCoincide || ! $dniCoincide) {
             return false;
         }
 
@@ -169,6 +169,7 @@ class UsuarioPolicy
 
         return false;
     }
+
     /**
      * Verifica si una persona está bajo la jurisdicción del performer.
      */
@@ -176,6 +177,7 @@ class UsuarioPolicy
     {
         return false;
     }
+
     /**
      * Determine whether the user can view a target user's avatar.
      */
@@ -201,6 +203,4 @@ class UsuarioPolicy
 
         return false;
     }
-
-
 }

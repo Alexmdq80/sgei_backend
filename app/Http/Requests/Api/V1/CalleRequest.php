@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,7 +31,7 @@ class CalleRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -41,33 +42,33 @@ class CalleRequest extends FormRequest
             'nombre' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
             'localidad_censal_id' => [
                 'required',
-                Rule::exists('localidad_censals', 'id')
+                Rule::exists('localidad_censals', 'id'),
             ],
             'id_georef' => [
                 'nullable',
                 'string',
                 'max:255',
-                Rule::unique('calles', 'id_georef')->ignore($id)
+                Rule::unique('calles', 'id_georef')->ignore($id),
             ],
             'altura_inicio_derecha' => [
                 'nullable',
-                'integer'
+                'integer',
             ],
             'altura_inicio_izquierda' => [
                 'nullable',
-                'integer'
+                'integer',
             ],
             'altura_fin_derecha' => [
                 'nullable',
-                'integer'
+                'integer',
             ],
             'altura_fin_izquierda' => [
                 'nullable',
-                'integer'
+                'integer',
             ],
         ];
     }

@@ -2,12 +2,11 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\AnioPlan;
 use App\Models\Plan;
 use App\Models\Usuario;
-use App\Models\Ambito;
-use App\Models\AnioPlan;
-use Tests\ProvidesRoles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\ProvidesRoles;
 
 uses(RefreshDatabase::class, ProvidesRoles::class);
 
@@ -22,7 +21,7 @@ beforeEach(function () {
     $this->director = Usuario::factory()->create(['estado' => 'activo']);
     $this->director->assignRole('director');
 
-        // Profesor institucional (sin permisos curriculares)
+    // Profesor institucional (sin permisos curriculares)
     $this->profesor = Usuario::factory()->create(['estado' => 'activo']);
     $this->profesor->assignRole('profesor');
 
@@ -44,7 +43,7 @@ test('roles restringidos no pueden acceder a los endpoints del Panel General', f
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/admin/ambitos');
 
-                // El middleware block_panel_general rechaza con 403 antes de llegar al controlador/validación.
+        // El middleware block_panel_general rechaza con 403 antes de llegar al controlador/validación.
         $response->assertStatus(403);
     }
 });
@@ -85,11 +84,10 @@ test('profesor no puede gestionar planes ni asignaturas', function () {
             'plan_ciclo_id' => $plan->plan_ciclo_id,
         ])->assertStatus(403);
 
-        $this->actingAs($this->profesor, 'sanctum')
+    $this->actingAs($this->profesor, 'sanctum')
         ->postJson('/api/v1/asignaturas', [
             'nombre' => 'Física',
             'anio_plan_id' => $this->anioPlan->id,
             'horas_semanales' => 4,
         ])->assertStatus(403);
 });
-

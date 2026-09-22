@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,10 +18,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $orden
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\AnioPlan|null $anioPlan
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read AnioPlan|null $anioPlan
+ *
  * @method static \Database\Factories\AsignaturaFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Asignatura newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Asignatura newQuery()
@@ -40,13 +42,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Asignatura whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Asignatura withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Asignatura withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Asignatura extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "academic";
+    protected $auditGroup = 'academic';
 
     /**
      * The attributes that are mass assignable.
@@ -54,12 +57,12 @@ class Asignatura extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "nombre",
-        "nombre_completo",
-        "anio_plan_id",
-        "horas_semanales",
-        "codigo",
-        "orden"
+        'nombre',
+        'nombre_completo',
+        'anio_plan_id',
+        'horas_semanales',
+        'codigo',
+        'orden',
     ];
 
     /**

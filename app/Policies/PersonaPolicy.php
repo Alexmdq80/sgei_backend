@@ -37,7 +37,7 @@ class PersonaPolicy
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
         return $usuario->persona?->escuelasPersonas()
-            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
+            ->whereHas('role', fn ($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at')
             ->exists() ?? false;
     }
@@ -68,6 +68,7 @@ class PersonaPolicy
     {
         return false;
     }
+
     /**
      * Determine whether the user can view a Persona's profile photo.
      * Superuser, directivos de sus escuelas, o el usuario vinculado.
@@ -77,7 +78,7 @@ class PersonaPolicy
         // Superuser ya autorizado por before()
         if (
             $usuario->persona?->escuelasPersonas()
-                ->whereHas('role', fn($q) => $q->whereIn('name', Usuario::ROLES_EQUIPO_CONDUCCION))
+                ->whereHas('role', fn ($q) => $q->whereIn('name', Usuario::ROLES_EQUIPO_CONDUCCION))
                 ->whereNotNull('verified_at')
                 ->exists()
         ) {
@@ -86,5 +87,4 @@ class PersonaPolicy
 
         return $persona->usuario_id !== null && $usuario->id === $persona->usuario_id;
     }
-
 }

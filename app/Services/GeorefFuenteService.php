@@ -16,7 +16,7 @@ class GeorefFuenteService
         $query = GeorefFuente::query()->orderBy('nombre');
 
         if ($search) {
-            $query->where('nombre', 'LIKE', "%" . mb_strtoupper($search) . "%");
+            $query->where('nombre', 'LIKE', '%'.mb_strtoupper($search).'%');
         }
 
         return $perPage > 0 ? $query->paginate($perPage) : $query->get();

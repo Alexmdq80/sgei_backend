@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -25,27 +26,28 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $proyecto_inclusion_si
  * @property int $concurre_especial_si
  * @property int $asistente_externo_si
- * @property \Illuminate\Support\Carbon|null $fecha
+ * @property Carbon|null $fecha
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\InscripcionBaja|null $baja
- * @property-read \App\Models\Condicion|null $condicion
- * @property-read \App\Models\Escuela|null $escuelaProcedencia
- * @property-read \App\Models\Espacio|null $espacio
- * @property-read \App\Models\InscripcionFinalizado|null $finalizado
- * @property-read \App\Models\HistorialInfoInscripcion|null $info
- * @property-read \App\Models\Inscripcion|null $inscripcion
- * @property-read \App\Models\Modalidad|null $modalidadProcedencia
- * @property-read \App\Models\Nivel|null $nivelProcedencia
- * @property-read \App\Models\InscripcionPase|null $pase
- * @property-read \App\Models\Persona|null $persona
- * @property-read \App\Models\Persona|null $personaFirma
- * @property-read \App\Models\PersonaVinculoPersona|null $vinculoPersona_1
- * @property-read \App\Models\PersonaVinculoPersona|null $vinculoPersona_2
- * @property-read \App\Models\PersonaVinculoPersona|null $vinculoPersona_3
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read InscripcionBaja|null $baja
+ * @property-read Condicion|null $condicion
+ * @property-read Escuela|null $escuelaProcedencia
+ * @property-read Espacio|null $espacio
+ * @property-read InscripcionFinalizado|null $finalizado
+ * @property-read HistorialInfoInscripcion|null $info
+ * @property-read Inscripcion|null $inscripcion
+ * @property-read Modalidad|null $modalidadProcedencia
+ * @property-read Nivel|null $nivelProcedencia
+ * @property-read InscripcionPase|null $pase
+ * @property-read Persona|null $persona
+ * @property-read Persona|null $personaFirma
+ * @property-read PersonaVinculoPersona|null $vinculoPersona_1
+ * @property-read PersonaVinculoPersona|null $vinculoPersona_2
+ * @property-read PersonaVinculoPersona|null $vinculoPersona_3
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion onlyTrashed()
@@ -74,13 +76,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInscripcion withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class HistorialInscripcion extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "academic";
+    protected $auditGroup = 'academic';
 
     /**
      * The attributes that are mass assignable.
@@ -88,22 +91,22 @@ class HistorialInscripcion extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "inscripcion_id",
-        "persona_id",
-        "persona_firma_id",
-        "espacio_id",
-        "escuela_id",
-        "nivel_id",
-        "modalidad_id",
-        "condicion_id",
-        "persona_vinculo_persona_1_id",
-        "persona_vinculo_persona_2_id",
-        "persona_vinculo_persona_3_id",
-        "codigo_abc",
-        "proyecto_inclusion_si",
-        "concurre_especial_si",
-        "asistente_externo_si",
-        "fecha"
+        'inscripcion_id',
+        'persona_id',
+        'persona_firma_id',
+        'espacio_id',
+        'escuela_id',
+        'nivel_id',
+        'modalidad_id',
+        'condicion_id',
+        'persona_vinculo_persona_1_id',
+        'persona_vinculo_persona_2_id',
+        'persona_vinculo_persona_3_id',
+        'codigo_abc',
+        'proyecto_inclusion_si',
+        'concurre_especial_si',
+        'asistente_externo_si',
+        'fecha',
     ];
 
     /**
@@ -112,7 +115,7 @@ class HistorialInscripcion extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'fecha' => 'datetime'
+        'fecha' => 'datetime',
     ];
 
     /**
@@ -136,7 +139,7 @@ class HistorialInscripcion extends Model
      */
     public function personaFirma(): BelongsTo
     {
-        return $this->belongsTo(Persona::class, "persona_firma_id", "id");
+        return $this->belongsTo(Persona::class, 'persona_firma_id', 'id');
     }
 
     /**
@@ -152,7 +155,7 @@ class HistorialInscripcion extends Model
      */
     public function escuelaProcedencia(): BelongsTo
     {
-        return $this->belongsTo(Escuela::class, "escuela_id");
+        return $this->belongsTo(Escuela::class, 'escuela_id');
     }
 
     /**
@@ -160,7 +163,7 @@ class HistorialInscripcion extends Model
      */
     public function nivelProcedencia(): BelongsTo
     {
-        return $this->belongsTo(Nivel::class, "nivel_id");
+        return $this->belongsTo(Nivel::class, 'nivel_id');
     }
 
     /**
@@ -168,7 +171,7 @@ class HistorialInscripcion extends Model
      */
     public function modalidadProcedencia(): BelongsTo
     {
-        return $this->belongsTo(Modalidad::class, "modalidad_id");
+        return $this->belongsTo(Modalidad::class, 'modalidad_id');
     }
 
     /**
@@ -184,7 +187,7 @@ class HistorialInscripcion extends Model
      */
     public function vinculoPersona_1(): BelongsTo
     {
-        return $this->belongsTo(PersonaVinculoPersona::class, "persona_vinculo_persona_1_id", "id");
+        return $this->belongsTo(PersonaVinculoPersona::class, 'persona_vinculo_persona_1_id', 'id');
     }
 
     /**
@@ -192,7 +195,7 @@ class HistorialInscripcion extends Model
      */
     public function vinculoPersona_2(): BelongsTo
     {
-        return $this->belongsTo(PersonaVinculoPersona::class, "persona_vinculo_persona_2_id", "id");
+        return $this->belongsTo(PersonaVinculoPersona::class, 'persona_vinculo_persona_2_id', 'id');
     }
 
     /**
@@ -200,7 +203,7 @@ class HistorialInscripcion extends Model
      */
     public function vinculoPersona_3(): BelongsTo
     {
-        return $this->belongsTo(PersonaVinculoPersona::class, "persona_vinculo_persona_3_id", "id");
+        return $this->belongsTo(PersonaVinculoPersona::class, 'persona_vinculo_persona_3_id', 'id');
     }
 
     /**

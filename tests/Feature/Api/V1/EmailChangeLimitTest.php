@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Usuario;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use App\Notifications\VerifyEmailNotification;
 
 uses(RefreshDatabase::class);
 
@@ -32,11 +32,11 @@ test('user can change email up to limit', function () {
         expect($this->user->email)->toBe($newEmail);
         expect($this->user->email_correction_attempts)->toBe($i);
         expect($this->user->email_verified_at)->toBeNull();
-        
+
         // Re-verificar para que el middleware no bloquee la siguiente iteración
         $this->user->email_verified_at = now();
         $this->user->save();
-        
+
         Notification::assertSentTo($this->user, VerifyEmailNotification::class);
     }
 
@@ -47,8 +47,8 @@ test('user can change email up to limit', function () {
     ]);
 
     $response->assertStatus(422)
-             ->assertJsonValidationErrors(['email']);
-             
+        ->assertJsonValidationErrors(['email']);
+
     $this->user->refresh();
     expect($this->user->email)->toBe('change3@example.com');
     expect($this->user->email_correction_attempts)->toBe(3);
@@ -58,7 +58,7 @@ test('administrator can bypass email change limit', function () {
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
     $admin = Usuario::factory()->create(['es_administrador' => true]);
     $admin->assignRole('superuser');
-    
+
     $targetUser = Usuario::factory()->create([
         'email' => 'limit@example.com',
         'email_correction_attempts' => 3, // Already at limit

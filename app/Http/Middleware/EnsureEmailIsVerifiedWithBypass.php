@@ -3,22 +3,22 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class EnsureEmailIsVerifiedWithBypass
 {
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
@@ -33,7 +33,7 @@ class EnsureEmailIsVerifiedWithBypass
             return response()->json([
                 'error' => 'Tu dirección de correo electrónico no ha sido verificada.',
                 'code' => 403,
-                'require_verification' => true
+                'require_verification' => true,
             ], 403);
         }
 

@@ -10,7 +10,9 @@ use Illuminate\Foundation\Http\FormRequest;
 readonly class UpdateUserProfileDTO
 {
     public ?int $documentoTipoId;
+
     public ?string $documentoNumero;
+
     public ?DocumentoIdentidad $documentoIdentidad;
 
     public function __construct(
@@ -39,6 +41,7 @@ readonly class UpdateUserProfileDTO
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
         $data = array_merge($request->validated(), $overrides);
+
         return self::fromArray($data);
     }
 
@@ -49,7 +52,7 @@ readonly class UpdateUserProfileDTO
             email: isset($data['email']) ? (string) $data['email'] : null,
             documentoTipoId: isset($data['documento_tipo_id']) ? (int) $data['documento_tipo_id'] : null,
             documentoNumero: isset($data['documento_numero']) ? (string) $data['documento_numero'] : null,
-            password: isset($data['password']) && !empty($data['password']) ? (string) $data['password'] : null,
+            password: isset($data['password']) && ! empty($data['password']) ? (string) $data['password'] : null,
         );
     }
 

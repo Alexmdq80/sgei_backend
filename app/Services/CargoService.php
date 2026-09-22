@@ -40,6 +40,7 @@ class CargoService
     public function update(Cargo $cargo, array $data): Cargo
     {
         $cargo->update($data);
+
         return $cargo;
     }
 

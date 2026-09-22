@@ -1,17 +1,19 @@
 <?php
 
 use App\Models\Usuario;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'DocumentoTipoSeeder']);
-    \Illuminate\Support\Facades\Cache::flush();
+    Cache::flush();
     RateLimiter::clear('forgot-password');
 });
 
@@ -26,7 +28,7 @@ test('user can request a password reset link', function () {
     $response->assertStatus(200)
         ->assertJson(['message' => __('passwords.sent')]);
 
-    Notification::assertSentTo($user, \Illuminate\Auth\Notifications\ResetPassword::class);
+    Notification::assertSentTo($user, ResetPassword::class);
 });
 
 test('user cannot request password reset for non-existent email', function () {
@@ -97,4 +99,3 @@ test('password reset auto-verifies email and updates estado for unverified user'
         ->and($user->verification_token)->toBeNull()
         ->and($user->estado)->toBe('email_verificado');
 });
-

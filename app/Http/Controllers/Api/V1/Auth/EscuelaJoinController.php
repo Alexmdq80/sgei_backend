@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\EscuelaService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EscuelaJoinController extends Controller
@@ -24,7 +24,7 @@ class EscuelaJoinController extends Controller
     {
         $request->validate([
             'escuela_id' => 'required|exists:escuelas,id',
-            'role_id' => 'required|exists:roles,id'
+            'role_id' => 'required|exists:roles,id',
         ]);
 
         try {
@@ -35,12 +35,12 @@ class EscuelaJoinController extends Controller
             );
 
             return response()->json([
-                'message' => 'Solicitud enviada con éxito. Espere la aprobación del administrador.'
+                'message' => 'Solicitud enviada con éxito. Espere la aprobación del administrador.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => $e->getCode() ?: 400
+                'code' => $e->getCode() ?: 400,
             ], $e->getCode() ?: 400);
         }
     }
@@ -51,7 +51,7 @@ class EscuelaJoinController extends Controller
     public function cancelJoin(Request $request): JsonResponse
     {
         $request->validate([
-            'escuela_id' => 'required|exists:escuelas,id'
+            'escuela_id' => 'required|exists:escuelas,id',
         ]);
 
         try {
@@ -61,12 +61,12 @@ class EscuelaJoinController extends Controller
             );
 
             return response()->json([
-                'message' => 'Solicitud cancelada.'
+                'message' => 'Solicitud cancelada.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => $e->getCode() ?: 400
+                'code' => $e->getCode() ?: 400,
             ], $e->getCode() ?: 400);
         }
     }

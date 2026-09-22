@@ -3,12 +3,13 @@
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Limpiar caché de permisos
-    $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
 });
 
 test('user can login with correct credentials', function () {
@@ -77,7 +78,7 @@ test('user cannot login with incorrect document number', function () {
     $response->assertStatus(401)
         ->assertJson([
             'error' => 'Las credenciales proporcionadas son incorrectas.',
-            'code' => 401
+            'code' => 401,
         ]);
 
     $this->assertGuest();
@@ -98,7 +99,7 @@ test('user can login with document even if email is unverified', function () {
 
     $response->assertOk()
         ->assertJsonStructure([
-            'user' => ['id', 'email', 'email_verified_at']
+            'user' => ['id', 'email', 'email_verified_at'],
         ])
         ->assertJsonPath('user.email_verified_at', null);
 });
@@ -118,7 +119,7 @@ test('user cannot login with incorrect password', function () {
     $response->assertStatus(401)
         ->assertJson([
             'error' => 'Las credenciales proporcionadas son incorrectas.',
-            'code' => 401
+            'code' => 401,
         ]);
 
     $this->assertGuest();
@@ -133,7 +134,7 @@ test('user cannot login with non existent email', function () {
     $response->assertStatus(401)
         ->assertJson([
             'error' => 'Las credenciales proporcionadas son incorrectas.',
-            'code' => 401
+            'code' => 401,
         ]);
 
     $this->assertGuest();
@@ -150,13 +151,13 @@ test('user can logout', function () {
     $usuario = Usuario::factory()->create();
     $token = $usuario->createToken('test-token')->plainTextToken;
 
-    $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+    $response = $this->withHeader('Authorization', 'Bearer '.$token)
         ->postJson('/api/v1/auth/logout');
 
     $response->assertStatus(200)
         ->assertJson([
             'message' => 'Sesión cerrada correctamente.',
-            'code' => 200
+            'code' => 200,
         ]);
 
     expect($usuario->tokens)->toHaveCount(0);

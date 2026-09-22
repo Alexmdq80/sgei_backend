@@ -4,6 +4,7 @@ use App\Models\Usuario;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 
 uses(RefreshDatabase::class);
 
@@ -26,7 +27,7 @@ test('user is created with verification token and notification is sent', functio
     $response = $this->postJson('/api/v1/auth/register', $userData);
 
     $response->assertStatus(201);
-    
+
     $user = Usuario::where('email', 'test@example.com')->first();
     expect($user->verification_token)->not->toBeNull();
     expect($user->email_verified_at)->toBeNull();
@@ -46,7 +47,7 @@ test('user can verify email with valid token', function () {
     $response = $this->getJson("/api/v1/auth/verify?token=valid-token&email={$user->email}");
 
     $response->assertOk()
-             ->assertJson(['message' => 'Correo electrónico verificado con éxito.']);
+        ->assertJson(['message' => 'Correo electrónico verificado con éxito.']);
 
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
     expect($user->fresh()->verification_token)->toBeNull();
@@ -61,7 +62,7 @@ test('user cannot verify email with invalid token', function () {
     $response = $this->getJson("/api/v1/auth/verify?token=invalid-token&email={$user->email}");
 
     $response->assertStatus(400)
-             ->assertJson(['message' => 'Token de verificación inválido.']);
+        ->assertJson(['message' => 'Token de verificación inválido.']);
 
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
@@ -75,13 +76,13 @@ test('user cannot verify email with expired token', function () {
     $response = $this->getJson("/api/v1/auth/verify?token=expired-token&email={$user->email}");
 
     $response->assertStatus(400)
-             ->assertJson(['message' => 'El enlace de verificación ha expirado. Por favor, solicita uno nuevo.']);
+        ->assertJson(['message' => 'El enlace de verificación ha expirado. Por favor, solicita uno nuevo.']);
 
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
 
 test('user cannot resend verification email more than 3 times per hour', function () {
-    \Illuminate\Support\Facades\RateLimiter::clear('resend-verification');
+    RateLimiter::clear('resend-verification');
     Notification::fake();
 
     $user = Usuario::factory()->unverified()->create();
@@ -100,19 +101,19 @@ test('user cannot resend verification email more than 3 times per hour', functio
 test('unverified user can login', function () {
     $password = 'Password123!';
     $user = Usuario::factory()->unverified()->create([
-        'password' => bcrypt($password)
+        'password' => bcrypt($password),
     ]);
 
     $response = $this->postJson('/api/v1/auth/login', [
         'email' => $user->email,
-        'password' => $password
+        'password' => $password,
     ]);
 
     $response->assertOk()
-             ->assertJsonStructure([
-                 'user' => ['id', 'email', 'email_verified_at']
-             ])
-             ->assertJsonPath('user.email_verified_at', null);
+        ->assertJsonStructure([
+            'user' => ['id', 'email', 'email_verified_at'],
+        ])
+        ->assertJsonPath('user.email_verified_at', null);
 });
 
 test('user can resend verification email', function () {
@@ -124,7 +125,7 @@ test('user can resend verification email', function () {
     $response = $this->postJson('/api/v1/auth/verify/resend');
 
     $response->assertOk()
-             ->assertJson(['message' => 'Se ha enviado un nuevo enlace de verificación a tu correo electrónico.']);
+        ->assertJson(['message' => 'Se ha enviado un nuevo enlace de verificación a tu correo electrónico.']);
 
     Notification::assertSentTo(
         $user,

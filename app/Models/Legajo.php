@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,11 +17,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $legajo
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Escuela|null $escuela
- * @property-read \App\Models\Persona|null $persona
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Escuela|null $escuela
+ * @property-read Persona|null $persona
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Legajo newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Legajo newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Legajo onlyTrashed()
@@ -38,13 +40,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Legajo whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Legajo withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Legajo withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Legajo extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "entities";
+    protected $auditGroup = 'entities';
 
     /**
      * The attributes that are mass assignable.
@@ -52,11 +55,11 @@ class Legajo extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "persona_id",
-        "escuela_id",
-        "libro",
-        "folio",
-        "legajo"
+        'persona_id',
+        'escuela_id',
+        'libro',
+        'folio',
+        'legajo',
     ];
 
     /**

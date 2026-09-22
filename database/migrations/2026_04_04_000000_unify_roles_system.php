@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 
 return new class extends Migration
@@ -60,7 +60,7 @@ return new class extends Migration
                     $table->dropForeign('escuela_usuario_rol_escolar_id_foreign');
                 });
             } catch (\Exception $e) {}
-            
+
             // Finalmente borramos la columna
             try {
                 Schema::table('escuela_usuario', function (Blueprint $table) {
@@ -70,8 +70,8 @@ return new class extends Migration
         }*/
 
         Schema::dropIfExists('roles_escolares');
-        
-        //Schema::enableForeignKeyConstraints();
+
+        // Schema::enableForeignKeyConstraints();
     }
 
     public function down(): void {}

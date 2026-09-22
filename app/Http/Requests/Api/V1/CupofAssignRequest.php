@@ -18,7 +18,7 @@ class CupofAssignRequest extends FormRequest
             'persona_id' => ['required', Rule::exists('personas', 'id')],
             'situacion_revista' => ['required', Rule::in(['titular', 'provisional', 'suplente'])],
             'fecha_inicio' => ['required', 'date'],
-            'resolucion' => ['nullable', 'string']
+            'resolucion' => ['nullable', 'string'],
         ];
     }
 }

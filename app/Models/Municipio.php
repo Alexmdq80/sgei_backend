@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -21,12 +21,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $provincia_interseccion
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\GeorefCategoria|null $georefCategoria
- * @property-read \App\Models\GeorefFuente|null $georefFuente
- * @property-read \App\Models\Provincia|null $provincia
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read GeorefCategoria|null $georefCategoria
+ * @property-read GeorefFuente|null $georefFuente
+ * @property-read Provincia|null $provincia
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Municipio newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Municipio newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Municipio onlyTrashed()
@@ -48,11 +49,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Municipio whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Municipio withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Municipio withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Municipio extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -60,15 +62,15 @@ class Municipio extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "id_georef",
-        "provincia_id",
-        "georef_fuente_id",
-        "georef_categoria_id",
-        "nombre",
-        "nombre_completo",
-        "centroide_lat",
-        "centroide_lon",
-        "provincia_interseccion"
+        'id_georef',
+        'provincia_id',
+        'georef_fuente_id',
+        'georef_categoria_id',
+        'nombre',
+        'nombre_completo',
+        'centroide_lat',
+        'centroide_lon',
+        'provincia_interseccion',
     ];
 
     /**

@@ -31,8 +31,7 @@ readonly class PersonaDomicilioDTO
         public ?string $observaciones = null,
         public bool $observacionesProvided = false,
         public bool $blanquear = false,
-    ) {
-    }
+    ) {}
 
     public static function fromRequest(Request $request): self
     {
@@ -102,6 +101,7 @@ readonly class PersonaDomicilioDTO
         if ($this->observacionesProvided) {
             $data['observaciones'] = $this->observaciones;
         }
+
         return $data;
 
     }
@@ -137,6 +137,6 @@ readonly class PersonaDomicilioDTO
     /** Descarta claves null para NO pisar valores previos en la BD. */
     private function filtrarNulos(array $datos): array
     {
-        return array_filter($datos, fn($valor) => $valor !== null);
+        return array_filter($datos, fn ($valor) => $valor !== null);
     }
 }

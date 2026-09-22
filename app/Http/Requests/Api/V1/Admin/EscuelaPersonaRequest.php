@@ -17,12 +17,12 @@ class EscuelaPersonaRequest extends FormRequest
         $rules = [
             'persona_id' => ['required', 'integer', Rule::exists('personas', 'id')],
             'escuela_id' => ['required', 'integer', Rule::exists('escuelas', 'id')],
-            'role_id' => ['required', 'integer', Rule::exists('roles', 'id')]
+            'role_id' => ['required', 'integer', Rule::exists('roles', 'id')],
         ];
 
         if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
             return [
-                'role_id' => ['required', 'integer', Rule::exists('roles', 'id')]
+                'role_id' => ['required', 'integer', Rule::exists('roles', 'id')],
             ];
         }
 

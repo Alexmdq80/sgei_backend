@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\DTOs\User\UpdateUserProfileDTO;
 use App\Http\Controllers\Controller;
-use App\Services\UserService;
-use App\Http\Requests\Api\V1\Auth\ProfileUpdateRequest;
 use App\Http\Requests\Api\V1\Auth\AvatarUpdateRequest;
 use App\Http\Requests\Api\V1\Auth\PasswordUpdateRequest;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\V1\Auth\ProfileUpdateRequest;
+use App\Http\Resources\UsuarioResource;
+use App\Services\UserService;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Resources\UsuarioResource;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
@@ -36,8 +38,8 @@ class ProfileController extends Controller
                 'documentoTipo',
                 'roles',
                 'persona.escuelasPersonas.escuela',
-                'persona.escuelasPersonas.role'
-            ]))
+                'persona.escuelasPersonas.role',
+            ])),
         ]);
     }
 
@@ -46,12 +48,12 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): JsonResponse
     {
-        $dto = \App\DTOs\User\UpdateUserProfileDTO::fromRequest($request);
+        $dto = UpdateUserProfileDTO::fromRequest($request);
         $user = $this->userService->updateProfile(Auth::user(), $dto);
 
         return response()->json([
             'message' => 'Perfil actualizado con éxito.',
-            'user' => $user->load(['persona', 'documentoTipo', 'persona.escuelasPersonas.escuela', 'persona.escuelasPersonas.role'])
+            'user' => $user->load(['persona', 'documentoTipo', 'persona.escuelasPersonas.escuela', 'persona.escuelasPersonas.role']),
         ]);
     }
 
@@ -65,17 +67,17 @@ class ProfileController extends Controller
 
             return response()->json([
                 'message' => 'Avatar actualizado con éxito.',
-                'avatar_url' => $avatarUrl
+                'avatar_url' => $avatarUrl,
             ]);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Error al subir avatar: ' . $e->getMessage());
+            Log::error('Error al subir avatar: '.$e->getMessage());
+
             return response()->json([
-                'error' => 'Error al subir el avatar: ' . $e->getMessage(),
-                'code' => 500
+                'error' => 'Error al subir el avatar: '.$e->getMessage(),
+                'code' => 500,
             ], 500);
         }
     }
-
 
     /**
      * Delete the user's avatar.
@@ -84,13 +86,14 @@ class ProfileController extends Controller
     {
         try {
             $this->userService->deleteAvatar(Auth::user());
+
             return response()->json([
-                'message' => 'Avatar eliminado con éxito.'
+                'message' => 'Avatar eliminado con éxito.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error al eliminar el avatar.',
-                'code' => 500
+                'code' => 500,
             ], 500);
         }
     }
@@ -104,15 +107,16 @@ class ProfileController extends Controller
             $this->userService->updatePassword(Auth::user(), $request->current_password, $request->password);
 
             return response()->json([
-                'message' => 'Contraseña actualizada con éxito.'
+                'message' => 'Contraseña actualizada con éxito.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => 400
+                'code' => 400,
             ], 400);
         }
     }
+
     /**
      * Stream the authenticated user's avatar (private).
      */
@@ -120,14 +124,13 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
 
-        if (!$user->avatar_path || !$disk->exists($user->avatar_path)) {
+        if (! $user->avatar_path || ! $disk->exists($user->avatar_path)) {
             return response()->json(['error' => 'Avatar no encontrado.'], 404);
         }
 
         return $disk->response($user->avatar_path);
     }
-
 }

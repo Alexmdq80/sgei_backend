@@ -6,7 +6,7 @@ use App\Models\Nivel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Nivel>
+ * @extends Factory<Nivel>
  */
 class NivelFactory extends Factory
 {

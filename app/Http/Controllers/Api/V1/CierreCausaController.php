@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\CierreCausaRequest;
 use App\Models\CierreCausa;
 use App\Services\CierreCausaService;
-use App\Http\Requests\Api\V1\CierreCausaRequest;
 use Illuminate\Http\JsonResponse;
 
 class CierreCausaController extends Controller
@@ -28,6 +28,7 @@ class CierreCausaController extends Controller
     public function store(CierreCausaRequest $request): JsonResponse
     {
         $cierreCausa = $this->cierreCausaService->create($request->validated());
+
         return response()->json($cierreCausa, 201);
     }
 
@@ -45,6 +46,7 @@ class CierreCausaController extends Controller
     public function update(CierreCausaRequest $request, CierreCausa $cierreCausa): JsonResponse
     {
         $cierreCausa = $this->cierreCausaService->update($cierreCausa, $request->validated());
+
         return response()->json($cierreCausa);
     }
 
@@ -54,6 +56,7 @@ class CierreCausaController extends Controller
     public function destroy(CierreCausa $cierreCausa): JsonResponse
     {
         $this->cierreCausaService->delete($cierreCausa);
+
         return response()->json(null, 204);
     }
 }

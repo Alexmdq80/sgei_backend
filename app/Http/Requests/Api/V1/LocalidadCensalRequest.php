@@ -31,7 +31,7 @@ class LocalidadCensalRequest extends FormRequest
             'georef_categoria_id' => ['nullable', Rule::exists('georef_categorias', 'id')],
             'georef_funcion_id' => ['nullable', Rule::exists('georef_funcions', 'id')],
             'centroide_lat' => ['nullable', 'numeric'],
-            'centroide_lon' => ['nullable', 'numeric']
+            'centroide_lon' => ['nullable', 'numeric'],
         ];
     }
 }

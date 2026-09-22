@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,11 +15,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $vigente
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Escuela> $escuelas
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Escuela> $escuelas
  * @property-read int|null $escuelas_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dependencia newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dependencia newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dependencia onlyTrashed()
@@ -32,11 +35,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dependencia whereVigente($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dependencia withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Dependencia withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Dependencia extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -44,10 +48,10 @@ class Dependencia extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "nombre",
-        "vigente",
-        "created_by",
-        "updated_by"
+        'nombre',
+        'vigente',
+        'created_by',
+        'updated_by',
     ];
 
     /**

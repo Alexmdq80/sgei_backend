@@ -12,6 +12,7 @@ class UserLinkedNotification extends Notification implements ShouldQueue
     use Queueable;
 
     protected string $personaNombre;
+
     protected string $personaApellido;
 
     public function __construct(string $personaNombre, string $personaApellido)
@@ -29,7 +30,7 @@ class UserLinkedNotification extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject('Vinculación confirmada - SGEI')
-            ->greeting('¡Hola, ' . $notifiable->nombre . '!')
+            ->greeting('¡Hola, '.$notifiable->nombre.'!')
             ->line('Tu cuenta de usuario ha sido vinculada exitosamente con tu registro en el padrón.')
             ->line("**Persona vinculada:** {$this->personaApellido}, {$this->personaNombre}")
             ->line('Ya puedes acceder al sistema con tu cuenta. Tu estado ha sido actualizado a "activo".')

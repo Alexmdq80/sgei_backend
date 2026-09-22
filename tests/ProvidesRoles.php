@@ -3,7 +3,6 @@
 namespace Tests;
 
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Illuminate\Support\Facades\Artisan;
 
 trait ProvidesRoles
 {

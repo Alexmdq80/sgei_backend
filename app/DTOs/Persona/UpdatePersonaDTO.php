@@ -41,6 +41,7 @@ readonly class UpdatePersonaDTO
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
         $data = array_merge($request->validated(), $overrides);
+
         return self::fromArray($data);
     }
 
@@ -98,44 +99,60 @@ readonly class UpdatePersonaDTO
     {
         $data = [];
 
-        if ($this->apellido !== null)
+        if ($this->apellido !== null) {
             $data['apellido'] = $this->apellido;
-        if ($this->nombre !== null)
+        }
+        if ($this->nombre !== null) {
             $data['nombre'] = $this->nombre;
+        }
         if ($this->documentoIdentidad !== null) {
             $data['documento_tipo_id'] = $this->documentoIdentidad->tipoId();
             $data['documento_numero'] = $this->documentoIdentidad->numero(); // raw string
         } elseif ($this->documentoTipoId !== null) {
             $data['documento_tipo_id'] = $this->documentoTipoId;
         }
-        if ($this->nombreAlternativo !== null)
+        if ($this->nombreAlternativo !== null) {
             $data['nombre_alternativo'] = $this->nombreAlternativo;
-        if ($this->sexoId !== null)
+        }
+        if ($this->sexoId !== null) {
             $data['sexo_id'] = $this->sexoId;
-        if ($this->documentoSituacionId !== null)
+        }
+        if ($this->documentoSituacionId !== null) {
             $data['documento_situacion_id'] = $this->documentoSituacionId;
-        if ($this->generoId !== null)
+        }
+        if ($this->generoId !== null) {
             $data['genero_id'] = $this->generoId;
-        if ($this->nacimientoFecha !== null)
+        }
+        if ($this->nacimientoFecha !== null) {
             $data['nacimiento_fecha'] = $this->nacimientoFecha;
-        if ($this->nacionalidadNacionId !== null)
+        }
+        if ($this->nacionalidadNacionId !== null) {
             $data['nacionalidad_nacion_id'] = $this->nacionalidadNacionId;
-        if ($this->nacionId !== null)
+        }
+        if ($this->nacionId !== null) {
             $data['nacion_id'] = $this->nacionId;
-        if ($this->provinciaId !== null)
+        }
+        if ($this->provinciaId !== null) {
             $data['provincia_id'] = $this->provinciaId;
-        if ($this->departamentoId !== null)
+        }
+        if ($this->departamentoId !== null) {
             $data['departamento_id'] = $this->departamentoId;
-        if ($this->localidadId !== null)
+        }
+        if ($this->localidadId !== null) {
             $data['localidad_id'] = $this->localidadId;
-        if ($this->tramite !== null)
+        }
+        if ($this->tramite !== null) {
             $data['tramite'] = $this->tramite;
-        if ($this->cuilPrefijo !== null)
+        }
+        if ($this->cuilPrefijo !== null) {
             $data['CUIL_prefijo'] = $this->cuilPrefijo;
-        if ($this->cuilSufijo !== null)
+        }
+        if ($this->cuilSufijo !== null) {
             $data['CUIL_sufijo'] = $this->cuilSufijo;
-        if ($this->viveSi !== null)
+        }
+        if ($this->viveSi !== null) {
             $data['vive_si'] = $this->viveSi;
+        }
         if ($this->observacionesProvided !== false || $this->observaciones !== null) {
             $data['observaciones'] = $this->observaciones;
         }

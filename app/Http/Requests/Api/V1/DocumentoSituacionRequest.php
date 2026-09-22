@@ -29,9 +29,9 @@ class DocumentoSituacionRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('documento_situacions', 'nombre')->ignore($id)
+                Rule::unique('documento_situacions', 'nombre')->ignore($id),
             ],
-            'vigente' => ['boolean']
+            'vigente' => ['boolean'],
         ];
     }
 }

@@ -2,13 +2,17 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Validation\Rules\Password;
+use App\Models\Contacto;
+use App\Models\Usuario;
+use App\Observers\ContactoObserver;
+use App\Policies\ComunidadEducativaPolicy;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Auth\Notifications\ResetPassword;
-use App\Models\Usuario;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,10 +33,11 @@ class AppServiceProvider extends ServiceProvider
         ResetPassword::createUrlUsing(function (Usuario $user, string $token) {
             $frontendUrls = explode(',', env('FRONTEND_URL', 'http://localhost:5173'));
             $baseUrl = trim($frontendUrls[0]);
-            return rtrim($baseUrl, '/') . '/reset-password?token=' . $token . '&email=' . $user->email;
+
+            return rtrim($baseUrl, '/').'/reset-password?token='.$token.'&email='.$user->email;
         });
 
-        \App\Models\Contacto::observe(\App\Observers\ContactoObserver::class);
+        Contacto::observe(ContactoObserver::class);
 
         // Standardize password requirements globally
         Password::defaults(function () {
@@ -44,10 +49,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('login', function (Request $request) {
-            $identifier = $request->input('email') 
-                ?: $request->input('documento_numero') 
+            $identifier = $request->input('email')
+                ?: $request->input('documento_numero')
                 ?: $request->ip();
-                
+
             return Limit::perMinute(5)->by($identifier);
         });
 
@@ -60,6 +65,6 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Register Gates and Policies
-        \Illuminate\Support\Facades\Gate::define('view-comunidad', [\App\Policies\ComunidadEducativaPolicy::class, 'view']);
+        Gate::define('view-comunidad', [ComunidadEducativaPolicy::class, 'view']);
     }
 }

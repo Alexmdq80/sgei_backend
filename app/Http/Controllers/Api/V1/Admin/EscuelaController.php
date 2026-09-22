@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\DTOs\Escuela\CreateEscuelaDTO;
+use App\DTOs\Escuela\UpdateEscuelaDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\EscuelaRequest;
 use App\Models\Escuela;
 use App\Services\EscuelaService;
-use App\Http\Requests\Api\V1\Admin\EscuelaRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,11 +32,12 @@ class EscuelaController extends Controller
         $provinciaId = $request->query('provincia_id');
         $regionId = $request->query('region_id');
         $perPage = $request->query('per_page', 20);
+
         return response()->json($this->escuelaService->getAllAdmin(
-            $search, 
-            $departamentoId, 
-            $perPage, 
-            $nivelId, 
+            $search,
+            $departamentoId,
+            $perPage,
+            $nivelId,
             $sectorId,
             $provinciaId,
             $regionId
@@ -47,8 +50,9 @@ class EscuelaController extends Controller
     public function store(EscuelaRequest $request): JsonResponse
     {
         $this->authorize('create', Escuela::class);
-        $dto = \App\DTOs\Escuela\CreateEscuelaDTO::fromRequest($request);
+        $dto = CreateEscuelaDTO::fromRequest($request);
         $escuela = $this->escuelaService->create($dto);
+
         return response()->json($escuela, 201);
     }
 
@@ -58,11 +62,12 @@ class EscuelaController extends Controller
     public function show(Escuela $escuela): JsonResponse
     {
         $this->authorize('view', $escuela);
+
         return response()->json($escuela->load([
-            'localidad.departamento.provincia', 
-            'ambito', 
-            'dependencia', 
-            'sector'
+            'localidad.departamento.provincia',
+            'ambito',
+            'dependencia',
+            'sector',
         ]));
     }
 
@@ -72,8 +77,9 @@ class EscuelaController extends Controller
     public function update(EscuelaRequest $request, Escuela $escuela): JsonResponse
     {
         $this->authorize('update', $escuela);
-        $dto = \App\DTOs\Escuela\UpdateEscuelaDTO::fromRequest($request);
+        $dto = UpdateEscuelaDTO::fromRequest($request);
         $escuela = $this->escuelaService->update($escuela, $dto);
+
         return response()->json($escuela);
     }
 
@@ -84,6 +90,7 @@ class EscuelaController extends Controller
     {
         $this->authorize('delete', $escuela);
         $this->escuelaService->delete($escuela);
+
         return response()->json(null, 204);
     }
 }

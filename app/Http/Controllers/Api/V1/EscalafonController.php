@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\EscalafonRequest;
 use App\Models\Escalafon;
 use App\Services\EscalafonService;
-use App\Http\Requests\Api\V1\EscalafonRequest;
 use Illuminate\Http\JsonResponse;
 
 class EscalafonController extends Controller
@@ -22,6 +22,7 @@ class EscalafonController extends Controller
     public function store(EscalafonRequest $request): JsonResponse
     {
         $item = $this->service->create($request->validated());
+
         return response()->json($item, 201);
     }
 
@@ -33,12 +34,14 @@ class EscalafonController extends Controller
     public function update(EscalafonRequest $request, Escalafon $escalafon): JsonResponse
     {
         $item = $this->service->update($escalafon, $request->validated());
+
         return response()->json($item);
     }
 
     public function destroy(Escalafon $escalafon): JsonResponse
     {
         $this->service->delete($escalafon);
+
         return response()->json(null, 204);
     }
 }

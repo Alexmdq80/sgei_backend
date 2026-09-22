@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\EscuelaService;
-use App\Http\Resources\EscuelaPersonaResource;
 use App\Http\Requests\Api\V1\Admin\EscuelaPersonaRequest;
-use Illuminate\Http\Request;
+use App\Http\Resources\EscuelaPersonaResource;
+use App\Models\EscuelaPersona;
+use App\Models\Persona;
+use App\Services\EscuelaService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class EscuelaPersonaController extends Controller
 {
@@ -24,34 +26,34 @@ class EscuelaPersonaController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        
+
         // El permiso viewAny en la Policy verifica si es Superuser, Jefe o Conducción
-        $this->authorize('viewAny', \App\Models\EscuelaPersona::class);
+        $this->authorize('viewAny', EscuelaPersona::class);
 
-        $query = \App\Models\EscuelaPersona::with(['persona.documentoTipo', 'escuela.localidad', 'role']);
+        $query = EscuelaPersona::with(['persona.documentoTipo', 'escuela.localidad', 'role']);
 
-                // Si no es Superusuario ni administrador, limitamos a sus propias escuelas
-        if (!$user->hasRole('superuser') && !$user->es_administrador) {
-            $mySchools = $user->persona?->escuelasPersonas()    
-                ->whereHas('role', function($q) {
-                    $q->whereIn('name', \App\Services\EscuelaService::HIERARCHICAL_ROLES);
+        // Si no es Superusuario ni administrador, limitamos a sus propias escuelas
+        if (! $user->hasRole('superuser') && ! $user->es_administrador) {
+            $mySchools = $user->persona?->escuelasPersonas()
+                ->whereHas('role', function ($q) {
+                    $q->whereIn('name', EscuelaService::HIERARCHICAL_ROLES);
                 })
                 ->whereNotNull('verified_at')
                 ->pluck('escuela_id');
-            
+
             $query->whereIn('escuela_id', $mySchools);
         }
-        
+
         if ($request->has('escuela_id')) {
             $query->where('escuela_id', $request->escuela_id);
         }
 
-        if ($request->has('persona_id')) {    
+        if ($request->has('persona_id')) {
             $query->where('persona_id', $request->persona_id);
         }
 
         return EscuelaPersonaResource::collection($query->paginate($request->per_page ?? 15));
-                
+
     }
 
     /**
@@ -60,13 +62,13 @@ class EscuelaPersonaController extends Controller
     public function store(EscuelaPersonaRequest $request): JsonResponse
     {
         try {
-            $persona = \App\Models\Persona::findOrFail($request->persona_id);
-            
+            $persona = Persona::findOrFail($request->persona_id);
+
             $link = $this->escuelaService->assignDirect($persona, $request->escuela_id, $request->role_id);
 
             return response()->json([
                 'message' => 'Rol institucional asignado con éxito.',
-                'data' => new EscuelaPersonaResource($link)
+                'data' => new EscuelaPersonaResource($link),
             ], 201);
         } catch (\Exception $e) {
             $code = $e->getCode();
@@ -74,7 +76,7 @@ class EscuelaPersonaController extends Controller
 
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => $status
+                'code' => $status,
             ], $status);
         }
     }
@@ -85,18 +87,18 @@ class EscuelaPersonaController extends Controller
     public function update(EscuelaPersonaRequest $request, string $id): JsonResponse
     {
         try {
-            $link = \App\Models\EscuelaPersona::findOrFail($id);
-            
+            $link = EscuelaPersona::findOrFail($id);
+
             $this->escuelaService->validateAssignmentPermissions($link->escuela_id, $request->role_id);
 
             $link->update([
                 'role_id' => $request->role_id,
-                'updated_by' => auth()->id()
+                'updated_by' => auth()->id(),
             ]);
 
             return response()->json([
                 'message' => 'Rol institucional actualizado con éxito.',
-                'data' => new EscuelaPersonaResource($link->fresh()->load(['persona', 'escuela', 'role']))
+                'data' => new EscuelaPersonaResource($link->fresh()->load(['persona', 'escuela', 'role'])),
             ]);
         } catch (\Exception $e) {
             $code = $e->getCode();
@@ -104,7 +106,7 @@ class EscuelaPersonaController extends Controller
 
             return response()->json([
                 'error' => $e->getMessage(),
-                'code' => $status
+                'code' => $status,
             ], $status);
         }
     }
@@ -115,23 +117,23 @@ class EscuelaPersonaController extends Controller
     public function destroy(string $id): JsonResponse
     {
         try {
-            $link = \App\Models\EscuelaPersona::findOrFail($id);  
-            
+            $link = EscuelaPersona::findOrFail($id);
+
             $this->escuelaService->validateAssignmentPermissions($link->escuela_id, $link->role_id);
 
             $link->delete();
-            
+
             return response()->json([
-                'message' => 'Vinculación eliminada con éxito.'
+                'message' => 'Vinculación eliminada con éxito.',
             ]);
         } catch (\Exception $e) {
-             $code = $e->getCode();
-             $status = ($code >= 400 && $code < 600) ? $code : 400;
+            $code = $e->getCode();
+            $status = ($code >= 400 && $code < 600) ? $code : 400;
 
-             return response()->json([
-                 'error' => $e->getMessage(),
-                 'code' => $status
-             ], $status);
+            return response()->json([
+                'error' => $e->getMessage(),
+                'code' => $status,
+            ], $status);
         }
     }
 }

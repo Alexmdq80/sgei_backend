@@ -1,16 +1,20 @@
 <?php
 
+use App\Models\Contacto;
+use App\Models\EscuelaPersona;
+use App\Models\Persona;
 use App\Models\Usuario;
-use App\Models\EscuelaUsuario;
 use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 // Seeder previo para los roles y permisos necesarios
 beforeEach(function () {
     Artisan::call('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
     Artisan::call('db:seed', ['--class' => 'DocumentoTipoSeeder']);
-    
+
     // Limpiar caché de permisos de Spatie para el proceso actual
-    $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
     // Administrador con rol superuser y permiso específico
     $this->admin = Usuario::factory()->create();
@@ -31,8 +35,8 @@ test('usuarios no autorizados no pueden acceder a las rutas de administración',
 
     // Autenticado pero sin el permiso 'sistema.usuarios'
     $this->actingAs($this->unauthorizedUser, 'sanctum')
-         ->getJson('/api/v1/admin/usuarios')
-         ->assertStatus(403);
+        ->getJson('/api/v1/admin/usuarios')
+        ->assertStatus(403);
 });
 
 // =========================================================================
@@ -43,9 +47,9 @@ test('el administrador puede listar todos los usuarios del sistema', function ()
     Usuario::factory()->count(3)->create();
 
     $this->actingAs($this->admin, 'sanctum')
-         ->getJson('/api/v1/admin/usuarios')
-         ->assertStatus(200)
-         ->assertJsonStructure(['data', 'meta', 'links']);
+        ->getJson('/api/v1/admin/usuarios')
+        ->assertStatus(200)
+        ->assertJsonStructure(['data', 'meta', 'links']);
 });
 
 test('la creación directa de usuarios en /api/v1/admin/usuarios no está disponible (405)', function () {
@@ -54,21 +58,21 @@ test('la creación directa de usuarios en /api/v1/admin/usuarios no está dispon
         'email' => 'admin_created@sgei.local',
         'password' => 'Sgei!2026_Admin',
         'documento_tipo_id' => 1,
-        'documento_numero' => '12345678'
+        'documento_numero' => '12345678',
     ];
 
     $this->actingAs($this->admin, 'sanctum')
-         ->postJson('/api/v1/admin/usuarios', $userData)
-         ->assertStatus(405);
+        ->postJson('/api/v1/admin/usuarios', $userData)
+        ->assertStatus(405);
 });
 
 test('el administrador puede ver el detalle de un usuario específico', function () {
     $user = Usuario::factory()->create(['nombre' => 'User Specific Detail']);
 
     $this->actingAs($this->admin, 'sanctum')
-         ->getJson("/api/v1/admin/usuarios/{$user->id}")
-         ->assertStatus(200)
-         ->assertJsonPath('data.nombre', 'User Specific Detail');
+        ->getJson("/api/v1/admin/usuarios/{$user->id}")
+        ->assertStatus(200)
+        ->assertJsonPath('data.nombre', 'User Specific Detail');
 });
 
 // =========================================================================
@@ -76,8 +80,8 @@ test('el administrador puede ver el detalle de un usuario específico', function
 // =========================================================================
 
 test('el administrador puede listar todos los vínculos institucionales', function () {
-    $roleId = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    \App\Models\EscuelaPersona::factory()->count(5)->create(['verified_at' => now(), 'role_id' => $roleId]);
+    $roleId = Role::where('name', 'director')->first()->id;
+    EscuelaPersona::factory()->count(5)->create(['verified_at' => now(), 'role_id' => $roleId]);
 
     $response = $this->actingAs($this->admin, 'sanctum')
         ->getJson('/api/v1/admin/escuela-personas');
@@ -87,22 +91,22 @@ test('el administrador puede listar todos los vínculos institucionales', functi
 });
 
 test('el administrador superuser no puede actualizar el rol institucional de un vínculo escuela-usuario directamente', function () {
-    $roleDirector = \Spatie\Permission\Models\Role::where('name', 'director')->first()->id;
-    $roleSecretario = \Spatie\Permission\Models\Role::where('name', 'secretario')->first()->id;
-    
-    $persona = \App\Models\Persona::factory()->create();
-    $link = \App\Models\EscuelaPersona::factory()->create([
+    $roleDirector = Role::where('name', 'director')->first()->id;
+    $roleSecretario = Role::where('name', 'secretario')->first()->id;
+
+    $persona = Persona::factory()->create();
+    $link = EscuelaPersona::factory()->create([
         'persona_id' => $persona->id,
         'role_id' => $roleDirector,
-        'verified_at' => now()
+        'verified_at' => now(),
     ]);
 
     $this->actingAs($this->admin, 'sanctum')
-         ->putJson("/api/v1/admin/escuela-personas/{$link->id}", [
-              'role_id' => $roleSecretario
-         ])
-         ->assertStatus(403)
-         ->assertJsonPath('error', 'Esta acción está reservada para el Superusuario.');
+        ->putJson("/api/v1/admin/escuela-personas/{$link->id}", [
+            'role_id' => $roleSecretario,
+        ])
+        ->assertStatus(403)
+        ->assertJsonPath('error', 'Esta acción está reservada para el Superusuario.');
 });
 
 // =========================================================================
@@ -111,29 +115,29 @@ test('el administrador superuser no puede actualizar el rol institucional de un 
 
 test('el cambio de DNI de un usuario vinculado a persona es bloqueado', function () {
     // 1. Setup usuario con persona vinculada
-    $user = \App\Models\Usuario::factory()->create([
+    $user = Usuario::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '12345678',
         'email' => 'vinculado@example.com',
         'email_verified_at' => now(),
-        'estado' => 'activo'
+        'estado' => 'activo',
     ]);
 
-    $persona = \App\Models\Persona::factory()->create([
+    $persona = Persona::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '12345678',
-        'usuario_id' => $user->id
+        'usuario_id' => $user->id,
     ]);
-    \App\Models\Contacto::create(['persona_id' => $persona->id, 'email' => 'vinculado@example.com']);
+    Contacto::create(['persona_id' => $persona->id, 'email' => 'vinculado@example.com']);
 
     // 2. Intentar cambiar el DNI del usuario
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->putJson("/api/v1/admin/usuarios/{$user->id}", [
-                        'nombre' => $user->nombre,
-                        'documento_tipo_id' => 1,
-                        'documento_numero' => '99999999', // Cambiado
-                        'email' => 'vinculado@example.com'
-                     ]);
+        ->putJson("/api/v1/admin/usuarios/{$user->id}", [
+            'nombre' => $user->nombre,
+            'documento_tipo_id' => 1,
+            'documento_numero' => '99999999', // Cambiado
+            'email' => 'vinculado@example.com',
+        ]);
 
     // 3. Verificar que se bloquea y el vínculo se mantiene
     $response->assertStatus(422);
@@ -143,29 +147,29 @@ test('el cambio de DNI de un usuario vinculado a persona es bloqueado', function
 
 test('el cambio de email de un usuario vinculado a persona es bloqueado', function () {
     // 1. Setup usuario con persona vinculada
-    $user = \App\Models\Usuario::factory()->create([
+    $user = Usuario::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '87654321',
         'email' => 'original@example.com',
         'email_verified_at' => now(),
-        'estado' => 'activo'
+        'estado' => 'activo',
     ]);
 
-    $persona = \App\Models\Persona::factory()->create([
+    $persona = Persona::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '87654321',
-        'usuario_id' => $user->id
+        'usuario_id' => $user->id,
     ]);
-    \App\Models\Contacto::create(['persona_id' => $persona->id, 'email' => 'original@example.com']);
+    Contacto::create(['persona_id' => $persona->id, 'email' => 'original@example.com']);
 
     // 2. Intentar cambiar el email del usuario
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->putJson("/api/v1/admin/usuarios/{$user->id}", [
-                        'nombre' => $user->nombre,
-                        'documento_tipo_id' => 1,
-                        'documento_numero' => '87654321',
-                        'email' => 'nuevo@example.com' // Cambiado
-                     ]);
+        ->putJson("/api/v1/admin/usuarios/{$user->id}", [
+            'nombre' => $user->nombre,
+            'documento_tipo_id' => 1,
+            'documento_numero' => '87654321',
+            'email' => 'nuevo@example.com', // Cambiado
+        ]);
 
     // 3. Verificar que se bloquea y el vínculo se mantiene
     $response->assertStatus(422);
@@ -175,29 +179,29 @@ test('el cambio de email de un usuario vinculado a persona es bloqueado', functi
 
 test('el cambio de nombre de un usuario vinculado a persona es permitido', function () {
     // 1. Setup usuario con persona vinculada
-    $user = \App\Models\Usuario::factory()->create([
+    $user = Usuario::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '11223344',
         'email' => 'permitido@example.com',
         'email_verified_at' => now(),
-        'estado' => 'activo'
+        'estado' => 'activo',
     ]);
 
-    $persona = \App\Models\Persona::factory()->create([
+    $persona = Persona::factory()->create([
         'documento_tipo_id' => 1,
         'documento_numero' => '11223344',
-        'usuario_id' => $user->id
+        'usuario_id' => $user->id,
     ]);
-    \App\Models\Contacto::create(['persona_id' => $persona->id, 'email' => 'permitido@example.com']);
+    Contacto::create(['persona_id' => $persona->id, 'email' => 'permitido@example.com']);
 
     // 2. Cambiar solo el nombre
     $response = $this->actingAs($this->admin, 'sanctum')
-                     ->putJson("/api/v1/admin/usuarios/{$user->id}", [
-                        'nombre' => 'Nuevo Nombre',
-                        'documento_tipo_id' => 1,
-                        'documento_numero' => '11223344',
-                        'email' => 'permitido@example.com'
-                     ]);
+        ->putJson("/api/v1/admin/usuarios/{$user->id}", [
+            'nombre' => 'Nuevo Nombre',
+            'documento_tipo_id' => 1,
+            'documento_numero' => '11223344',
+            'email' => 'permitido@example.com',
+        ]);
 
     // 3. Verificar que se permite y el vínculo se mantiene
     $response->assertOk();

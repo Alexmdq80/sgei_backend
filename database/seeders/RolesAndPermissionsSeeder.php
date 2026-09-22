@@ -3,8 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -14,31 +15,31 @@ class RolesAndPermissionsSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // --- DEFINICIÓN DE PERMISOS ATÓMICOS ---
 
         $permissions = [
             // Gestión Institucional
             'institucion.ver', 'institucion.editar', 'institucion.configurar', 'institucion.ciclos',
-            
+
             // Gestión de Estudiantes (ex-alumnos)
-            'estudiantes.ver', 'estudiantes.ver.sensible', 'estudiantes.crear', 'estudiantes.editar', 
+            'estudiantes.ver', 'estudiantes.ver.sensible', 'estudiantes.crear', 'estudiantes.editar',
             'estudiantes.inscribir', 'estudiantes.pases', 'estudiantes.bajas',
-            
+
             // Gestión de Personal
             'personal.ver', 'personal.gestionar', 'personal.asignar',
-            
+
             // Gestión Académica
             'notas.ver', 'notas.cargar', 'notas.cerrar',
             'asistencia.ver', 'asistencia.cargar', 'asistencia.justificar',
             'boletines.generar',
             'planes.ver', 'planes.crear', 'planes.editar', 'planes.eliminar',
             'asignaturas.ver', 'asignaturas.gestionar',
-            
+
             // Familia y Vínculos
             'familia.gestionar', 'familia.notificar',
-            
+
             // Sistema y Seguridad
             'sistema.usuarios', 'sistema.roles', 'sistema.auditoria',
         ];
@@ -56,7 +57,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // 2. Roles Directivos (Director / Vicedirector)
         $director = Role::firstOrCreate(['name' => 'director', 'guard_name' => 'sanctum']);
         $vicedirector = Role::firstOrCreate(['name' => 'vicedirector', 'guard_name' => 'sanctum']);
-        
+
         $directivoPermissions = [
             'institucion.ver', 'institucion.editar', 'institucion.configurar', 'institucion.ciclos',
             'estudiantes.ver', 'estudiantes.ver.sensible', 'estudiantes.crear', 'estudiantes.editar', 'estudiantes.inscribir', 'estudiantes.pases', 'estudiantes.bajas',
@@ -66,7 +67,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'boletines.generar', 'familia.gestionar', 'familia.notificar',
             'planes.ver', 'planes.crear', 'planes.editar', 'planes.eliminar',
             'asignaturas.ver', 'asignaturas.gestionar',
-            'sistema.usuarios' // Solo gestión de usuarios locales
+            'sistema.usuarios', // Solo gestión de usuarios locales
         ];
         $director->givePermissionTo($directivoPermissions);
         $vicedirector->givePermissionTo($directivoPermissions);
@@ -74,12 +75,12 @@ class RolesAndPermissionsSeeder extends Seeder
         // 3. Roles Secretaría (Secretario / Prosecretario)
         $secretario = Role::firstOrCreate(['name' => 'secretario', 'guard_name' => 'sanctum']);
         $prosecretario = Role::firstOrCreate(['name' => 'prosecretario', 'guard_name' => 'sanctum']);
-        
+
         $secretariaPermissions = [
             'institucion.ver', 'institucion.ciclos',
             'estudiantes.ver', 'estudiantes.crear', 'estudiantes.editar', 'estudiantes.inscribir', 'estudiantes.pases', 'estudiantes.bajas',
             'personal.ver', 'asistencia.ver', 'boletines.generar', 'familia.gestionar',
-            'sistema.usuarios' // Habilitado para gestión delegada
+            'sistema.usuarios', // Habilitado para gestión delegada
         ];
         $secretario->givePermissionTo($secretariaPermissions);
         $prosecretario->givePermissionTo($secretariaPermissions);
@@ -87,15 +88,15 @@ class RolesAndPermissionsSeeder extends Seeder
         // 4. Preceptor
         $preceptor = Role::firstOrCreate(['name' => 'preceptor', 'guard_name' => 'sanctum']);
         $preceptor->givePermissionTo([
-            'institucion.ver', 'estudiantes.ver', 'asistencia.ver', 'asistencia.cargar', 
-            'asistencia.justificar', 'notas.ver', 'familia.notificar'
+            'institucion.ver', 'estudiantes.ver', 'asistencia.ver', 'asistencia.cargar',
+            'asistencia.justificar', 'notas.ver', 'familia.notificar',
         ]);
 
         // 5. Profesor
         $profesor = Role::firstOrCreate(['name' => 'profesor', 'guard_name' => 'sanctum']);
         $profesor->givePermissionTo([
-            'institucion.ver', 'estudiantes.ver', 'notas.ver', 'notas.cargar', 
-            'asistencia.cargar', 'boletines.generar'
+            'institucion.ver', 'estudiantes.ver', 'notas.ver', 'notas.cargar',
+            'asistencia.cargar', 'boletines.generar',
         ]);
 
         // 6. Estudiante
@@ -106,6 +107,5 @@ class RolesAndPermissionsSeeder extends Seeder
         $responsable = Role::firstOrCreate(['name' => 'responsable', 'guard_name' => 'sanctum']);
         $responsable->givePermissionTo(['institucion.ver', 'estudiantes.ver', 'notas.ver', 'asistencia.ver']);
 
-       
     }
 }

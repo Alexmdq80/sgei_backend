@@ -24,7 +24,7 @@ class ModalidadNivelRequest extends FormRequest
         ];
 
         // Validar unicidad de la combinación en store
-        if (!$id) {
+        if (! $id) {
             $rules['nivel_id'][] = Rule::unique('modalidad_nivels')->where(function ($query) {
                 return $query->where('modalidad_id', $this->modalidad_id)
                     ->where('escuela_tipo_id', $this->escuela_tipo_id);

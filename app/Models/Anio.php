@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,11 +18,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $vigente
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AnioPlan> $planAnios
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, AnioPlan> $planAnios
  * @property-read int|null $plan_anios_count
+ *
  * @method static \Database\Factories\AnioFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Anio newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Anio newQuery()
@@ -39,11 +42,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Anio whereVigente($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Anio withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Anio withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Anio extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -51,13 +55,13 @@ class Anio extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "nombre",
-        "nombre_completo",
-        "anio_absoluto",
-        "anio_relativo",
-        "vigente",
-        "created_by",
-        "updated_by"
+        'nombre',
+        'nombre_completo',
+        'anio_absoluto',
+        'anio_relativo',
+        'vigente',
+        'created_by',
+        'updated_by',
     ];
 
     /**

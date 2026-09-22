@@ -3,18 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\DepartamentoRequest;
 use App\Models\Departamento;
 use App\Services\DepartamentoService;
-use App\Http\Requests\Api\V1\DepartamentoRequest;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DepartamentoController extends Controller
 {
     public function __construct(
         protected DepartamentoService $departamentoService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -32,6 +31,7 @@ class DepartamentoController extends Controller
         if ($request->has('provincia_id')) {
             $filters['provincia_id'] = $request->query('provincia_id');
         }
+
         return response()->json($this->departamentoService->getAll($search, (int) $perPage, $filters));
     }
 
@@ -41,6 +41,7 @@ class DepartamentoController extends Controller
     public function store(DepartamentoRequest $request): JsonResponse
     {
         $item = $this->departamentoService->create($request->validated());
+
         return response()->json($item, 201);
     }
 
@@ -58,6 +59,7 @@ class DepartamentoController extends Controller
     public function update(DepartamentoRequest $request, Departamento $departamento): JsonResponse
     {
         $updated = $this->departamentoService->update($departamento, $request->validated());
+
         return response()->json($updated);
     }
 
@@ -67,6 +69,7 @@ class DepartamentoController extends Controller
     public function destroy(Departamento $departamento): JsonResponse
     {
         $this->departamentoService->delete($departamento);
+
         return response()->json(null, 204);
     }
 }

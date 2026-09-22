@@ -17,7 +17,7 @@ class DomicilioResource extends JsonResource
     public function toArray(Request $request): ?array
     {
         $domicilio = $this->resource;
-        if (!($domicilio instanceof Domicilio)) {
+        if (! ($domicilio instanceof Domicilio)) {
             return null;
         }
 

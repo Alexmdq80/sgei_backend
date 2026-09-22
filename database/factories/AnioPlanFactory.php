@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Anio;
 use App\Models\AnioPlan;
 use App\Models\Plan;
-use App\Models\Anio;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AnioPlanFactory extends Factory

@@ -26,7 +26,7 @@ class UsuarioRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('usuarios', 'email')->ignore($id)
+                Rule::unique('usuarios', 'email')->ignore($id),
             ],
             'password' => ['nullable', 'string', Password::defaults()],
             'updated_at' => ['nullable', 'date'],

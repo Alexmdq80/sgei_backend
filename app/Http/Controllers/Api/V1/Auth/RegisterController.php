@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\DTOs\User\CreateUserDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Auth\RegisterRequest;
+use App\Http\Resources\UsuarioResource;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
-use App\Http\Resources\UsuarioResource;
-use App\Http\Requests\Api\V1\Auth\RegisterRequest;
 
 class RegisterController extends Controller
 {
@@ -23,23 +24,23 @@ class RegisterController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         $data = $request->validated();
-        
+
         // Forzar que no sea administrador en registro público
         $data['es_administrador'] = false;
         $data['estado'] = 'email_pendiente';
 
         try {
-            $dto = \App\DTOs\User\CreateUserDTO::fromArray($data);
+            $dto = CreateUserDTO::fromArray($data);
             $user = $this->userService->create($dto);
 
             return response()->json([
                 'message' => 'Usuario registrado con éxito. Por favor, verifica tu correo electrónico.',
-                'user' => new UsuarioResource($user)
+                'user' => new UsuarioResource($user),
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'No se pudo completar el registro. Intente más tarde.',
-                'code' => 500
+                'code' => 500,
             ], 500);
         }
     }

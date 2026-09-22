@@ -31,7 +31,7 @@ class NacionRequest extends FormRequest
             'id_georef' => ['nullable'],
             'continente_id' => ['required', Rule::exists('continentes', 'id')],
             'nombre' => ['required', 'string', 'max:255', Rule::unique('nacions', 'nombre')->ignore($id)],
-            'nacionalidad' => ['required', 'string', 'max:255']
+            'nacionalidad' => ['required', 'string', 'max:255'],
         ];
     }
 }

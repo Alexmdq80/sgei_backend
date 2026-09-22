@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\ContinenteRequest;
 use App\Models\Continente;
 use App\Services\ContinenteService;
-use App\Http\Requests\Api\V1\ContinenteRequest;
 use Illuminate\Http\JsonResponse;
 
 class ContinenteController extends Controller
@@ -28,6 +28,7 @@ class ContinenteController extends Controller
     public function store(ContinenteRequest $request): JsonResponse
     {
         $item = $this->continenteService->create($request->validated());
+
         return response()->json($item, 201);
     }
 
@@ -45,6 +46,7 @@ class ContinenteController extends Controller
     public function update(ContinenteRequest $request, Continente $continente): JsonResponse
     {
         $updated = $this->continenteService->update($continente, $request->validated());
+
         return response()->json($updated);
     }
 
@@ -54,6 +56,7 @@ class ContinenteController extends Controller
     public function destroy(Continente $continente): JsonResponse
     {
         $this->continenteService->delete($continente);
+
         return response()->json(null, 204);
     }
 }

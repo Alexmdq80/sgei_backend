@@ -7,7 +7,7 @@ use App\Models\Provincia;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Departamento>
+ * @extends Factory<Departamento>
  */
 class DepartamentoFactory extends Factory
 {

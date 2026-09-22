@@ -38,11 +38,11 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
     {
         $frontendUrls = explode(',', env('FRONTEND_URL', 'http://localhost:5173'));
         $frontendUrl = trim($frontendUrls[0]); // Usar la primera URL configurada
-        $verificationUrl = $frontendUrl . '/verificar-email?token=' . $this->token . '&email=' . urlencode($notifiable->email);
+        $verificationUrl = $frontendUrl.'/verificar-email?token='.$this->token.'&email='.urlencode($notifiable->email);
 
         return (new MailMessage)
             ->subject('Verifica tu correo electrónico - SGEI')
-            ->greeting('¡Hola, ' . $notifiable->nombre . '!')
+            ->greeting('¡Hola, '.$notifiable->nombre.'!')
             ->line('Gracias por registrarte en el Sistema de Gestión Escolar Integral (SGEI).')
             ->line('Por favor, haz clic en el botón de abajo para verificar tu dirección de correo electrónico.')
             ->action('Verificar Correo Electrónico', $verificationUrl)

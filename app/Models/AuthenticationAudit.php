@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -20,9 +21,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $audit_driver
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuthenticationAudit newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuthenticationAudit newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuthenticationAudit onlyTrashed()
@@ -45,11 +47,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuthenticationAudit whereUserAgent($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuthenticationAudit withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuthenticationAudit withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class AuthenticationAudit extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -83,6 +86,6 @@ class AuthenticationAudit extends Model
      */
     protected $casts = [
         'tags' => 'array',
-        'details' => 'array'
+        'details' => 'array',
     ];
 }

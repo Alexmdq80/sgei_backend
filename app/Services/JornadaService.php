@@ -25,6 +25,7 @@ class JornadaService
     public function update(Jornada $jornada, array $data): Jornada
     {
         $jornada->update($data);
+
         return $jornada;
     }
 

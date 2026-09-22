@@ -23,7 +23,6 @@ class DocumentoTipoSeeder extends Seeder
             ['id' => 8, 'nombre' => 'OTRO', 'vigente' => true],
         ];
 
-
         foreach ($tipos as $tipo) {
             DocumentoTipo::updateOrCreate(['id' => $tipo['id']], $tipo);
         }

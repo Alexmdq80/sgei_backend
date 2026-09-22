@@ -1,12 +1,12 @@
 <?php
 
 use App\Models\Calle;
-use App\Models\Localidad;
-use App\Models\Persona;
-use App\Models\Usuario;
-use App\Models\Nacion;
-use App\Models\Provincia;
 use App\Models\Departamento;
+use App\Models\Localidad;
+use App\Models\Nacion;
+use App\Models\Persona;
+use App\Models\Provincia;
+use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -77,7 +77,6 @@ test('admin crea domicilio', function () {
     ]);
 });
 
-
 test('admin actualiza domicilio sin pisar valores previos (filtra null)', function () {
     $persona = Persona::factory()->create();
     // La persona ya tiene un domicilio previo
@@ -123,7 +122,6 @@ test('admin crea domicilio con nacion_id y observaciones', function () {
         'observaciones' => 'VIVE EN CASA PROPIA',
     ]);
 });
-
 
 test('admin declara domicilio desconocido y blanquea campos geográficos', function () {
     $persona = Persona::factory()->create();

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,17 +20,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property int|null $lectivo_id
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\AnioPlan|null $anioPlan
- * @property-read \App\Models\Lectivo|null $cicloLectivo
- * @property-read \App\Models\Escuela|null $escuela
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Espacio> $espacios
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read AnioPlan|null $anioPlan
+ * @property-read Lectivo|null $cicloLectivo
+ * @property-read Escuela|null $escuela
+ * @property-read Collection<int, Espacio> $espacios
  * @property-read int|null $espacios_count
- * @property-read \App\Models\Jornada|null $jornada
- * @property-read \App\Models\Turno|null $turnoFin
- * @property-read \App\Models\Turno|null $turnoInicio
+ * @property-read Jornada|null $jornada
+ * @property-read Turno|null $turnoFin
+ * @property-read Turno|null $turnoInicio
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta onlyTrashed()
@@ -48,13 +50,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Propuesta withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Propuesta extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "academic";
+    protected $auditGroup = 'academic';
 
     /**
      * The attributes that are mass assignable.
@@ -62,12 +65,12 @@ class Propuesta extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "escuela_id",
-        "anio_plan_id",
-        "turno_inicio_id",
-        "turno_fin_id",
-        "jornada_id",
-        "lectivo_id"
+        'escuela_id',
+        'anio_plan_id',
+        'turno_inicio_id',
+        'turno_fin_id',
+        'jornada_id',
+        'lectivo_id',
     ];
 
     /**
@@ -91,7 +94,7 @@ class Propuesta extends Model
      */
     public function turnoInicio(): BelongsTo
     {
-        return $this->belongsTo(Turno::class, "turno_inicio_id", "id");
+        return $this->belongsTo(Turno::class, 'turno_inicio_id', 'id');
     }
 
     /**
@@ -99,7 +102,7 @@ class Propuesta extends Model
      */
     public function turnoFin(): BelongsTo
     {
-        return $this->belongsTo(Turno::class, "turno_fin_id", "id");
+        return $this->belongsTo(Turno::class, 'turno_fin_id', 'id');
     }
 
     /**

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Spatie\Permission\Models\Role;
-use Illuminate\Http\JsonResponse;
 use App\Http\Resources\RoleResource;
+use Illuminate\Http\JsonResponse;
+use Spatie\Permission\Models\Role;
 
 class RolEscolarController extends Controller
 {

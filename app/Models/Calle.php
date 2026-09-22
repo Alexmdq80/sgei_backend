@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\ActualizaVersionCatalogo;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -21,18 +24,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $georef_categoria_id
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Domicilio> $domicilioCalles
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Domicilio> $domicilioCalles
  * @property-read int|null $domicilio_calles_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Domicilio> $domicilioEntreCalles1
+ * @property-read Collection<int, Domicilio> $domicilioEntreCalles1
  * @property-read int|null $domicilio_entre_calles1_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Domicilio> $domicilioEntreCalles2
+ * @property-read Collection<int, Domicilio> $domicilioEntreCalles2
  * @property-read int|null $domicilio_entre_calles2_count
- * @property-read \App\Models\GeorefCategoria|null $georefCategoria
- * @property-read \App\Models\GeorefFuente|null $georefFuente
- * @property-read \App\Models\LocalidadCensal|null $localidadCensal
+ * @property-read GeorefCategoria|null $georefCategoria
+ * @property-read GeorefFuente|null $georefFuente
+ * @property-read LocalidadCensal|null $localidadCensal
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Calle newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Calle newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Calle onlyTrashed()
@@ -54,11 +58,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Calle whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Calle withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Calle withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Calle extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use ActualizaVersionCatalogo, AuditableTrait, HasFactory,  SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -66,17 +71,17 @@ class Calle extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "id_georef",
-        "nombre",
-        "altura_fin_derecha",
-        "altura_fin_izquierda",
-        "altura_inicio_derecha",
-        "altura_inicio_izquierda",
-        "localidad_censal_id",
-        "georef_fuente_id",
-        "georef_categoria_id",
-        "created_by",
-        "updated_by"
+        'id_georef',
+        'nombre',
+        'altura_fin_derecha',
+        'altura_fin_izquierda',
+        'altura_inicio_derecha',
+        'altura_inicio_izquierda',
+        'localidad_censal_id',
+        'georef_fuente_id',
+        'georef_categoria_id',
+        'created_by',
+        'updated_by',
     ];
 
     /**
@@ -116,7 +121,7 @@ class Calle extends Model
      */
     public function domicilioEntreCalles1(): HasMany
     {
-        return $this->hasMany(Domicilio::class, "calle_entre_1_id", "id");
+        return $this->hasMany(Domicilio::class, 'calle_entre_1_id', 'id');
     }
 
     /**
@@ -124,6 +129,6 @@ class Calle extends Model
      */
     public function domicilioEntreCalles2(): HasMany
     {
-        return $this->hasMany(Domicilio::class, "calle_entre_2_id", "id");
+        return $this->hasMany(Domicilio::class, 'calle_entre_2_id', 'id');
     }
 }

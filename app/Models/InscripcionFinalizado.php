@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,11 +14,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $condicion_id
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Condicion|null $condicionFinalizacion
- * @property-read \App\Models\HistorialInscripcion|null $historialInscripcion
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Condicion|null $condicionFinalizacion
+ * @property-read HistorialInscripcion|null $historialInscripcion
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionFinalizado newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionFinalizado newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionFinalizado onlyTrashed()
@@ -32,13 +34,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionFinalizado whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionFinalizado withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionFinalizado withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class InscripcionFinalizado extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "academic";
+    protected $auditGroup = 'academic';
 
     /**
      * The attributes that are mass assignable.
@@ -46,8 +49,8 @@ class InscripcionFinalizado extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "historial_inscripcion_id",
-        "condicion_id"
+        'historial_inscripcion_id',
+        'condicion_id',
     ];
 
     /**
@@ -63,6 +66,6 @@ class InscripcionFinalizado extends Model
      */
     public function condicionFinalizacion(): BelongsTo
     {
-        return $this->belongsTo(Condicion::class, "condicion_id");
+        return $this->belongsTo(Condicion::class, 'condicion_id');
     }
 }

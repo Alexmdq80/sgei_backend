@@ -105,7 +105,7 @@ class Domicilio extends Model
     protected function numero(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -115,7 +115,7 @@ class Domicilio extends Model
     protected function piso(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -125,7 +125,7 @@ class Domicilio extends Model
     protected function torre(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -135,7 +135,7 @@ class Domicilio extends Model
     protected function unidad(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
@@ -145,27 +145,28 @@ class Domicilio extends Model
     protected function observaciones(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
+
     protected function calleNombre(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
     protected function calleEntre1Nombre(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 
     protected function calleEntre2Nombre(): Attribute
     {
         return Attribute::make(
-            set: fn(?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
+            set: fn (?string $value) => $value ? mb_strtoupper(trim($value), 'UTF-8') : null,
         );
     }
 

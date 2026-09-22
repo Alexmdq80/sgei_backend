@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('cupofs', function (Blueprint $table) {
             $table->uuid('created_by')->nullable()->after('updated_at');
             $table->uuid('updated_by')->nullable()->after('created_by');
-            
+
             $table->foreign('created_by')->references('id')->on('usuarios')->onDelete('set null');
             $table->foreign('updated_by')->references('id')->on('usuarios')->onDelete('set null');
         });
@@ -22,7 +22,7 @@ return new class extends Migration
         Schema::table('cupof_movimientos', function (Blueprint $table) {
             $table->uuid('created_by')->nullable()->after('updated_at');
             $table->uuid('updated_by')->nullable()->after('created_by');
-            
+
             $table->foreign('created_by')->references('id')->on('usuarios')->onDelete('set null');
             $table->foreign('updated_by')->references('id')->on('usuarios')->onDelete('set null');
         });

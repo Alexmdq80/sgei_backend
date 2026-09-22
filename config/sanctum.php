@@ -24,9 +24,8 @@ return [
         Sanctum::currentApplicationUrlWithPort(),
         ''
     ))),*/
-    
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'sgei.local,api.sgei.local,127.0.0.1,localhost')),
 
+    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'sgei.local,api.sgei.local,127.0.0.1,localhost')),
 
     /*
     |--------------------------------------------------------------------------

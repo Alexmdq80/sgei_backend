@@ -4,14 +4,14 @@ namespace Tests\Feature\Api\V1;
 
 use App\Models\Cargo;
 use App\Models\Usuario;
-use Tests\ProvidesRoles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\ProvidesRoles;
 
 uses(RefreshDatabase::class, ProvidesRoles::class);
 
 beforeEach(function () {
     $this->seedRoles();
-    
+
     $this->user = Usuario::factory()->create([
         'estado' => 'activo',
         'email_verified_at' => now(),
@@ -41,7 +41,7 @@ test('un administrador puede crear un cargo', function () {
         ->postJson('/api/v1/admin/cargos', [
             'nombre' => 'Cargo Nuevo',
             'tipo' => 'cargo',
-            'requiere_cursos' => true
+            'requiere_cursos' => true,
         ]);
 
     $response->assertStatus(201)
@@ -57,7 +57,7 @@ test('no se puede crear un cargo con un nombre que ya existe', function () {
     $response = $this->actingAs($this->user, 'sanctum')
         ->postJson('/api/v1/admin/cargos', [
             'nombre' => 'Cargo Existente',
-            'requiere_cursos' => false
+            'requiere_cursos' => false,
         ]);
 
     $response->assertStatus(422)
@@ -69,7 +69,7 @@ test('un usuario sin permisos no puede crear un cargo', function () {
         ->postJson('/api/v1/admin/cargos', [
             'nombre' => 'Cargo Nuevo',
             'tipo' => 'cargo',
-            'requiere_cursos' => true
+            'requiere_cursos' => true,
         ]);
 
     $response->assertStatus(403);
@@ -83,7 +83,7 @@ test('un administrador puede actualizar un cargo', function () {
         ->putJson("/api/v1/admin/cargos/{$cargo->id}", [
             'nombre' => 'Cargo Actualizado',
             'tipo' => 'horas',
-            'activo' => false
+            'activo' => false,
         ]);
 
     $response->assertStatus(200)
@@ -93,7 +93,7 @@ test('un administrador puede actualizar un cargo', function () {
     $this->assertDatabaseHas('cargos', [
         'id' => $cargo->id,
         'nombre' => 'CARGO ACTUALIZADO',
-        'activo' => false
+        'activo' => false,
     ]);
 });
 
@@ -116,14 +116,14 @@ test('el nombre del cargo se normaliza a mayúsculas', function () {
 
 test('el seeder de cargos carga los datos iniciales correctamente', function () {
     $this->artisan('db:seed', ['--class' => 'CargoSeeder']);
-    
+
     $this->assertDatabaseHas('cargos', [
         'nombre' => 'PRECEPTOR/A',
-        'requiere_cursos' => true
+        'requiere_cursos' => true,
     ]);
-    
+
     $this->assertDatabaseHas('cargos', [
         'nombre' => 'DIRECTOR/A',
-        'requiere_cursos' => false
+        'requiere_cursos' => false,
     ]);
 });

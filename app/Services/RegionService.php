@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use App\Models\Region;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class RegionService
 {
     /**
      * Get paginated regions with their province.
      */
-    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         $query = Region::with('provincia')
             ->orderBy('numero');
@@ -46,6 +47,7 @@ class RegionService
     public function update(Region $region, array $data): Region
     {
         $region->update($data);
+
         return $region->load('provincia');
     }
 

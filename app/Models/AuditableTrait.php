@@ -16,10 +16,10 @@ trait AuditableTrait
         // 1. Automatic author fields (created_by, updated_by)
         static::creating(function ($model) {
             if (Auth::check()) {
-                if (!isset($model->created_by)) {
+                if (! isset($model->created_by)) {
                     $model->created_by = Auth::id();
                 }
-                if (!isset($model->updated_by)) {
+                if (! isset($model->updated_by)) {
                     $model->updated_by = Auth::id();
                 }
             }
@@ -39,9 +39,9 @@ trait AuditableTrait
         static::updated(function ($model) {
             $old = $model->getOriginal();
             $new = $model->getChanges();
-            
+
             // Only log if there are relevant changes
-            if (!empty($new)) {
+            if (! empty($new)) {
                 $model->logAudit('updated', $old, $new);
             }
         });
@@ -58,9 +58,9 @@ trait AuditableTrait
     {
         $auditGroup = property_exists($this, 'auditGroup') ? $this->auditGroup : 'system';
         $tableName = "audit_{$auditGroup}";
-        
+
         // Ensure the table exists or fallback to system
-        if (!in_array($auditGroup, ['entities', 'academic', 'system'])) {
+        if (! in_array($auditGroup, ['entities', 'academic', 'system'])) {
             $tableName = 'audit_system';
         }
 
@@ -94,8 +94,8 @@ trait AuditableTrait
     protected function filterAuditFields(array $data): array
     {
         $ignore = [
-            'password', 'remember_token', 'created_at', 'updated_at', 
-            'deleted_at', 'created_by', 'updated_by'
+            'password', 'remember_token', 'created_at', 'updated_at',
+            'deleted_at', 'created_by', 'updated_by',
         ];
 
         return array_diff_key($data, array_flip($ignore));

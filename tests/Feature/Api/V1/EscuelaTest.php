@@ -1,11 +1,14 @@
 <?php
 
 use App\Models\Escuela;
+use App\Models\EscuelaPersona;
 use App\Models\Nivel;
+use App\Models\Persona;
 use App\Models\Sector;
 use App\Models\Usuario;
-use Spatie\Permission\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -60,14 +63,14 @@ test('can get sectores', function () {
 
 test('authenticated user can request to join a school', function () {
     $user = Usuario::factory()->create();
-    $persona = \App\Models\Persona::factory()->create(['usuario_id' => $user->id]);
+    $persona = Persona::factory()->create(['usuario_id' => $user->id]);
     $escuela = Escuela::factory()->create();
     $rol = Role::where('name', 'profesor')->first();
 
     $response = $this->actingAs($user)
         ->postJson('/api/v1/auth/escuelas/join', [
             'escuela_id' => $escuela->id,
-            'role_id' => $rol->id
+            'role_id' => $rol->id,
         ]);
 
     $response->assertStatus(200)
@@ -77,28 +80,28 @@ test('authenticated user can request to join a school', function () {
         'persona_id' => $persona->id,
         'escuela_id' => $escuela->id,
         'role_id' => $rol->id,
-        'verified_at' => null
+        'verified_at' => null,
     ]);
 });
 
 test('authenticated user can cancel join request', function () {
     $user = Usuario::factory()->create();
-    $persona = \App\Models\Persona::factory()->create(['usuario_id' => $user->id]);
+    $persona = Persona::factory()->create(['usuario_id' => $user->id]);
     $escuela = Escuela::factory()->create();
     $rol = Role::where('name', 'profesor')->first();
 
     // Crear la solicitud previa usando el modelo EscuelaPersona
-    \App\Models\EscuelaPersona::create([
-        'id' => \Illuminate\Support\Str::uuid(),
+    EscuelaPersona::create([
+        'id' => Str::uuid(),
         'persona_id' => $persona->id,
         'escuela_id' => $escuela->id,
         'role_id' => $rol->id,
-        'verified_at' => null
+        'verified_at' => null,
     ]);
 
     $response = $this->actingAs($user)
         ->postJson('/api/v1/auth/escuelas/cancel-join', [
-            'escuela_id' => $escuela->id
+            'escuela_id' => $escuela->id,
         ]);
 
     $response->assertStatus(200)
@@ -107,6 +110,6 @@ test('authenticated user can cancel join request', function () {
     $this->assertSoftDeleted('escuela_persona', [
         'persona_id' => $persona->id,
         'escuela_id' => $escuela->id,
-        'role_id' => $rol->id
+        'role_id' => $rol->id,
     ]);
 });

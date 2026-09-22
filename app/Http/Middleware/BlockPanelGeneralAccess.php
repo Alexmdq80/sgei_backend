@@ -14,7 +14,7 @@ class BlockPanelGeneralAccess
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
@@ -28,13 +28,13 @@ class BlockPanelGeneralAccess
             'director',
             'vicedirector',
             'secretario',
-            'prosecretario'
+            'prosecretario',
         ];
 
         // Verificar si el usuario tiene alguno de los roles restringidos
         $hasRestrictedRole = $user->hasAnyRole($restrictedRoles);
 
-        if (!$hasRestrictedRole) {
+        if (! $hasRestrictedRole) {
             // Verificar conducción institucional en escuela_usuarios
             $hasRestrictedRole = $user->persona?->escuelasPersonas()
                 ->whereNotNull('verified_at')
@@ -82,7 +82,7 @@ class BlockPanelGeneralAccess
                 'calles',
                 'georef-fuentes',
                 'georef-categorias',
-                'georef-funcions'
+                'georef-funcions',
             ];
 
             foreach ($panelGeneralResources as $resource) {
@@ -90,18 +90,18 @@ class BlockPanelGeneralAccess
                 if (preg_match("#api/v1/admin/{$resource}(\$|/)#", $path)) {
                     return response()->json([
                         'error' => 'No tienes permisos para acceder al Panel General.',
-                        'code' => 403
+                        'code' => 403,
                     ], 403);
                 }
             }
 
             // Para 'anios' (Años), que es parte del Panel Curricular:
             // "sólo lectura Panel Curricular": se permite GET, pero se bloquean POST, PUT, PATCH, DELETE.
-            if (preg_match("#api/v1/admin/anios(\$|/)#", $path)) {
-                if (!$request->isMethod('GET')) {
+            if (preg_match('#api/v1/admin/anios($|/)#', $path)) {
+                if (! $request->isMethod('GET')) {
                     return response()->json([
                         'error' => 'No tienes permisos para modificar elementos del Panel Curricular.',
-                        'code' => 403
+                        'code' => 403,
                     ], 403);
                 }
             }

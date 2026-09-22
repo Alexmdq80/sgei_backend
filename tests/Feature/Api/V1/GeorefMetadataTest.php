@@ -1,17 +1,18 @@
 <?php
 
-use App\Models\GeorefFuente;
 use App\Models\GeorefCategoria;
+use App\Models\GeorefFuente;
 use App\Models\GeorefFuncion;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Artisan::call('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
-    $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
     $this->admin = Usuario::factory()->create();
     $this->admin->assignRole('superuser');
@@ -32,7 +33,7 @@ test('can create georef source in uppercase', function () {
     $data = [
         'nombre' => 'fuente de prueba',
         'orden' => 10,
-        'vigente' => true
+        'vigente' => true,
     ];
 
     $response = $this->actingAs($this->admin, 'sanctum')
@@ -42,7 +43,7 @@ test('can create georef source in uppercase', function () {
         ->assertJsonPath('nombre', 'FUENTE DE PRUEBA');
 
     $this->assertDatabaseHas('georef_fuentes', [
-        'nombre' => 'FUENTE DE PRUEBA'
+        'nombre' => 'FUENTE DE PRUEBA',
     ]);
 });
 
@@ -71,7 +72,7 @@ test('can update georef category', function () {
 
     $response = $this->actingAs($this->admin, 'sanctum')
         ->putJson("/api/v1/admin/georef-categorias/{$categoria->id}", [
-            'nombre' => 'cat new'
+            'nombre' => 'cat new',
         ]);
 
     $response->assertStatus(200)
@@ -79,7 +80,7 @@ test('can update georef category', function () {
 
     $this->assertDatabaseHas('georef_categorias', [
         'id' => $categoria->id,
-        'nombre' => 'CAT NEW'
+        'nombre' => 'CAT NEW',
     ]);
 });
 

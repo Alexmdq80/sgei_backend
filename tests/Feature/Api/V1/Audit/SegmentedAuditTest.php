@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Escuela;
+use App\Models\Genero;
 use App\Models\Usuario;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -14,7 +14,7 @@ beforeEach(function () {
 test('it logs creation of a model in the correct audit table', function () {
     $escuela = Escuela::factory()->create([
         'nombre' => 'Escuela de Prueba Auditada',
-        'cue_anexo' => '123456789'
+        'cue_anexo' => '123456789',
     ]);
 
     $this->assertDatabaseHas('audit_entities', [
@@ -70,10 +70,10 @@ test('it logs deletions of a model', function () {
 
 test('it uses system audit table by default for unconfigured models', function () {
     // Genero is a model that uses AuditableTrait but doesn't have a defined auditGroup
-    $genero = \App\Models\Genero::create(['nombre' => 'Otro']);
+    $genero = Genero::create(['nombre' => 'Otro']);
 
     $this->assertDatabaseHas('audit_system', [
-        'auditable_type' => \App\Models\Genero::class,
+        'auditable_type' => Genero::class,
         'auditable_id' => $genero->id,
         'event' => 'created',
     ]);

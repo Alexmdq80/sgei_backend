@@ -28,7 +28,7 @@ return new class extends Migration
         foreach ($lookupTables as $table => $columns) {
             Schema::create($table, function (Blueprint $table) use ($columns) {
                 // Usamos tinyint para tablas de referencia pequeñas, común en optimización de BD
-                $table->tinyIncrements('id'); 
+                $table->tinyIncrements('id');
                 foreach ($columns as $column) {
                     if ($column === 'orden') {
                         $table->integer($column)->nullable();

@@ -14,7 +14,7 @@ test('refresca la versión de todos los catálogos versionados', function () {
 
     $despues = CatalogoVersion::pluck('version', 'tabla');
 
-    expect($despues)->toHaveCount(9);
+    expect($despues)->toHaveCount(10);
 
     foreach ($antes as $tabla => $version) {
         expect($despues[$tabla])->not->toBe($version);

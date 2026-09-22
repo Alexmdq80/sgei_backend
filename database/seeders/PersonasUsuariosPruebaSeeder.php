@@ -27,8 +27,9 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         $faker = Faker::create('es_AR');
 
         $docTipo = DocumentoTipo::find(1); // DNI
-        if (!$docTipo) {
+        if (! $docTipo) {
             $this->command->error('Ejecutá DocumentoTipoSeeder antes.');
+
             return;
         }
 
@@ -54,8 +55,7 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         $proximoIndiceUsuario = $this->proximoIndiceUsuario();
         $proximoIndiceAdmin = $this->proximoIndiceAdmin();
 
-
-        DB::transaction(function () use ($faker, $docTipo, $roles, $escuelas, $password, $proximoDni, $proximoIndiceContacto, $proximoIndiceUsuario, $proximoIndiceAdmin) {
+        DB::transaction(function () use ($faker, $roles, $escuelas, $password, $proximoDni, $proximoIndiceContacto, $proximoIndiceUsuario, $proximoIndiceAdmin) {
             // ===== PERSONAS (500) =====
             $personas = collect();
             for ($i = 0; $i < 500; $i++) {
@@ -116,8 +116,8 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         });
 
         $this->command->info(
-            '✅ Lote agregado: 500 personas + 245 usuarios. ' .
-            'Totales: ' . Persona::count() . ' personas, ' . Usuario::count() . ' usuarios.'
+            '✅ Lote agregado: 500 personas + 245 usuarios. '.
+            'Totales: '.Persona::count().' personas, '.Usuario::count().' usuarios.'
         );
     }
 
@@ -140,11 +140,12 @@ class PersonasUsuariosPruebaSeeder extends Seeder
     {
         return Usuario::where('email', 'like', 'usuario%@test.local')->count() + 1;
     }
+
     private function proximoIndiceAdmin(): int
     {
         $max = Usuario::where('email', 'like', 'admin%@sgei.local')
             ->get()
-            ->map(fn($u) => (int) substr($u->email, 5, 2))
+            ->map(fn ($u) => (int) substr($u->email, 5, 2))
             ->max();
 
         return $max ? $max + 1 : 1;
@@ -210,7 +211,7 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         $usuario = Usuario::firstOrCreate(
             ['email' => $email],
             [
-                'nombre' => $persona->nombre . ' ' . $persona->apellido . ' (' . $persona->documentoNumeroRaw() . ')',
+                'nombre' => $persona->nombre.' '.$persona->apellido.' ('.$persona->documentoNumeroRaw().')',
                 'documento_tipo_id' => $persona->documento_tipo_id,
                 'documento_numero' => $persona->documentoNumeroRaw(),
                 'email' => $email,
@@ -240,7 +241,7 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         return Usuario::firstOrCreate(
             ['email' => $contacto->email],
             [
-                'nombre' => $persona->nombre . ' ' . $persona->apellido,
+                'nombre' => $persona->nombre.' '.$persona->apellido,
                 'documento_tipo_id' => $persona->documento_tipo_id,
                 'documento_numero' => $persona->documentoNumeroRaw(),
                 'email' => $contacto->email,
@@ -258,7 +259,7 @@ class PersonasUsuariosPruebaSeeder extends Seeder
         $email = sprintf('usuario%06d@test.local', $indiceUsuario);
 
         $data = [
-            'nombre' => fake()->name() . ' (' . (91000000 + $indiceUsuario) . ')',
+            'nombre' => fake()->name().' ('.(91000000 + $indiceUsuario).')',
             'documento_tipo_id' => 1,
             'documento_numero' => (string) (91000000 + $indiceUsuario),
             'email' => $email,
@@ -278,7 +279,7 @@ class PersonasUsuariosPruebaSeeder extends Seeder
 
     private function asignarRolEscolar(Persona $persona, ?Escuela $escuela, int $roleId): void
     {
-        if (!$escuela) {
+        if (! $escuela) {
             return;
         }
         EscuelaPersona::firstOrCreate(

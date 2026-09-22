@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\ModalidadNivel;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ModalidadNivelService
 {
@@ -16,8 +16,8 @@ class ModalidadNivelService
     {
         return ModalidadNivel::with(['nivel', 'modalidad', 'escuelaTipo'])
             ->get()
-            ->sortBy(function($item) {
-                return ($item->nivel->nombre ?? '') . ($item->modalidad->nombre ?? '');
+            ->sortBy(function ($item) {
+                return ($item->nivel->nombre ?? '').($item->modalidad->nombre ?? '');
             })->values();
     }
 
@@ -48,6 +48,7 @@ class ModalidadNivelService
                 'escuela_tipo_id' => $data['escuela_tipo_id'] ?? $modalidadNivel->escuela_tipo_id,
                 'updated_by' => Auth::id(),
             ]);
+
             return $modalidadNivel;
         });
     }

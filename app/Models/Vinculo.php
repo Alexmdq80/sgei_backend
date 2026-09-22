@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,12 +18,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $vigente
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PersonaVinculoPersona> $pvps
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, PersonaVinculoPersona> $pvps
  * @property-read int|null $pvps_count
- * @property-read \App\Models\VinculoTipo|null $vinculoTipo
+ * @property-read VinculoTipo|null $vinculoTipo
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vinculo newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vinculo newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vinculo onlyTrashed()
@@ -38,11 +41,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vinculo whereVinculoTipoId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vinculo withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vinculo withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Vinculo extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -50,10 +54,10 @@ class Vinculo extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "vinculo_tipo_id",
-        "nombre",
-        "orden",
-        "vigente"
+        'vinculo_tipo_id',
+        'nombre',
+        'orden',
+        'vigente',
     ];
 
     /**

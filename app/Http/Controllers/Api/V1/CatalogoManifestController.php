@@ -28,6 +28,7 @@ class CatalogoManifestController extends Controller
         'documento_situacions' => 'documento_situacions',
         'sexos' => 'sexos',
         'generos' => 'generos',
+        'calles' => 'calles',
     ];
 
     /**

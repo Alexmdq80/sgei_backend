@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Calle;
 use App\Models\Localidad;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class CalleService
 {
@@ -86,5 +87,21 @@ class CalleService
     public function delete(Calle $calle): bool
     {
         return (bool) $calle->delete();
+    }
+
+    /**
+     * Devuelve el listado compacto (id y nombre) de todas las calles de una localidad.
+     *
+     * @return Collection<int, Calle>
+     */
+    public function getCompactByLocalidad(int $localidadId): Collection
+    {
+        $censalIds = Localidad::where('id', $localidadId)->pluck('localidad_censal_id');
+
+        return Calle::query()
+            ->select(['id', 'nombre'])
+            ->whereIn('localidad_censal_id', $censalIds)
+            ->orderBy('nombre')
+            ->get();
     }
 }

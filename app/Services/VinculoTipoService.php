@@ -25,6 +25,7 @@ class VinculoTipoService
     public function update(VinculoTipo $vinculoTipo, array $data): VinculoTipo
     {
         $vinculoTipo->update($data);
+
         return $vinculoTipo;
     }
 

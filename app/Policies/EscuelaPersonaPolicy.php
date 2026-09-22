@@ -20,7 +20,7 @@ class EscuelaPersonaPolicy
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
         return $user->persona?->escuelasPersonas()
-            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
+            ->whereHas('role', fn ($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at')
             ->exists() ?? false;
     }
@@ -36,7 +36,7 @@ class EscuelaPersonaPolicy
 
         return $user->persona?->escuelasPersonas()
             ->where('escuela_id', $escuelaPersona->escuela_id)
-            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
+            ->whereHas('role', fn ($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at')
             ->exists() ?? false;
     }

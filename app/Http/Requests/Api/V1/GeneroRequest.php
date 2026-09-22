@@ -29,10 +29,10 @@ class GeneroRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('generos', 'nombre')->ignore($id)
+                Rule::unique('generos', 'nombre')->ignore($id),
             ],
             'orden' => ['nullable', 'integer', 'min:0', 'max:255'],
-            'vigente' => ['boolean']
+            'vigente' => ['boolean'],
         ];
     }
 }

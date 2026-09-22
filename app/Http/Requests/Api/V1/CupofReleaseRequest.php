@@ -14,7 +14,7 @@ class CupofReleaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'motivo_baja' => ['nullable', 'string', 'max:255']
+            'motivo_baja' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

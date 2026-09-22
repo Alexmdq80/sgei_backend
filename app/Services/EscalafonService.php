@@ -25,6 +25,7 @@ class EscalafonService
     public function update(Escalafon $escalafon, array $data): Escalafon
     {
         $escalafon->update($data);
+
         return $escalafon;
     }
 

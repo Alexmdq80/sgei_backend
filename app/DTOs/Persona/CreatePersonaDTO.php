@@ -30,19 +30,18 @@ readonly class CreatePersonaDTO
         public ?bool $viveSi = null,
         public ?string $email = null,
         public ?string $observaciones = null
-    ) {
-    }
-
+    ) {}
 
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
         $data = array_merge($request->validated(), $overrides);
+
         return self::fromArray($data);
     }
 
     public static function fromArray(array $data): self
     {
-          $tipoId = isset($data['documento_tipo_id']) ? (int) $data['documento_tipo_id'] : null;
+        $tipoId = isset($data['documento_tipo_id']) ? (int) $data['documento_tipo_id'] : null;
         $numero = ($data['documento_numero'] ?? '') !== '' ? (string) $data['documento_numero'] : null;
 
         $documentoIdentidad = ($tipoId !== null && $numero !== null)
@@ -76,7 +75,6 @@ readonly class CreatePersonaDTO
         );
     }
 
-
     public function toArray(): array
     {
         $data = [
@@ -107,7 +105,6 @@ readonly class CreatePersonaDTO
             $data['documento_tipo_id'] = $this->documentoTipoId;
         }
 
-        return array_filter($data, fn($val) => $val !== null);
+        return array_filter($data, fn ($val) => $val !== null);
     }
-
 }

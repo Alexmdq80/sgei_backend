@@ -21,7 +21,7 @@ class CupofRequest extends FormRequest
             'escalafon_id' => ['required', Rule::exists('escalafones', 'id')],
             'puesto_tipo_id' => ['required', Rule::exists('puesto_tipos', 'id')],
             'nombre_cargo' => ['nullable', 'string', 'max:255'],
-            'cantidad' => ['integer', 'min:1']
+            'cantidad' => ['integer', 'min:1'],
         ];
 
         if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {

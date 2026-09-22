@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Anio;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AnioService
 {
@@ -56,6 +56,7 @@ class AnioService
                 'vigente' => $data['vigente'] ?? $anio->vigente,
                 'updated_by' => Auth::id(),
             ]);
+
             return $anio;
         });
     }

@@ -15,7 +15,7 @@ return new class extends Migration
             if (Schema::hasColumn('continentes', 'orden')) {
                 $table->dropColumn('orden');
             }
-            if (!Schema::hasColumn('continentes', 'vigente')) {
+            if (! Schema::hasColumn('continentes', 'vigente')) {
                 $table->boolean('vigente')->default(true)->after('nombre');
             }
         });

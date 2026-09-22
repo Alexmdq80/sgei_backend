@@ -29,7 +29,7 @@ class EscuelaUbicacionRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('escuela_ubicacions', 'nombre')->ignore($id)
+                Rule::unique('escuela_ubicacions', 'nombre')->ignore($id),
             ],
             'vigente' => ['nullable', 'boolean'],
         ];

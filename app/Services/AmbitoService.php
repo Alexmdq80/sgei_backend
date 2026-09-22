@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Ambito;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AmbitoService
 {
@@ -42,6 +42,7 @@ class AmbitoService
                 'vigente' => $data['vigente'] ?? $ambito->vigente,
                 'updated_by' => Auth::id(),
             ]);
+
             return $ambito;
         });
     }

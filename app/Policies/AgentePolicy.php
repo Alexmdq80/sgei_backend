@@ -20,7 +20,7 @@ class AgentePolicy
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
         return $usuario->persona?->escuelasPersonas()
-            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
+            ->whereHas('role', fn ($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at')
             ->exists() ?? false;
     }

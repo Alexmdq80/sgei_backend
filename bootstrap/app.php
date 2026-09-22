@@ -1,21 +1,27 @@
 <?php
 
+use App\Http\Middleware\BlockPanelGeneralAccess;
+use App\Http\Middleware\EnsureEmailIsVerifiedWithBypass;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        api: __DIR__ . '/../routes/api.php',
-        commands: __DIR__ . '/../routes/console.php',
-        channels: __DIR__ . '/../routes/channels.php',
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     // 🔒 1. Habilitar la autenticación de canales para Sanctum / React
     ->withBroadcasting(
-        __DIR__ . '/../routes/channels.php',
+        __DIR__.'/../routes/channels.php',
         ['prefix' => 'api', 'middleware' => ['web', 'auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -23,15 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // Internamente ya añade StartSession, VerifyCsrfToken, etc., a las rutas de la API.
         $middleware->statefulApi();
 
-        // 2. NO hagas prepend manual de StartSession o VerifyCsrfToken aquí, 
+        // 2. NO hagas prepend manual de StartSession o VerifyCsrfToken aquí,
         // ya que statefulApi() se encarga de inyectarlos en el orden correcto.
-    
+
         $middleware->alias([
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
-            'verified' => \App\Http\Middleware\EnsureEmailIsVerifiedWithBypass::class,
-            'block_panel_general' => \App\Http\Middleware\BlockPanelGeneralAccess::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'verified' => EnsureEmailIsVerifiedWithBypass::class,
+            'block_panel_general' => BlockPanelGeneralAccess::class,
         ]);
 
         // 3. TrustProxies es correcto si usas Apache como Proxy.
@@ -44,11 +50,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, Request $request) {
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
                     'error' => 'Has realizado demasiadas peticiones. Por favor, espera un momento antes de volver a intentarlo.',
-                    'code' => 429
+                    'code' => 429,
                 ], 429);
             }
         });

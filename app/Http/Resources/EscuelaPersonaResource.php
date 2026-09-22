@@ -26,7 +26,7 @@ class EscuelaPersonaResource extends JsonResource
             if ($this->relationLoaded('escuela')) {
                 $loads[] = 'escuela.localidad';
             }
-            if (!empty($loads)) {
+            if (! empty($loads)) {
                 $this->resource->loadMissing($loads);
             }
         }

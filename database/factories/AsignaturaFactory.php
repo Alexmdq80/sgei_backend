@@ -2,12 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\Asignatura;
 use App\Models\AnioPlan;
+use App\Models\Asignatura;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Asignatura>
+ * @extends Factory<Asignatura>
  */
 class AsignaturaFactory extends Factory
 {

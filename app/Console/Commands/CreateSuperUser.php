@@ -30,8 +30,9 @@ class CreateSuperUser extends Command
         $email = $this->argument('email');
         $usuario = Usuario::where('email', $email)->first();
 
-        if (!$usuario) {
+        if (! $usuario) {
             $this->error("No se encontró ningún usuario con el email: {$email}");
+
             return 1;
         }
 
@@ -50,7 +51,7 @@ class CreateSuperUser extends Command
             $this->warn("Advertencia: El rol 'superuser' no existe en la tabla de roles. Ejecute el seeder primero.");
         }
 
-        $this->info("¡Éxito! El usuario ahora tiene privilegios de Super Administrador.");
+        $this->info('¡Éxito! El usuario ahora tiene privilegios de Super Administrador.');
 
         return 0;
     }

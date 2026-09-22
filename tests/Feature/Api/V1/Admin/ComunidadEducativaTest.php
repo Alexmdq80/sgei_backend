@@ -2,13 +2,15 @@
 
 use App\Models\Departamento;
 use App\Models\Escuela;
-use App\Models\EscuelaUsuario;
+use App\Models\EscuelaPersona;
 use App\Models\Localidad;
+use App\Models\Persona;
 use App\Models\Provincia;
 use App\Models\Region;
 use App\Models\Sector;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -43,15 +45,15 @@ beforeEach(function () {
     $this->superuser = Usuario::factory()->create(['email_verified_at' => now()]);
     $this->superuser->assignRole('superuser');
 
-        // Director de Escuela A
-    $directorRole = \Spatie\Permission\Models\Role::where('name', 'director')->first();
+    // Director de Escuela A
+    $directorRole = Role::where('name', 'director')->first();
     $this->director = Usuario::factory()->create(['email_verified_at' => now()]);
     $this->director->assignRole('director');
-    $personaDirector = \App\Models\Persona::factory()->create(['usuario_id' => $this->director->id]);
-    \App\Models\EscuelaPersona::create([
-        'persona_id'  => $personaDirector->id,
-        'escuela_id'  => $this->escuelaA->id,
-        'role_id'     => $directorRole->id,
+    $personaDirector = Persona::factory()->create(['usuario_id' => $this->director->id]);
+    EscuelaPersona::create([
+        'persona_id' => $personaDirector->id,
+        'escuela_id' => $this->escuelaA->id,
+        'role_id' => $directorRole->id,
         'verified_at' => now(),
     ]);
 });
@@ -69,8 +71,6 @@ test('superuser puede ver comunidad de cualquier escuela', function () {
         ->getJson("/api/v1/admin/comunidad-educativa?escuela_id={$this->escuelaB->id}")
         ->assertStatus(200);
 });
-
-
 
 // ---------------------------------------------------------------------------
 // Equipo de Conducción

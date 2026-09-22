@@ -13,7 +13,9 @@ class CupofAssignmentNotification extends Notification implements ShouldQueue
     use Queueable;
 
     protected Cupof $cupof;
+
     protected string $situacionRevista;
+
     protected string $personaNombre;
 
     /**
@@ -44,20 +46,20 @@ class CupofAssignmentNotification extends Notification implements ShouldQueue
         $cargo = $this->cupof->nombre_cargo ?? 'Docente';
         $escuela = $this->cupof->escuela->nombre;
         $asignatura = $this->cupof->asignatura?->nombre;
-        
+
         $message = (new MailMessage)
             ->subject('Asignación de puesto - SGEI')
-            ->greeting('¡Hola, ' . $this->personaNombre . '!')
+            ->greeting('¡Hola, '.$this->personaNombre.'!')
             ->line('Te informamos que has sido asignado a un nuevo puesto en el Sistema de Gestión Escolar Integral (SGEI).')
             ->line('**Detalles del puesto:**')
-            ->line('- **Cargo:** ' . $cargo)
-            ->line('- **Escuela:** ' . $escuela);
+            ->line('- **Cargo:** '.$cargo)
+            ->line('- **Escuela:** '.$escuela);
 
         if ($asignatura) {
-            $message->line('- **Asignatura:** ' . $asignatura);
+            $message->line('- **Asignatura:** '.$asignatura);
         }
 
-        $message->line('- **Situación de Revista:** ' . $this->situacionRevista)
+        $message->line('- **Situación de Revista:** '.$this->situacionRevista)
             ->line('Puedes acceder al sistema para ver más detalles.')
             ->salutation('Atentamente, El equipo de SGEI');
 

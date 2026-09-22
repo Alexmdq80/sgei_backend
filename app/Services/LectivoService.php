@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Lectivo;
 use Illuminate\Support\Collection;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class LectivoService
 {
@@ -15,8 +14,8 @@ class LectivoService
     {
         $query = Lectivo::query();
 
-        if (!empty($filters['search'])) {
-            $query->where('nombre', 'like', '%' . $filters['search'] . '%');
+        if (! empty($filters['search'])) {
+            $query->where('nombre', 'like', '%'.$filters['search'].'%');
         }
 
         return $query->orderBy('anio', 'desc')->orderBy('orden', 'asc')->get();
@@ -30,7 +29,7 @@ class LectivoService
         if (empty($data['orden'])) {
             $data['orden'] = (Lectivo::max('orden') ?? 0) + 1;
         }
-        
+
         return Lectivo::create($data);
     }
 
@@ -40,6 +39,7 @@ class LectivoService
     public function update(Lectivo $lectivo, array $data): Lectivo
     {
         $lectivo->update($data);
+
         return $lectivo;
     }
 

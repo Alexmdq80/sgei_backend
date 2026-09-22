@@ -1,20 +1,22 @@
 <?php
 
+use App\Models\DocumentoTipo;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Ensure roles and permissions are seeded
     $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
-    
+
     // Limpiar caché de permisos
-    $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
     // Create a default DocumentoTipo for the tests
-    $this->docTipo = \App\Models\DocumentoTipo::factory()->create(['nombre' => 'DNI']);
+    $this->docTipo = DocumentoTipo::factory()->create(['nombre' => 'DNI']);
 
     // Create test users and assign roles
     $this->superUser = Usuario::factory()->create([
@@ -61,14 +63,14 @@ test('superuser can update user', function () {
         'documento_numero' => '20202020',
         'email' => 'updated.admin@example.com',
     ];
-    $response = $this->putJson('/api/v1/admin/usuarios/' . $userToUpdate->id, $updatedData);
+    $response = $this->putJson('/api/v1/admin/usuarios/'.$userToUpdate->id, $updatedData);
     $response->assertOk();
 });
 
 test('superuser can delete user', function () {
     $userToDelete = Usuario::factory()->create();
     $this->actingAs($this->superUser, 'sanctum');
-    $response = $this->deleteJson('/api/v1/admin/usuarios/' . $userToDelete->id);
+    $response = $this->deleteJson('/api/v1/admin/usuarios/'.$userToDelete->id);
     $response->assertOk();
     $this->assertSoftDeleted('usuarios', ['id' => $userToDelete->id]);
 });

@@ -29,7 +29,7 @@ class CondicionRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('condicions', 'nombre')->ignore($id)
+                Rule::unique('condicions', 'nombre')->ignore($id),
             ],
             'vigente' => ['nullable', 'boolean'],
         ];

@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use App\Models\Localidad;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class LocalidadService
 {
     /**
      * Get paginated localities with their department, province, and nation.
      */
-    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         $query = Localidad::with(['departamento.provincia.nacion', 'localidadCensal'])
             ->orderBy('nombre');

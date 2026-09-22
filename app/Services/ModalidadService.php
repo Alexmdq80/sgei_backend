@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Modalidad;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ModalidadService
 {
@@ -42,6 +42,7 @@ class ModalidadService
                 'vigente' => $data['vigente'] ?? $modalidad->vigente,
                 'updated_by' => Auth::id(),
             ]);
+
             return $modalidad;
         });
     }

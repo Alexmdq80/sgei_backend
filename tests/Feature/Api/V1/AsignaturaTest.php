@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\Asignatura;
 use App\Models\AnioPlan;
+use App\Models\Asignatura;
 use App\Models\Usuario;
-use Tests\ProvidesRoles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\ProvidesRoles;
 
 uses(RefreshDatabase::class, ProvidesRoles::class);
 
@@ -38,7 +38,7 @@ test('el superuser puede crear una asignatura', function () {
         'anio_plan_id' => $this->anioPlan->id,
         'horas_semanales' => 4,
         'codigo' => 'MAT-01',
-        'orden' => 1
+        'orden' => 1,
     ];
 
     $response = $this->actingAs($this->admin, 'sanctum')
@@ -81,7 +81,7 @@ test('un usuario sin permisos no puede gestionar asignaturas', function () {
         ->postJson('/api/v1/asignaturas', [
             'nombre' => 'Física',
             'anio_plan_id' => $this->anioPlan->id,
-            'horas_semanales' => 4
+            'horas_semanales' => 4,
         ]);
 
     $response->assertStatus(403);
@@ -92,10 +92,9 @@ test('la carga horaria debe estar entre 0 y 40 horas', function () {
         ->postJson('/api/v1/asignaturas', [
             'nombre' => 'Invalida',
             'anio_plan_id' => $this->anioPlan->id,
-            'horas_semanales' => 50 // Excede el máximo
+            'horas_semanales' => 50, // Excede el máximo
         ]);
 
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['horas_semanales']);
 });
-

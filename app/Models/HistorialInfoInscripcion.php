@@ -4,22 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $historial_inscripcion_id
  * @property int|null $cierre_causa_id
- * @property \Illuminate\Support\Carbon|null $fecha
+ * @property Carbon|null $fecha
  * @property string|null $observaciones
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\CierreCausa|null $cierreCausa
- * @property-read \App\Models\HistorialInscripcion|null $historialInscripcion
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read CierreCausa|null $cierreCausa
+ * @property-read HistorialInscripcion|null $historialInscripcion
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInfoInscripcion newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInfoInscripcion newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInfoInscripcion onlyTrashed()
@@ -36,11 +38,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInfoInscripcion whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInfoInscripcion withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialInfoInscripcion withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class HistorialInfoInscripcion extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -48,10 +51,10 @@ class HistorialInfoInscripcion extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "historial_inscripcion_id",
-        "cierre_causa_id",
-        "fecha",
-        "observaciones"
+        'historial_inscripcion_id',
+        'cierre_causa_id',
+        'fecha',
+        'observaciones',
     ];
 
     /**
@@ -60,7 +63,7 @@ class HistorialInfoInscripcion extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'fecha' => 'datetime'
+        'fecha' => 'datetime',
     ];
 
     /**

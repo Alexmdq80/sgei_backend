@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Usuario;
 use App\Models\DocumentoTipo;
+use App\Models\Usuario;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 
 class AdminSistemaSeeder extends Seeder
 {
@@ -18,15 +18,17 @@ class AdminSistemaSeeder extends Seeder
     {
         // 1. Obtener tipo de documento (DNI usualmente es ID 1)
         $docTipo = DocumentoTipo::find(1) ?? DocumentoTipo::first();
-        if (!$docTipo) {
+        if (! $docTipo) {
             $this->command->error('Error: Debe ejecutar DocumentoTipoSeeder antes para crear tipos de documento.');
+
             return;
         }
 
         // 2. Verificar rol superuser (usando guard sanctum como en RolesAndPermissionsSeeder)
         $role = Role::where('name', 'superuser')->where('guard_name', 'sanctum')->first();
-        if (!$role) {
+        if (! $role) {
             $this->command->error('Error: Debe ejecutar RolesAndPermissionsSeeder antes para crear los roles.');
+
             return;
         }
 
@@ -54,7 +56,7 @@ class AdminSistemaSeeder extends Seeder
         );
 
         // 4. Asignar el rol de superuser si no lo tiene
-        if (!$admin->hasRole($role)) {
+        if (! $admin->hasRole($role)) {
             $admin->assignRole($role);
         }
 

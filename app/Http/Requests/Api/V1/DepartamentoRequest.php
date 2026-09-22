@@ -27,7 +27,7 @@ class DepartamentoRequest extends FormRequest
         return [
             'provincia_id' => ['required', Rule::exists('provincias', 'id')],
             'nombre' => ['required', 'string', 'max:255'],
-            'id_georef' => ['nullable', Rule::unique('departamentos', 'id_georef')->ignore($id)]
+            'id_georef' => ['nullable', Rule::unique('departamentos', 'id_georef')->ignore($id)],
         ];
     }
 }

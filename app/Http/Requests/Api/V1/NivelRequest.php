@@ -29,7 +29,7 @@ class NivelRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('nivels', 'nombre')->ignore($id)
+                Rule::unique('nivels', 'nombre')->ignore($id),
             ],
             'vigente' => ['nullable', 'boolean'],
         ];

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::table('cupof_movimientos', function (Blueprint $table) {
             // Drop existing foreign key
             $table->dropForeign(['agente_id']);
-            
+
             // Rename the column
             $table->renameColumn('agente_id', 'persona_id');
-            
+
             // Add new foreign key pointing to personas
             $table->foreign('persona_id')->references('id')->on('personas')->onDelete('cascade');
         });

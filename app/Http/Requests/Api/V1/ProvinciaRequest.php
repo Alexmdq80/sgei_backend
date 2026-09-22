@@ -28,7 +28,7 @@ class ProvinciaRequest extends FormRequest
             'nacion_id' => ['required', Rule::exists('nacions', 'id')],
             'nombre' => ['required', 'string', 'max:255', Rule::unique('provincias', 'nombre')->ignore($id)],
             'id_georef' => ['nullable', Rule::unique('provincias', 'id_georef')->ignore($id)],
-            'iso_id' => ['nullable', 'string', 'max:10']
+            'iso_id' => ['nullable', 'string', 'max:10'],
         ];
     }
 
@@ -36,7 +36,7 @@ class ProvinciaRequest extends FormRequest
     {
         return [
             'id_georef.unique' => 'El ID Georef ingresado ya está asignado a otra provincia.',
-            'nombre.unique' => 'Ya existe una provincia con este nombre.'
+            'nombre.unique' => 'Ya existe una provincia con este nombre.',
         ];
     }
 }

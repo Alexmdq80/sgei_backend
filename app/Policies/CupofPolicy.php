@@ -66,7 +66,7 @@ class CupofPolicy
         $rolesConduccion = ['director', 'vicedirector', 'secretario', 'prosecretario'];
 
         $query = $user->persona?->escuelasPersonas()
-            ->whereHas('role', fn($q) => $q->whereIn('name', $rolesConduccion))
+            ->whereHas('role', fn ($q) => $q->whereIn('name', $rolesConduccion))
             ->whereNotNull('verified_at');
 
         if ($escuelaId) {

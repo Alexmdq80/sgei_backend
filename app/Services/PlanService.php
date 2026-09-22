@@ -42,6 +42,7 @@ class PlanService
         return DB::transaction(function () use ($id, $data) {
             $plan = Plan::findOrFail($id);
             $plan->update($data);
+
             return $plan;
         });
     }
@@ -53,6 +54,7 @@ class PlanService
     {
         return DB::transaction(function () use ($id) {
             $plan = Plan::findOrFail($id);
+
             return (bool) $plan->delete();
         });
     }

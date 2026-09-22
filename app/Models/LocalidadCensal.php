@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,20 +21,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property numeric|null $centroide_lon
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Calle> $calles
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Calle> $calles
  * @property-read int|null $calles_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\GeorefAsentamiento> $georefAsentamientos
+ * @property-read Collection<int, GeorefAsentamiento> $georefAsentamientos
  * @property-read int|null $georef_asentamientos_count
- * @property-read \App\Models\GeorefCategoria|null $georefCategoria
- * @property-read \App\Models\GeorefFuente|null $georefFuente
- * @property-read \App\Models\GeorefFuncion|null $georefFuncion
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\GeorefLocalidad> $georefLocalidades
+ * @property-read GeorefCategoria|null $georefCategoria
+ * @property-read GeorefFuente|null $georefFuente
+ * @property-read GeorefFuncion|null $georefFuncion
+ * @property-read Collection<int, GeorefLocalidad> $georefLocalidades
  * @property-read int|null $georef_localidades_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Localidad> $localidades
+ * @property-read Collection<int, Localidad> $localidades
  * @property-read int|null $localidades_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|LocalidadCensal newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|LocalidadCensal newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|LocalidadCensal onlyTrashed()
@@ -52,11 +55,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|LocalidadCensal whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|LocalidadCensal withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|LocalidadCensal withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class LocalidadCensal extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -64,13 +68,13 @@ class LocalidadCensal extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "id_georef",
-        "georef_fuente_id",
-        "georef_categoria_id",
-        "georef_funcion_id",
-        "nombre",
-        "centroide_lat",
-        "centroide_lon"
+        'id_georef',
+        'georef_fuente_id',
+        'georef_categoria_id',
+        'georef_funcion_id',
+        'nombre',
+        'centroide_lat',
+        'centroide_lon',
     ];
 
     /**

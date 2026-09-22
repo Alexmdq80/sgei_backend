@@ -2,12 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\DocumentoTipo;
 use App\Models\Usuario;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-
-use App\Models\DocumentoTipo;
 
 /**
  * @extends Factory<Usuario>

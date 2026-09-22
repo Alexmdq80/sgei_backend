@@ -29,7 +29,7 @@ class OfertaRequest extends FormRequest
                 'required',
                 'string',
                 'max:200',
-                Rule::unique('ofertas', 'nombre')->ignore($id)
+                Rule::unique('ofertas', 'nombre')->ignore($id),
             ],
             'vigente' => ['nullable', 'boolean'],
         ];

@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\GeorefCategoria;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\GeorefCategoria>
+ * @extends Factory<GeorefCategoria>
  */
 class GeorefCategoriaFactory extends Factory
 {

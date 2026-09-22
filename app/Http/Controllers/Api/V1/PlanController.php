@@ -22,6 +22,7 @@ class PlanController extends Controller
     {
         Gate::authorize('viewAny', Plan::class);
         $plans = $this->planService->getAllPlans();
+
         return response()->json($plans);
     }
 
@@ -32,6 +33,7 @@ class PlanController extends Controller
     {
         Gate::authorize('create', Plan::class);
         $plan = $this->planService->createPlan($request->validated());
+
         return response()->json($plan, 201);
     }
 
@@ -42,6 +44,7 @@ class PlanController extends Controller
     {
         $plan = $this->planService->getPlanById($id);
         Gate::authorize('view', $plan);
+
         return response()->json($plan);
     }
 
@@ -53,6 +56,7 @@ class PlanController extends Controller
         $plan = $this->planService->getPlanById($id);
         Gate::authorize('update', $plan);
         $plan = $this->planService->updatePlan($id, $request->validated());
+
         return response()->json($plan);
     }
 
@@ -64,6 +68,7 @@ class PlanController extends Controller
         $plan = $this->planService->getPlanById($id);
         Gate::authorize('delete', $plan);
         $this->planService->deletePlan($id);
+
         return response()->json(null, 204);
     }
 }

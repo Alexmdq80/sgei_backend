@@ -33,10 +33,10 @@ return [
             'hostname' => env('REVERB_HOST'),
             'options' => [
                 'tls' => env('REVERB_SERVER_TLS', false) ? [
-                        'local_cert' => env('REVERB_TLS_CERT'),
-                        'local_pk' => env('REVERB_TLS_KEY'),
-                        'verify_peer' => false,
-                    ] : [],
+                    'local_cert' => env('REVERB_TLS_CERT'),
+                    'local_pk' => env('REVERB_TLS_KEY'),
+                    'verify_peer' => false,
+                ] : [],
             ],
             'max_request_size' => env('REVERB_MAX_REQUEST_SIZE', 10_000),
             'scaling' => [

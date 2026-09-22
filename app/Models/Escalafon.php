@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -14,11 +16,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $vigente
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Cupof> $cupofs
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Cupof> $cupofs
  * @property-read int|null $cupofs_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Escalafon newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Escalafon newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Escalafon onlyTrashed()
@@ -34,18 +37,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Escalafon whereVigente($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Escalafon withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Escalafon withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Escalafon extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     protected $table = 'escalafones';
 
     protected $fillable = [
-        "nombre",
-        "orden",
-        "vigente"
+        'nombre',
+        'orden',
+        'vigente',
     ];
 
     public function cupofs(): HasMany

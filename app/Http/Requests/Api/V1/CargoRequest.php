@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,7 +31,7 @@ class CargoRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -42,7 +43,7 @@ class CargoRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('cargos', 'nombre')->ignore($id)
+                Rule::unique('cargos', 'nombre')->ignore($id),
             ],
             'tipo' => ['required', 'string', Rule::in(['horas', 'modulos', 'cargo'])],
             'escalafon_id' => ['nullable', 'integer', 'exists:escalafones,id'],

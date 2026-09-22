@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,13 +18,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $finalizado
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Escuela|null $escuela
- * @property-read \App\Models\EscuelaUbicacion|null $escuelaUbicacion
- * @property-read \App\Models\HistorialInscripcion|null $historialInscripcion
- * @property-read \App\Models\SalidaMotivo|null $salidaMotivo
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Escuela|null $escuela
+ * @property-read EscuelaUbicacion|null $escuelaUbicacion
+ * @property-read HistorialInscripcion|null $historialInscripcion
+ * @property-read SalidaMotivo|null $salidaMotivo
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionPase newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionPase newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionPase onlyTrashed()
@@ -42,13 +44,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionPase whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionPase withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InscripcionPase withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class InscripcionPase extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
-    protected $auditGroup = "academic";
+    protected $auditGroup = 'academic';
 
     /**
      * The attributes that are mass assignable.
@@ -56,12 +59,12 @@ class InscripcionPase extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "escuela_id",
-        "historial_inscripcion_id",
-        "salida_motivo_id",
-        "escuela_ubicacion_id",
-        "otro_motivo",
-        "finalizado"
+        'escuela_id',
+        'historial_inscripcion_id',
+        'salida_motivo_id',
+        'escuela_ubicacion_id',
+        'otro_motivo',
+        'finalizado',
     ];
 
     /**

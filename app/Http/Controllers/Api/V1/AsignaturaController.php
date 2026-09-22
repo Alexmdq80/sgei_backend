@@ -22,6 +22,7 @@ class AsignaturaController extends Controller
     {
         Gate::authorize('viewAny', Asignatura::class);
         $asignaturas = $this->asignaturaService->getByAnioPlan($anioPlanId);
+
         return response()->json($asignaturas);
     }
 
@@ -32,6 +33,7 @@ class AsignaturaController extends Controller
     {
         Gate::authorize('create', Asignatura::class);
         $asignatura = $this->asignaturaService->create($request->validated());
+
         return response()->json($asignatura, 201);
     }
 
@@ -43,6 +45,7 @@ class AsignaturaController extends Controller
         $asignatura = Asignatura::findOrFail($id);
         Gate::authorize('update', $asignatura);
         $asignatura = $this->asignaturaService->update($id, $request->validated());
+
         return response()->json($asignatura);
     }
 
@@ -54,6 +57,7 @@ class AsignaturaController extends Controller
         $asignatura = Asignatura::findOrFail($id);
         Gate::authorize('delete', $asignatura);
         $this->asignaturaService->delete($id);
+
         return response()->json(null, 204);
     }
 }

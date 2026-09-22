@@ -12,7 +12,7 @@ return new class extends Migration
     public function handle(): void
     {
         // Corregir tabla Usuarios
-        if (Schema::hasTable('usuarios') && !Schema::hasColumn('usuarios', 'apellido')) {
+        if (Schema::hasTable('usuarios') && ! Schema::hasColumn('usuarios', 'apellido')) {
             Schema::table('usuarios', function (Blueprint $table) {
                 $table->string('apellido')->nullable()->after('nombre');
             });
@@ -48,7 +48,7 @@ return new class extends Migration
             });
         }
     }
-    
+
     // Sobrescribo up() por handle() por convención de Laravel 11/12+ si se usa, pero usaré up() por seguridad
     public function up(): void
     {

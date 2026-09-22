@@ -27,7 +27,7 @@ test('user can register with valid data', function () {
                 'email',
                 'documento_tipo_id',
                 'documento_numero',
-            ]
+            ],
         ]);
 
     $this->assertDatabaseHas('usuarios', [
@@ -56,7 +56,7 @@ test('registration fails with invalid email', function () {
 
 test('registration fails if email already exists', function () {
     $existingUser = Usuario::factory()->create([
-        'email' => 'existing@example.com'
+        'email' => 'existing@example.com',
     ]);
 
     $documentoTipo = DocumentoTipo::factory()->create();

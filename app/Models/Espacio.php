@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,15 +19,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $nombre
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\HistorialInscripcion> $historialInscripciones
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, HistorialInscripcion> $historialInscripciones
  * @property-read int|null $historial_inscripciones_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Inscripcion> $inscripciones
+ * @property-read Collection<int, Inscripcion> $inscripciones
  * @property-read int|null $inscripciones_count
- * @property-read \App\Models\Propuesta|null $propuesta
- * @property-read \App\Models\SeccionTipo|null $seccionTipo
+ * @property-read Propuesta|null $propuesta
+ * @property-read SeccionTipo|null $seccionTipo
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Espacio newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Espacio newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Espacio onlyTrashed()
@@ -43,11 +46,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Espacio whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Espacio withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Espacio withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Espacio extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -55,10 +59,10 @@ class Espacio extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "propuesta_id",
-        "seccion_tipo_id",
-        "division",
-        "nombre"
+        'propuesta_id',
+        'seccion_tipo_id',
+        'division',
+        'nombre',
     ];
 
     /**
@@ -74,7 +78,7 @@ class Espacio extends Model
      */
     public function seccionTipo(): BelongsTo
     {
-        return $this->belongsTo(SeccionTipo::class, "seccion_tipo_id");
+        return $this->belongsTo(SeccionTipo::class, 'seccion_tipo_id');
     }
 
     /**

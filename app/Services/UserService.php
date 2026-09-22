@@ -2,30 +2,32 @@
 
 namespace App\Services;
 
-use App\Models\Usuario;
-use App\Models\Persona;
-use App\Models\Escuela;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Pagination\LengthAwarePaginator;
-use App\Notifications\VerifyEmailNotification;
-use App\Notifications\AdminEmailChangeNotification;
-use Illuminate\Support\Str;
 use App\DTOs\User\CreateUserDTO;
 use App\DTOs\User\UpdateUserProfileDTO;
-use App\Notifications\AccountInvitationNotification;
 use App\Events\UsuarioUpdatedEvent;
+use App\Models\Escuela;
+use App\Models\Persona;
+use App\Models\Usuario;
+use App\Notifications\AccountInvitationNotification;
+use App\Notifications\AdminEmailChangeNotification;
+use App\Notifications\VerifyEmailNotification;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class UserService
 {
     public function __construct(
         protected PersonaService $personaService,
         protected CupofService $cupofService
-    ) {
-    }
+    ) {}
 
     /**
      * Get a paginated list of users with optional filters.
@@ -39,45 +41,45 @@ class UserService
             'documentoTipo',
             'persona.escuelasPersonas.escuela',
             'persona.escuelasPersonas.role',
-            'roles'
+            'roles',
         ]);
 
         // Enforce Jurisdiction for non-superusers
-        if ($user && !$user->hasRole('superuser')) {
+        if ($user && ! $user->hasRole('superuser')) {
             if ($user->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
                 $filters['escuela_ids'] = $user->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
             }
         }
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('nombre', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('documento_numero', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('email', 'like', '%' . $filters['search'] . '%');
+                $q->where('nombre', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('documento_numero', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('email', 'like', '%'.$filters['search'].'%');
             });
         }
 
         // Filtro por Escuela específica (ID o CUE)
-        if (!empty($filters['escuela_id'])) {
+        if (! empty($filters['escuela_id'])) {
             $query->whereHas('persona.escuelasPersonas', function ($q) use ($filters) {
                 $q->where('escuela_id', $filters['escuela_id']);
             });
         }
 
-        if (!empty($filters['escuela_ids'])) {
+        if (! empty($filters['escuela_ids'])) {
             $query->whereHas('persona.escuelasPersonas', function ($q) use ($filters) {
                 $q->whereIn('escuela_id', $filters['escuela_ids']);
             });
         }
 
-        if (!empty($filters['cue_anexo'])) {
+        if (! empty($filters['cue_anexo'])) {
             $query->whereHas('persona.escuelasPersonas.escuela', function ($q) use ($filters) {
                 $q->where('cue_anexo', $filters['cue_anexo']);
             });
         }
 
         // Filtro por Estado de Vinculación
-        if (!empty($filters['vinculation'])) {
+        if (! empty($filters['vinculation'])) {
             if ($filters['vinculation'] === 'vinculated') {
                 $query->whereHas('persona.escuelasPersonas', function ($q) {
                     $q->whereNotNull('verified_at');
@@ -96,7 +98,7 @@ class UserService
         }
 
         // Filtro por Email Verificado
-        if (!empty($filters['email_verified'])) {
+        if (! empty($filters['email_verified'])) {
             if ($filters['email_verified'] === 'verified') {
                 $query->whereNotNull('email_verified_at');
             } elseif ($filters['email_verified'] === 'unverified') {
@@ -105,7 +107,7 @@ class UserService
         }
 
         // Filtro por Vinculación a Persona en Padrón
-        if (!empty($filters['persona_linked'])) {
+        if (! empty($filters['persona_linked'])) {
             if ($filters['persona_linked'] === 'linked') {
                 $query->has('persona');
             } elseif ($filters['persona_linked'] === 'unlinked') {
@@ -114,19 +116,19 @@ class UserService
         }
 
         // Filtro por Rol / Cargo
-        if (!empty($filters['role'])) {
+        if (! empty($filters['role'])) {
             $role = $filters['role'];
             $query->where(function ($q) use ($role) {
                 if ($role === 'superuser') {
                     $q->where('es_administrador', true)
-                        ->orWhereHas('roles', fn($sq) => $sq->where('name', 'superuser'));
+                        ->orWhereHas('roles', fn ($sq) => $sq->where('name', 'superuser'));
                 } elseif ($role === 'equipo_directivo') {
                     $leadershipRoles = Usuario::ROLES_EQUIPO_CONDUCCION;
-                    $q->whereHas('persona.escuelasPersonas.role', fn($sq) => $sq->whereIn('name', $leadershipRoles))
-                        ->orWhereHas('roles', fn($sq) => $sq->whereIn('name', $leadershipRoles));
+                    $q->whereHas('persona.escuelasPersonas.role', fn ($sq) => $sq->whereIn('name', $leadershipRoles))
+                        ->orWhereHas('roles', fn ($sq) => $sq->whereIn('name', $leadershipRoles));
                 } else {
-                    $q->whereHas('roles', fn($sq) => $sq->where('name', $role))
-                        ->orWhereHas('persona.escuelasPersonas.role', fn($sq) => $sq->where('name', $role));
+                    $q->whereHas('roles', fn ($sq) => $sq->where('name', $role))
+                        ->orWhereHas('persona.escuelasPersonas.role', fn ($sq) => $sq->where('name', $role));
                 }
             });
         }
@@ -163,7 +165,7 @@ class UserService
         $arrayData = $dto->toArray();
 
         // 1. Si viene password en el DTO, se usa. Si no, se genera uno aleatorio temporal.
-        $hasPassword = !empty($dto->password);
+        $hasPassword = ! empty($dto->password);
         $rawPassword = $hasPassword ? $dto->password : Str::random(32);
 
         $arrayData['password'] = Hash::make($rawPassword);
@@ -178,10 +180,10 @@ class UserService
         $this->linkToPersona($user);
 
         // 3. Notificaciones según el caso:
-        if (!$hasPassword) {
+        if (! $hasPassword) {
             // Enviar invitación para configurar contraseña
             $user->notify(new AccountInvitationNotification($user->verification_token));
-        } elseif (!$user->hasVerifiedEmail()) {
+        } elseif (! $user->hasVerifiedEmail()) {
             // Si ya tiene clave pero falta verificar email
             $user->notify(new VerifyEmailNotification($user->verification_token));
         }
@@ -204,11 +206,11 @@ class UserService
             return;
         }
 
-        if (!$user->documento_tipo_id || !$user->documento_numero) {
+        if (! $user->documento_tipo_id || ! $user->documento_numero) {
             return;
         }
 
-        // Search for a persona with matching documents and matching email in contact info and vive_si === true 
+        // Search for a persona with matching documents and matching email in contact info and vive_si === true
         $persona = Persona::where('vive_si', 1)
             ->where('documento_tipo_id', $user->documento_tipo_id)
             ->where('documento_numero', $user->documento_numero)
@@ -219,8 +221,8 @@ class UserService
             ->first();
 
         if ($persona) {
-            // Match found: set to pending confirmation. 
-            // The user will still need to verify email if they haven't yet, 
+            // Match found: set to pending confirmation.
+            // The user will still need to verify email if they haven't yet,
             // but they are now visible to their administrators.
             $user->update(['estado' => 'vinculacion_pendiente']);
             UsuarioUpdatedEvent::dispatch('linked', $user->id);
@@ -231,7 +233,7 @@ class UserService
      * Link a persona to an existing user if a match is found.
      * Useful when creating or updating a persona's contact information or DNI.
      * Match requirements: documento_tipo_id, documento_numero AND email match.
-     * 
+     *
      * NEW RULES:
      * - Any match found results in 'vinculacion_pendiente' status for the user.
      * - Automatic linking is disabled to enforce admin confirmation.
@@ -243,17 +245,17 @@ class UserService
             return;
         }
 
-        if (!$persona->documento_tipo_id || !$persona->documento_numero) {
+        if (! $persona->documento_tipo_id || ! $persona->documento_numero) {
             return;
         }
         // Una persona fallecida nunca se auto-vincula a un usuario
-        if (!$persona->vive_si) {
+        if (! $persona->vive_si) {
             return;
         }
 
         // Load contact information to get the email
         $persona->loadMissing('contacto');
-        if (!$persona->contacto || !$persona->contacto->email) {
+        if (! $persona->contacto || ! $persona->contacto->email) {
             return;
         }
 
@@ -266,7 +268,7 @@ class UserService
             ->first();
 
         // If user found and NOT already linked to ANY persona, set to pending confirmation.
-        if ($user && !$user->persona) {
+        if ($user && ! $user->persona) {
             // Match found: set to pending confirmation regardless of verification status
             $user->update(['estado' => 'vinculacion_pendiente']);
             UsuarioUpdatedEvent::dispatch('linked', $user->id);
@@ -313,9 +315,9 @@ class UserService
         $dto = $data instanceof UpdateUserProfileDTO ? $data : UpdateUserProfileDTO::fromArray($data);
         $data = $dto->toArray();
 
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $data, $dto) {
+        return DB::transaction(function () use ($user, $data, $dto) {
             // Handle password update if provided
-            if (!empty($dto->password)) {
+            if (! empty($dto->password)) {
                 $data['password'] = Hash::make($dto->password);
             } else {
                 unset($data['password']); // Don't try to update password if empty
@@ -327,11 +329,11 @@ class UserService
                 || ($dto->documentoNumero !== null && $dto->documentoNumero != $user->documento_numero);
 
             if ($emailChanged || $dniChanged) {
-                $performer = \Illuminate\Support\Facades\Auth::user();
+                $performer = Auth::user();
                 $isAdmin = $performer?->es_administrador || $performer?->hasRole('superuser');
 
                 // Special limit check for email changes (only for non-admins)
-                if ($emailChanged && !$isAdmin && !$user->canChangeEmail()) {
+                if ($emailChanged && ! $isAdmin && ! $user->canChangeEmail()) {
                     throw ValidationException::withMessages([
                         'email' => ['Has alcanzado el límite máximo de cambios de correo electrónico (3).'],
                     ]);
@@ -366,12 +368,12 @@ class UserService
 
                     // If matches a persona, it stays pending confirmation. Otherwise, pending verification.
                     $data['estado'] = $matchingPersona ? 'vinculacion_pendiente' : 'email_pendiente';
-                } else if ($dniChanged) {
-                    // DNI changed but email didn't. 
+                } elseif ($dniChanged) {
+                    // DNI changed but email didn't.
                     // If matches, pending admin confirmation. If not, clear pending state.
                     if ($matchingPersona) {
                         $data['estado'] = 'vinculacion_pendiente';
-                    } else if (in_array($user->estado, ['activo', 'vinculacion_pendiente'])) {
+                    } elseif (in_array($user->estado, ['activo', 'vinculacion_pendiente'])) {
                         // Was active or pending, now unlinked and no new match found.
                         $data['estado'] = $user->hasVerifiedEmail() ? 'email_verificado' : 'email_pendiente';
                     }
@@ -455,6 +457,7 @@ class UserService
     {
         $result = (bool) $user->delete();
         UsuarioUpdatedEvent::dispatch('deleted', $user->id);
+
         return $result;
     }
 
@@ -473,7 +476,7 @@ class UserService
 
         $path = $avatar->storeAs('avatars', $filename, 'local');
 
-        if (!$path) {
+        if (! $path) {
             throw new \RuntimeException('No se pudo almacenar el archivo de avatar.');
         }
 
@@ -482,7 +485,6 @@ class UserService
 
         return $user->avatar_url ?? url("/api/v1/usuarios/{$user->id}/avatar");
     }
-
 
     /**
      * Delete the user's avatar.
@@ -500,7 +502,7 @@ class UserService
      * Get schools where the user has a verified "leadership team" role (equipo de conducción).
      * Leadership roles: director, vicedirector, secretario, prosecretario.
      */
-    public function getAuthorizedSchoolsForProposals(Usuario $user): \Illuminate\Database\Eloquent\Collection
+    public function getAuthorizedSchoolsForProposals(Usuario $user): Collection
     {
         $leadershipRoles = Usuario::ROLES_EQUIPO_CONDUCCION;
 
@@ -520,14 +522,14 @@ class UserService
      */
     public function updatePassword(Usuario $user, string $currentPassword, string $newPassword): void
     {
-        if (!Hash::check($currentPassword, $user->password)) {
+        if (! Hash::check($currentPassword, $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['La contraseña actual es incorrecta.'],
             ]);
         }
 
         $user->update([
-            'password' => Hash::make($newPassword)
+            'password' => Hash::make($newPassword),
         ]);
     }
 
@@ -550,8 +552,9 @@ class UserService
                 $q->whereIn('escuela_id', $performerSchoolIds);
             })->exists();
 
-        if ($hasCupof)
+        if ($hasCupof) {
             return true;
+        }
 
         // 3. Check Enrollment (Inscripcion) in those schools
         $hasInscripcion = $persona->inscripcion()
@@ -559,8 +562,9 @@ class UserService
                 $q->whereIn('escuela_id', $performerSchoolIds);
             })->exists();
 
-        if ($hasInscripcion)
+        if ($hasInscripcion) {
             return true;
+        }
 
         // 4. Check Relationships with enrolled students (Vinculos)
         // Check if any student vinculated to this persona has an inscription in performer's schools
@@ -577,11 +581,11 @@ class UserService
      * Criterios: mismo documento_tipo_id, documento_numero y email (en contacto).
      * Filtra por jurisdicción del usuario logueado.
      */
-    public function getCandidatosPersona(Usuario $usuario, Usuario $performer): \Illuminate\Database\Eloquent\Collection
+    public function getCandidatosPersona(Usuario $usuario, Usuario $performer): Collection
     {
 
-        if (!$usuario->documento_tipo_id || !$usuario->documento_numero || !$usuario->email) {
-            return new \Illuminate\Database\Eloquent\Collection();
+        if (! $usuario->documento_tipo_id || ! $usuario->documento_numero || ! $usuario->email) {
+            return new Collection;
         }
 
         $query = Persona::where('vive_si', 1)
@@ -596,15 +600,16 @@ class UserService
                 'documentoTipo',
                 'movimientosCupofActivos.cupof.escuela.localidad.departamento',
                 'inscripcion.escuelaProcedencia.localidad.departamento',
-                'vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento'
+                'vinculosComoAdulto.inscripcion.escuelaProcedencia.localidad.departamento',
             ]);
 
         // Filtro jurisdiccional (solo para no-superusers)
-        if (!$performer->hasRole('superuser') && !$performer->es_administrador) {
+        if (! $performer->hasRole('superuser') && ! $performer->es_administrador) {
             if ($performer->hasAnyRole(Usuario::ROLES_EQUIPO_CONDUCCION)) {
                 $escuelaIds = $performer->persona?->escuelasPersonas()->whereNotNull('verified_at')->pluck('escuela_id')->toArray() ?? [];
-                if (empty($escuelaIds))
+                if (empty($escuelaIds)) {
                     return collect();
+                }
                 $query->where(function ($q) use ($escuelaIds) {
                     $q->whereHas('movimientosCupofActivos.cupof', function ($sq) use ($escuelaIds) {
                         $sq->whereIn('escuela_id', $escuelaIds);
@@ -620,7 +625,6 @@ class UserService
                 return collect();
             }
         }
-
 
         return $query->limit(10)->get();
     }
@@ -645,6 +649,7 @@ class UserService
         $user->notify(new AccountInvitationNotification($user->verification_token));
         UsuarioUpdatedEvent::dispatch('updated', $user->id);
     }
+
     /**
      * Resend the email verification notification.
      * Does NOT touch the password or password_set.
@@ -666,5 +671,4 @@ class UserService
         UsuarioUpdatedEvent::dispatch('updated', $user->id);
 
     }
-
 }

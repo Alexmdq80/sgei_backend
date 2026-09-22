@@ -3,13 +3,13 @@
 namespace Database\Factories;
 
 use App\Models\Cupof;
-use App\Models\Escuela;
 use App\Models\Escalafon;
+use App\Models\Escuela;
 use App\Models\PuestoTipo;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Cupof>
+ * @extends Factory<Cupof>
  */
 class CupofFactory extends Factory
 {

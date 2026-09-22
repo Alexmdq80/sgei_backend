@@ -29,7 +29,7 @@ class JornadaRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('jornadas', 'nombre')->ignore($id)
+                Rule::unique('jornadas', 'nombre')->ignore($id),
             ],
             'orden' => ['nullable', 'integer'],
         ];

@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use App\Models\Provincia;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ProvinciaService
 {
     /**
      * Get paginated provinces with their nation.
      */
-    public function getAll(?string $search = null, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         $query = Provincia::with('nacion')
             ->orderBy('nombre');

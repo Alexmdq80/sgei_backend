@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Cargo;
+use Illuminate\Database\Seeder;
 
 class CargoSeeder extends Seeder
 {
@@ -29,10 +29,10 @@ class CargoSeeder extends Seeder
             Cargo::updateOrCreate(
                 ['nombre' => mb_strtoupper($cargo['nombre'], 'UTF-8')],
                 [
-                    'tipo'          => $cargo['tipo'],
-                    'escalafon_id'  => $cargo['escalafon_id'],
+                    'tipo' => $cargo['tipo'],
+                    'escalafon_id' => $cargo['escalafon_id'],
                     'requiere_cursos' => $cargo['requiere_cursos'],
-                    'activo'        => true,
+                    'activo' => true,
                 ]
             );
         }

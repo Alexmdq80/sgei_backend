@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\CondicionRequest;
 use App\Models\Condicion;
 use App\Services\CondicionService;
-use App\Http\Requests\Api\V1\CondicionRequest;
 use Illuminate\Http\JsonResponse;
 
 class CondicionController extends Controller
@@ -28,6 +28,7 @@ class CondicionController extends Controller
     public function store(CondicionRequest $request): JsonResponse
     {
         $condicion = $this->condicionService->create($request->validated());
+
         return response()->json($condicion, 201);
     }
 
@@ -45,6 +46,7 @@ class CondicionController extends Controller
     public function update(CondicionRequest $request, Condicion $condicion): JsonResponse
     {
         $condicion = $this->condicionService->update($condicion, $request->validated());
+
         return response()->json($condicion);
     }
 
@@ -54,6 +56,7 @@ class CondicionController extends Controller
     public function destroy(Condicion $condicion): JsonResponse
     {
         $this->condicionService->delete($condicion);
+
         return response()->json(null, 204);
     }
 }

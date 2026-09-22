@@ -67,7 +67,7 @@ class DocumentoIdentidadCast implements CastsAttributes
         }
 
         throw new InvalidArgumentException(
-            'El valor debe ser una instancia de ' . DocumentoIdentidad::class . ' o un string.'
+            'El valor debe ser una instancia de '.DocumentoIdentidad::class.' o un string.'
         );
     }
 }

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,10 +18,11 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property bool $activo
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \App\Models\Escalafon|null $escalafon
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property-read Escalafon|null $escalafon
+ *
  * @method static \Database\Factories\CargoFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo newQuery()
@@ -38,11 +41,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Cargo extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     protected $auditGroup = 'entities';
 
@@ -56,7 +60,7 @@ class Cargo extends Model
         'tipo',
         'escalafon_id',
         'requiere_cursos',
-        'activo'
+        'activo',
     ];
 
     /**
@@ -73,7 +77,7 @@ class Cargo extends Model
     /**
      * Relation with Escalafon.
      */
-    public function escalafon(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function escalafon(): BelongsTo
     {
         return $this->belongsTo(Escalafon::class);
     }

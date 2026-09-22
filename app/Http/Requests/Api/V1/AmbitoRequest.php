@@ -29,7 +29,7 @@ class AmbitoRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('ambitos', 'nombre')->ignore($id)
+                Rule::unique('ambitos', 'nombre')->ignore($id),
             ],
             'vigente' => ['nullable', 'boolean'],
         ];

@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\EscuelaUbicacion;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class EscuelaUbicacionService
 {
@@ -42,6 +42,7 @@ class EscuelaUbicacionService
                 'vigente' => $data['vigente'] ?? $escuelaUbicacion->vigente,
                 'updated_by' => Auth::id(),
             ]);
+
             return $escuelaUbicacion;
         });
     }

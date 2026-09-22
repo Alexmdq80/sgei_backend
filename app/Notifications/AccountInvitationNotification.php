@@ -39,11 +39,11 @@ class AccountInvitationNotification extends Notification implements ShouldQueue
         $frontendUrls = explode(',', env('FRONTEND_URL', 'http://localhost:5173'));
         $frontendUrl = trim($frontendUrls[0]);
         // Redirigimos a una nueva ruta de activación en el frontend
-        $setupUrl = $frontendUrl . '/activar-cuenta?token=' . $this->token . '&email=' . urlencode($notifiable->email);
+        $setupUrl = $frontendUrl.'/activar-cuenta?token='.$this->token.'&email='.urlencode($notifiable->email);
 
         return (new MailMessage)
             ->subject('Activación de cuenta - SGEI')
-            ->greeting('¡Hola, ' . $notifiable->nombre . '!')
+            ->greeting('¡Hola, '.$notifiable->nombre.'!')
             ->line('Se ha creado una cuenta para ti en el Sistema de Gestión Escolar Integral (SGEI).')
             ->line('Para comenzar a utilizar el sistema, es necesario que actives tu cuenta configurando una contraseña.')
             ->action('Activar mi Cuenta', $setupUrl)

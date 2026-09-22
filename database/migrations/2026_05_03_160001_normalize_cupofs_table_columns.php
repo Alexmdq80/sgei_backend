@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -27,26 +27,30 @@ return new class extends Migration
         foreach ($cupofs as $cupof) {
             $eId = $escalafones[strtoupper($cupof->escalafon)] ?? null;
             $pId = null;
-            
+
             // Mapeo manual para puesto tipos con tildes
             $tipo = strtoupper($cupof->tipo_puesto);
-            if ($tipo === 'CARGO') $pId = $puestoTipos['CARGO'] ?? null;
-            elseif ($tipo === 'HORAS_CATEDRA') $pId = $puestoTipos['HORAS CÁTEDRA'] ?? null;
-            elseif ($tipo === 'MODULOS') $pId = $puestoTipos['MÓDULOS'] ?? null;
+            if ($tipo === 'CARGO') {
+                $pId = $puestoTipos['CARGO'] ?? null;
+            } elseif ($tipo === 'HORAS_CATEDRA') {
+                $pId = $puestoTipos['HORAS CÁTEDRA'] ?? null;
+            } elseif ($tipo === 'MODULOS') {
+                $pId = $puestoTipos['MÓDULOS'] ?? null;
+            }
 
             DB::table('cupofs')->where('id', $cupof->id)->update([
                 'escalafon_id' => $eId,
-                'puesto_tipo_id' => $pId
+                'puesto_tipo_id' => $pId,
             ]);
         }
 
         // 3. Eliminar columnas antiguas y establecer FKs
         Schema::table('cupofs', function (Blueprint $table) {
             $table->dropColumn(['escalafon', 'tipo_puesto']);
-            
+
             $table->foreign('escalafon_id')->references('id')->on('escalafones')->onDelete('restrict');
             $table->foreign('puesto_tipo_id')->references('id')->on('puesto_tipos')->onDelete('restrict');
-            
+
             $table->unsignedTinyInteger('escalafon_id')->nullable(false)->change();
             $table->unsignedTinyInteger('puesto_tipo_id')->nullable(false)->change();
         });
@@ -60,7 +64,7 @@ return new class extends Migration
         Schema::table('cupofs', function (Blueprint $table) {
             $table->dropForeign(['puesto_tipo_id']);
             $table->dropForeign(['escalafon_id']);
-            
+
             $table->enum('escalafon', ['docente', 'auxiliar', 'administrativo'])->default('docente')->after('asignatura_id');
             $table->enum('tipo_puesto', ['cargo', 'horas_catedra', 'modulos'])->default('cargo')->after('escalafon');
         });
@@ -68,7 +72,7 @@ return new class extends Migration
         // Migrar de vuelta (aproximado)
         DB::table('cupofs')->update([
             'escalafon' => 'docente',
-            'tipo_puesto' => 'cargo'
+            'tipo_puesto' => 'cargo',
         ]);
 
         Schema::table('cupofs', function (Blueprint $table) {

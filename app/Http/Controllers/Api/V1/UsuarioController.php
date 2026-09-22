@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
-use App\Models\Usuario;
-use App\Models\Persona;
-use App\Services\UserService;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use App\Http\Resources\UsuarioResource;
-use App\Http\Requests\Api\V1\UsuarioRequest;
 use App\DTOs\User\UpdateUserProfileDTO;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\UsuarioRequest;
+use App\Http\Resources\UsuarioResource;
+use App\Models\Persona;
+use App\Models\Usuario;
+use App\Services\CupofService;
+use App\Services\UserService;
+use Illuminate\Database\QueryException;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use \Illuminate\Validation\ValidationException;
-use \App\Services\CupofService;
-use \Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+
 class UsuarioController extends Controller
 {
     protected UserService $userService;
@@ -35,7 +37,7 @@ class UsuarioController extends Controller
         if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
             return response()->json([
                 'error' => 'Acceso Denegado: No se puede reenviar la activación a un superusuario.',
-                'code' => 403
+                'code' => 403,
             ], 403);
         }
 
@@ -44,14 +46,15 @@ class UsuarioController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'error' => $e->errors()['password'][0] ?? 'No se pudo reenviar la invitación.',
-                'code' => 422
+                'code' => 422,
             ], 422);
         }
 
         return response()->json([
-            'message' => 'Invitación de activación reenviada con éxito al correo del usuario.'
+            'message' => 'Invitación de activación reenviada con éxito al correo del usuario.',
         ]);
     }
+
     /**
      * Resend the email verification notification to a user.
      */
@@ -62,23 +65,24 @@ class UsuarioController extends Controller
         if ($usuario->es_administrador || $usuario->hasRole('superuser')) {
             return response()->json([
                 'error' => 'Acceso Denegado: No se puede reenviar la verificación a un superusuario.',
-                'code' => 403
+                'code' => 403,
             ], 403);
         }
-        
+
         try {
             $this->userService->resendEmailVerification($usuario);
         } catch (ValidationException $e) {
             return response()->json([
                 'error' => $e->errors()['email'][0] ?? 'No se pudo reenviar la verificación.',
-                'code' => 422
+                'code' => 422,
             ], 422);
         }
 
         return response()->json([
-            'message' => 'Verificación de email reenviada con éxito al correo del usuario.'
+            'message' => 'Verificación de email reenviada con éxito al correo del usuario.',
         ]);
     }
+
     /**
      * Display a listing of the users.
      */
@@ -95,7 +99,6 @@ class UsuarioController extends Controller
     /**
      * Display the specified user.
      */
-
     public function show(Usuario $usuario)
     {
 
@@ -107,11 +110,12 @@ class UsuarioController extends Controller
             'persona.escuelasPersonas.escuela',
             'persona.escuelasPersonas.role',
             'documentoTipo',
-            'roles'
+            'roles',
         ]);
 
         // 2. Autorizar DESPUÉS de cargar (la policy usa relaciones ya cargadas → sin N+1)
         $this->authorize('view', $usuario);
+
         return new UsuarioResource($usuario);
     }
 
@@ -130,7 +134,7 @@ class UsuarioController extends Controller
             if ($dbTimestamp && $dbTimestamp !== $clientTimestamp) {
                 return response()->json([
                     'error' => 'Conflicto de concurrencia: El registro fue modificado por otro administrador mientras lo editabas. Por favor, recarga los datos.',
-                    'code' => 409
+                    'code' => 409,
                 ], 409);
             }
         }
@@ -144,7 +148,7 @@ class UsuarioController extends Controller
             if ($emailChanged || $dniChanged) {
                 return response()->json([
                     'error' => 'Operación Inválida: Este usuario está vinculado a una persona del padrón. No se permite modificar el DNI o el Email para preservar la integridad del vínculo.',
-                    'code' => 422
+                    'code' => 422,
                 ], 422);
             }
         }
@@ -165,7 +169,7 @@ class UsuarioController extends Controller
 
         return response()->json([
             'message' => 'Usuario actualizado con éxito.',
-            'user' => new UsuarioResource($user)
+            'user' => new UsuarioResource($user),
         ]);
     }
 
@@ -174,14 +178,14 @@ class UsuarioController extends Controller
         $performer = auth()->user();
 
         // Autorización basada en Jurisdicción
-        if (!$performer->hasRole('superuser') && !$performer->es_administrador && !$performer->can('manageScoped', $usuario)) {
+        if (! $performer->hasRole('superuser') && ! $performer->es_administrador && ! $performer->can('manageScoped', $usuario)) {
             return response()->json(['error' => 'Acceso Denegado: No tienes permisos para gestionar este usuario según tu jurisdicción.'], 403);
         }
 
-        if (!$usuario->hasVerifiedEmail()) {
+        if (! $usuario->hasVerifiedEmail()) {
             return response()->json([
                 'error' => 'Operación Inválida: El usuario debe haber verificado su correo electrónico antes de que se pueda confirmar su vinculación con el padrón.',
-                'code' => 422
+                'code' => 422,
             ], 422);
         }
 
@@ -196,7 +200,7 @@ class UsuarioController extends Controller
 
             return response()->json([
                 'message' => 'El usuario ya se encontraba vinculado y ahora ha sido activado.',
-                'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role']))
+                'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role'])),
             ]);
         }
 
@@ -209,16 +213,16 @@ class UsuarioController extends Controller
             ->whereNull('usuario_id')
             ->first();
 
-        if (!$persona) {
+        if (! $persona) {
             return response()->json(['error' => 'No se encontró ninguna persona en el padrón con datos coincidentes (DNI y Email) para confirmar.'], 404);
         }
 
         // REGLA: El Equipo de Conducción NO puede confirmar vinculaciones de identidad.
         // Solo Superusuario y Jefaturas Jerárquicas (Provincial, Regional, Distrital) tienen este poder.
-        if ($performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']) && !$performer->hasRole('superuser')) {
+        if ($performer->hasAnyRole(['director', 'vicedirector', 'secretario', 'prosecretario']) && ! $performer->hasRole('superuser')) {
             return response()->json([
                 'error' => 'Acceso Denegado: El Equipo de Conducción no tiene permisos para confirmar vinculaciones de identidad con el padrón.',
-                'code' => 403
+                'code' => 403,
             ], 403);
         }
 
@@ -230,7 +234,7 @@ class UsuarioController extends Controller
 
         return response()->json([
             'message' => 'Vinculación con el padrón confirmada con éxito.',
-            'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role']))
+            'user' => new UsuarioResource($usuario->fresh(['persona', 'escuelaUsuarios.role'])),
         ]);
     }
 
@@ -242,16 +246,17 @@ class UsuarioController extends Controller
         if ($usuario->id === auth()->id()) {
             return response()->json([
                 'error' => 'Operación Inválida: No puedes eliminar tu propia cuenta administrativa.',
-                'code' => 400
+                'code' => 400,
             ], 400);
         }
 
         $this->userService->delete($usuario);
 
         return response()->json([
-            'message' => 'Usuario eliminado con éxito.'
+            'message' => 'Usuario eliminado con éxito.',
         ]);
     }
+
     /**
      * Stream a target user's avatar (authorized).
      */
@@ -259,14 +264,13 @@ class UsuarioController extends Controller
     {
         $this->authorize('viewAvatar', $usuario);
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
 
-        if (!$usuario->avatar_path || !$disk->exists($usuario->avatar_path)) {
+        if (! $usuario->avatar_path || ! $disk->exists($usuario->avatar_path)) {
             return response()->json(['error' => 'Avatar no encontrado.'], 404);
         }
 
         return $disk->response($usuario->avatar_path);
     }
-
 }

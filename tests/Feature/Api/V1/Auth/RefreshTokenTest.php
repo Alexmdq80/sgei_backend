@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Usuario;
 use App\Models\RefreshToken;
+use App\Models\Usuario;
 use Illuminate\Support\Facades\Hash;
 
 beforeEach(function () {
@@ -22,8 +22,8 @@ test('user receives a refresh token on login', function () {
     ]);
 
     $response->assertOk()
-             ->assertJsonStructure(['token', 'refresh_token', 'user']);
-    
+        ->assertJsonStructure(['token', 'refresh_token', 'user']);
+
     $this->assertDatabaseHas('refresh_tokens', [
         'usuario_id' => $user->id,
         'token' => $response->json('refresh_token'),
@@ -33,7 +33,7 @@ test('user receives a refresh token on login', function () {
 test('user can refresh access token with a valid refresh token', function () {
     $user = Usuario::factory()->create(['email_verified_at' => now()]);
     $oldToken = 'valid-refresh-token';
-    
+
     $refreshToken = RefreshToken::create([
         'usuario_id' => $user->id,
         'token' => $oldToken,
@@ -45,14 +45,14 @@ test('user can refresh access token with a valid refresh token', function () {
     ]);
 
     $response->assertOk()
-             ->assertJsonStructure(['token', 'refresh_token']);
-    
+        ->assertJsonStructure(['token', 'refresh_token']);
+
     $newToken = $response->json('refresh_token');
     $this->assertNotEquals($oldToken, $newToken);
-    
+
     // Old token should be deleted (soft deleted)
     $this->assertSoftDeleted('refresh_tokens', ['token' => $oldToken]);
-    
+
     // New token should exist
     $this->assertDatabaseHas('refresh_tokens', [
         'usuario_id' => $user->id,
@@ -63,23 +63,23 @@ test('user can refresh access token with a valid refresh token', function () {
 test('user can logout and revoke refresh token', function () {
     $user = Usuario::factory()->create(['email_verified_at' => now()]);
     $token = $user->createToken('auth-token')->plainTextToken;
-    
+
     $refreshToken = RefreshToken::create([
         'usuario_id' => $user->id,
         'token' => 'to-be-revoked',
         'expires_at' => now()->addDays(7),
     ]);
 
-    $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+    $response = $this->withHeader('Authorization', 'Bearer '.$token)
         ->postJson('/api/v1/auth/logout', [
             'refresh_token' => 'to-be-revoked',
         ]);
 
     $response->assertOk();
-    
+
     // Refresh token should be deleted
     $this->assertSoftDeleted('refresh_tokens', ['token' => 'to-be-revoked']);
-    
+
     // Sanctum token should also be deleted
     $this->assertCount(0, $user->tokens);
 });

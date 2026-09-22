@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Services\AuthService;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\RefreshTokenRequest;
-use Illuminate\Http\Request;
+use App\Http\Resources\UsuarioResource;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -17,8 +18,7 @@ class LoginController extends Controller
      */
     public function __construct(
         protected AuthService $authService
-    ) {
-    }
+    ) {}
 
     /**
      * Authenticate a user and return a token.
@@ -38,26 +38,26 @@ class LoginController extends Controller
             $data = $this->authService->login($credentials, $request);
 
             return response()->json([
-                'user' => new \App\Http\Resources\UsuarioResource($data['user']->load([
+                'user' => new UsuarioResource($data['user']->load([
                     'persona',
                     'documentoTipo',
                     'roles',
                     'persona.escuelasPersonas.escuela',
-                    'persona.escuelasPersonas.role'
+                    'persona.escuelasPersonas.role',
                 ])),
                 'token' => $data['token'],
-                'refresh_token' => $data['refresh_token']
+                'refresh_token' => $data['refresh_token'],
             ], 200);
 
         } catch (ValidationException $e) {
             return response()->json([
                 'error' => $e->validator->errors()->first(),
-                'code' => $e->status
+                'code' => $e->status,
             ], $e->status);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Ocurrió un error inesperado durante la autenticación.',
-                'code' => 500
+                'code' => 500,
             ], 500);
         }
     }
@@ -74,7 +74,7 @@ class LoginController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'error' => $e->errors()['refresh_token'][0] ?? 'Token de refresco inválido.',
-                'code' => 401
+                'code' => 401,
             ], 401);
         }
     }
@@ -88,7 +88,7 @@ class LoginController extends Controller
 
         return response()->json([
             'message' => 'Sesión cerrada correctamente.',
-            'code' => 200
+            'code' => 200,
         ], 200);
     }
 }

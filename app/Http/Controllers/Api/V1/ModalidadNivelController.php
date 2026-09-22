@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\ModalidadNivelRequest;
 use App\Models\ModalidadNivel;
 use App\Services\ModalidadNivelService;
-use App\Http\Requests\Api\V1\ModalidadNivelRequest;
 use Illuminate\Http\JsonResponse;
 
 class ModalidadNivelController extends Controller
@@ -31,6 +31,7 @@ class ModalidadNivelController extends Controller
     public function store(ModalidadNivelRequest $request): JsonResponse
     {
         $combination = $this->modalidadNivelService->create($request->validated());
+
         return response()->json($combination, 201);
     }
 
@@ -48,6 +49,7 @@ class ModalidadNivelController extends Controller
     public function update(ModalidadNivelRequest $request, ModalidadNivel $modalidadNivel): JsonResponse
     {
         $combination = $this->modalidadNivelService->update($modalidadNivel, $request->validated());
+
         return response()->json($combination);
     }
 
@@ -57,6 +59,7 @@ class ModalidadNivelController extends Controller
     public function destroy(ModalidadNivel $modalidadNivel): JsonResponse
     {
         $this->modalidadNivelService->delete($modalidadNivel);
+
         return response()->json(null, 204);
     }
 }

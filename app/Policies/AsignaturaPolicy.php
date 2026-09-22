@@ -19,7 +19,7 @@ class AsignaturaPolicy
             'director',
             'vicedirector',
             'secretario',
-            'prosecretario'
+            'prosecretario',
         ];
 
         if ($user->hasAnyRole($restrictedRoles)) {
@@ -30,12 +30,12 @@ class AsignaturaPolicy
         if ($user->relationLoaded('persona') && $user->persona?->relationLoaded('escuelasPersonas')) {
             return $user->persona->escuelasPersonas
                 ->whereNotNull('verified_at')
-                ->contains(fn($ep) => in_array($ep->role?->name, $restrictedRoles));
+                ->contains(fn ($ep) => in_array($ep->role?->name, $restrictedRoles));
         }
 
         return $user->persona?->escuelasPersonas()
             ->whereNotNull('verified_at')
-            ->whereHas('role', fn($q) => $q->whereIn('name', $restrictedRoles))
+            ->whereHas('role', fn ($q) => $q->whereIn('name', $restrictedRoles))
             ->exists() ?? false;
     }
 

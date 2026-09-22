@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\Usuario;
-use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function () {
@@ -13,11 +11,11 @@ test('cualquier usuario puede listar los roles institucionales', function () {
 
     $response->assertStatus(200)
         ->assertJsonStructure([
-            '*' => ['id', 'name', 'guard_name']
+            '*' => ['id', 'name', 'guard_name'],
         ]);
-        
+
     // Verificar que al menos existan los roles básicos sembrados
     $response->assertJsonFragment(['name' => 'director'])
-             ->assertJsonFragment(['name' => 'profesor'])
-             ->assertJsonFragment(['name' => 'estudiante']);
+        ->assertJsonFragment(['name' => 'profesor'])
+        ->assertJsonFragment(['name' => 'estudiante']);
 });

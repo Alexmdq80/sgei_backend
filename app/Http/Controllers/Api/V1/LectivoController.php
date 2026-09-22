@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\LectivoRequest;
 use App\Models\Lectivo;
 use App\Services\LectivoService;
-use App\Http\Requests\Api\V1\LectivoRequest;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class LectivoController extends Controller
 {
@@ -21,6 +21,7 @@ class LectivoController extends Controller
     public function index(Request $request): JsonResponse
     {
         $lectivos = $this->lectivoService->getAll($request->all());
+
         return response()->json($lectivos);
     }
 
@@ -30,6 +31,7 @@ class LectivoController extends Controller
     public function store(LectivoRequest $request): JsonResponse
     {
         $lectivo = $this->lectivoService->create($request->validated());
+
         return response()->json($lectivo, 201);
     }
 
@@ -47,6 +49,7 @@ class LectivoController extends Controller
     public function update(LectivoRequest $request, Lectivo $lectivo): JsonResponse
     {
         $updated = $this->lectivoService->update($lectivo, $request->validated());
+
         return response()->json($updated);
     }
 
@@ -56,6 +59,7 @@ class LectivoController extends Controller
     public function destroy(Lectivo $lectivo): JsonResponse
     {
         $this->lectivoService->delete($lectivo);
+
         return response()->json(null, 204);
     }
 }

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,13 +15,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $orden
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Propuesta> $propuestasTurnoFin
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Propuesta> $propuestasTurnoFin
  * @property-read int|null $propuestas_turno_fin_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Propuesta> $propuestasTurnoInicio
+ * @property-read Collection<int, Propuesta> $propuestasTurnoInicio
  * @property-read int|null $propuestas_turno_inicio_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Turno newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Turno newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Turno onlyTrashed()
@@ -34,11 +37,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Turno whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Turno withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Turno withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Turno extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -46,8 +50,8 @@ class Turno extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "nombre",
-        "orden"
+        'nombre',
+        'orden',
     ];
 
     /**
@@ -55,7 +59,7 @@ class Turno extends Model
      */
     public function propuestasTurnoInicio(): HasMany
     {
-        return $this->hasMany(Propuesta::class, "turno_inicio_id", "id");
+        return $this->hasMany(Propuesta::class, 'turno_inicio_id', 'id');
     }
 
     /**
@@ -63,6 +67,6 @@ class Turno extends Model
      */
     public function propuestasTurnoFin(): HasMany
     {
-        return $this->hasMany(Propuesta::class, "turno_fin_id", "id");
+        return $this->hasMany(Propuesta::class, 'turno_fin_id', 'id');
     }
 }

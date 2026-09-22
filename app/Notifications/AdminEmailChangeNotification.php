@@ -12,6 +12,7 @@ class AdminEmailChangeNotification extends Notification implements ShouldQueue
     use Queueable;
 
     protected string $token;
+
     protected string $oldEmail;
 
     public function __construct(string $token, string $oldEmail)
@@ -29,11 +30,11 @@ class AdminEmailChangeNotification extends Notification implements ShouldQueue
     {
         $frontendUrls = explode(',', env('FRONTEND_URL', 'http://localhost:5173'));
         $frontendUrl = trim($frontendUrls[0]);
-        $verificationUrl = $frontendUrl . '/verificar-email?token=' . $this->token . '&email=' . urlencode($notifiable->email);
+        $verificationUrl = $frontendUrl.'/verificar-email?token='.$this->token.'&email='.urlencode($notifiable->email);
 
         return (new MailMessage)
             ->subject('Cambio de correo electrónico - SGEI')
-            ->greeting('¡Hola, ' . $notifiable->nombre . '!')
+            ->greeting('¡Hola, '.$notifiable->nombre.'!')
             ->line('Una administración del Sistema de Gestión Escolar Integral (SGEI) ha modificado la dirección de correo electrónico asociada a tu cuenta.')
             ->line("Tu correo anterior ({$this->oldEmail}) ha sido reemplazado por {$notifiable->email}.")
             ->line('Para continuar utilizando el sistema con tu nueva dirección de correo, es necesario que la verifiques haciendo clic en el botón de abajo.')

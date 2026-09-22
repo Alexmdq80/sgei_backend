@@ -7,7 +7,7 @@ use App\Models\Sector;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Escuela>
+ * @extends Factory<Escuela>
  */
 class EscuelaFactory extends Factory
 {
@@ -16,7 +16,7 @@ class EscuelaFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => 'Escuela ' . $this->faker->company(),
+            'nombre' => 'Escuela '.$this->faker->company(),
             'numero' => $this->faker->numerify('####'),
             'cue_anexo' => $this->faker->numerify('#########'),
             'sector_id' => Sector::factory(),

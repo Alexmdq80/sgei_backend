@@ -25,6 +25,7 @@ readonly class CreateEscuelaDTO
     public static function fromRequest(FormRequest $request, array $overrides = []): self
     {
         $data = array_merge($request->validated(), $overrides);
+
         return self::fromArray($data);
     }
 

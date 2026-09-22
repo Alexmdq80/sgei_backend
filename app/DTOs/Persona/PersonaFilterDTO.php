@@ -53,7 +53,7 @@ readonly class PersonaFilterDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            search: !empty($data['search']) ? (string) $data['search'] : null,
+            search: ! empty($data['search']) ? (string) $data['search'] : null,
             onlyAgents: isset($data['only_agents']) ? (bool) $data['only_agents'] : null,
             escuelaId: isset($data['escuela_id']) ? (int) $data['escuela_id'] : null,
             provinciaId: isset($data['provincia_id']) ? (int) $data['provincia_id'] : null,

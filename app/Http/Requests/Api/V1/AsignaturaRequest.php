@@ -26,7 +26,7 @@ class AsignaturaRequest extends FormRequest
             'anio_plan_id' => ['required', Rule::exists('anio_plan', 'id')],
             'horas_semanales' => ['required', 'integer', 'min:0', 'max:40'],
             'codigo' => ['nullable', 'string', 'max:50'],
-            'orden' => ['integer', 'min:0']
+            'orden' => ['integer', 'min:0'],
         ];
     }
 }

@@ -37,6 +37,7 @@ class AsignaturaService
         return DB::transaction(function () use ($id, $data) {
             $asignatura = Asignatura::findOrFail($id);
             $asignatura->update($data);
+
             return $asignatura;
         });
     }
@@ -48,6 +49,7 @@ class AsignaturaService
     {
         return DB::transaction(function () use ($id) {
             $asignatura = Asignatura::findOrFail($id);
+
             return (bool) $asignatura->delete();
         });
     }

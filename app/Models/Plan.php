@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -18,12 +20,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $orientacion
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AnioPlan> $anioPlanes
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, AnioPlan> $anioPlanes
  * @property-read int|null $anio_planes_count
- * @property-read \App\Models\PlanCiclo|null $planCiclo
+ * @property-read PlanCiclo|null $planCiclo
+ *
  * @method static \Database\Factories\PlanFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Plan newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Plan newQuery()
@@ -43,15 +46,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Plan whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Plan withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Plan withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class Plan extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     protected $table = 'plans';
 
-    protected $auditGroup = "academic";
+    protected $auditGroup = 'academic';
 
     /**
      * The attributes that are mass assignable.
@@ -59,12 +63,12 @@ class Plan extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "plan_ciclo_id",
-        "nombre",
-        "nombre_completo",
-        "duracion_anios",
-        "resolucion",
-        "orientacion"
+        'plan_ciclo_id',
+        'nombre',
+        'nombre_completo',
+        'duracion_anios',
+        'resolucion',
+        'orientacion',
     ];
 
     /**

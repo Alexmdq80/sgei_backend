@@ -6,7 +6,7 @@ use App\Models\DocumentoTipo;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\DocumentoTipo>
+ * @extends Factory<DocumentoTipo>
  */
 class DocumentoTipoFactory extends Factory
 {

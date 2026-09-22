@@ -29,7 +29,7 @@ class VinculoTipoRequest extends FormRequest
                 'required',
                 'string',
                 'max:150',
-                Rule::unique('vinculo_tipos', 'nombre')->ignore($id)
+                Rule::unique('vinculo_tipos', 'nombre')->ignore($id),
             ],
             'orden' => ['nullable', 'integer'],
             'vigente' => ['boolean'],

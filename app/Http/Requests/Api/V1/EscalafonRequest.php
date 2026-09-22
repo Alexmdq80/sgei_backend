@@ -29,7 +29,7 @@ class EscalafonRequest extends FormRequest
                 'required',
                 'string',
                 'max:150',
-                Rule::unique('escalafones', 'nombre')->ignore($id)
+                Rule::unique('escalafones', 'nombre')->ignore($id),
             ],
             'orden' => ['nullable', 'integer'],
             'vigente' => ['boolean'],

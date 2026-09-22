@@ -29,10 +29,10 @@ class GeorefFuncionRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('georef_funcions', 'nombre')->ignore($id)
+                Rule::unique('georef_funcions', 'nombre')->ignore($id),
             ],
             'orden' => ['nullable', 'integer'],
-            'vigente' => ['boolean']
+            'vigente' => ['boolean'],
         ];
     }
 }

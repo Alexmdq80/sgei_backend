@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\PropuestaRequest;
 use App\Models\Propuesta;
 use App\Services\PropuestaService;
-use App\Http\Requests\Api\V1\PropuestaRequest;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PropuestaController extends Controller
 {
@@ -21,6 +21,7 @@ class PropuestaController extends Controller
     public function getAuthorizedSchools(Request $request): JsonResponse
     {
         $schools = $this->propuestaService->getAuthorizedSchools($request->user());
+
         return response()->json($schools);
     }
 
@@ -30,6 +31,7 @@ class PropuestaController extends Controller
     public function index(Request $request): JsonResponse
     {
         $propuestas = $this->propuestaService->getAllPropuestas($request->user(), $request->all());
+
         return response()->json($propuestas);
     }
 
@@ -39,6 +41,7 @@ class PropuestaController extends Controller
     public function store(PropuestaRequest $request): JsonResponse
     {
         $propuesta = $this->propuestaService->createPropuesta($request->user(), $request->validated());
+
         return response()->json($propuesta, 201);
     }
 
@@ -48,6 +51,7 @@ class PropuestaController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $propuesta = $this->propuestaService->getPropuestaById($request->user(), $id);
+
         return response()->json($propuesta);
     }
 
@@ -57,6 +61,7 @@ class PropuestaController extends Controller
     public function update(PropuestaRequest $request, Propuesta $propuesta): JsonResponse
     {
         $updated = $this->propuestaService->updatePropuesta($request->user(), $propuesta, $request->validated());
+
         return response()->json($updated);
     }
 
@@ -66,6 +71,7 @@ class PropuestaController extends Controller
     public function destroy(Request $request, Propuesta $propuesta): JsonResponse
     {
         $this->propuestaService->deletePropuesta($request->user(), $propuesta);
+
         return response()->json(null, 204);
     }
 }

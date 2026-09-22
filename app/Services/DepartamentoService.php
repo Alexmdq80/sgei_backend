@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use App\Models\Departamento;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class DepartamentoService
 {
     /**
      * Get paginated departments with their province and nation.
      */
-    public function getAll(?string $search = null, int $perPage = 15, array $filters = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?string $search = null, int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         $query = Departamento::with(['provincia.nacion', 'region'])
             ->orderBy('nombre');
@@ -29,11 +30,11 @@ class DepartamentoService
             });
         }
 
-        if (!empty($filters['region_id'])) {
+        if (! empty($filters['region_id'])) {
             $query->where('region_id', $filters['region_id']);
         }
 
-        if (!empty($filters['provincia_id'])) {
+        if (! empty($filters['provincia_id'])) {
             $query->where('provincia_id', $filters['provincia_id']);
         }
 

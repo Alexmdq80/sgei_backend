@@ -25,6 +25,7 @@ class PuestoTipoService
     public function update(PuestoTipo $puestoTipo, array $data): PuestoTipo
     {
         $puestoTipo->update($data);
+
         return $puestoTipo;
     }
 

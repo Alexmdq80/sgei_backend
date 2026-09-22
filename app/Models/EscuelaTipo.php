@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,11 +15,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $vigente
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ModalidadNivel> $modalidadesNiveles
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, ModalidadNivel> $modalidadesNiveles
  * @property-read int|null $modalidades_niveles_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaTipo newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaTipo newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaTipo onlyTrashed()
@@ -32,11 +35,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaTipo whereVigente($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaTipo withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|EscuelaTipo withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class EscuelaTipo extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -44,8 +48,8 @@ class EscuelaTipo extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "nombre",
-        "vigente"
+        'nombre',
+        'vigente',
     ];
 
     /**

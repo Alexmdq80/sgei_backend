@@ -32,6 +32,7 @@ class CatalogoVersion extends Model
         'documento_situacions',
         'sexos',
         'generos',
+        'calles',
     ];
 
     /**

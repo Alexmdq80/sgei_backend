@@ -25,6 +25,7 @@ class TurnoService
     public function update(Turno $turno, array $data): Turno
     {
         $turno->update($data);
+
         return $turno;
     }
 

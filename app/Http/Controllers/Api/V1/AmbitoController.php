@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\AmbitoRequest;
 use App\Models\Ambito;
 use App\Services\AmbitoService;
-use App\Http\Requests\Api\V1\AmbitoRequest;
 use Illuminate\Http\JsonResponse;
 
 class AmbitoController extends Controller
@@ -28,6 +28,7 @@ class AmbitoController extends Controller
     public function store(AmbitoRequest $request): JsonResponse
     {
         $ambito = $this->ambitoService->create($request->validated());
+
         return response()->json($ambito, 201);
     }
 
@@ -45,6 +46,7 @@ class AmbitoController extends Controller
     public function update(AmbitoRequest $request, Ambito $ambito): JsonResponse
     {
         $ambito = $this->ambitoService->update($ambito, $request->validated());
+
         return response()->json($ambito);
     }
 
@@ -54,6 +56,7 @@ class AmbitoController extends Controller
     public function destroy(Ambito $ambito): JsonResponse
     {
         $this->ambitoService->delete($ambito);
+
         return response()->json(null, 204);
     }
 }

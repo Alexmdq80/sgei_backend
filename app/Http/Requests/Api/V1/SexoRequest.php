@@ -32,11 +32,11 @@ class SexoRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('sexos', 'nombre')->ignore($id)
+                Rule::unique('sexos', 'nombre')->ignore($id),
             ],
             'letra' => ['required', 'string', 'max:1'],
             'orden' => ['nullable', 'integer', 'min:0', 'max:255'],
-            'vigente' => ['boolean']
+            'vigente' => ['boolean'],
         ];
     }
 }

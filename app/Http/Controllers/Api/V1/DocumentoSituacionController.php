@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\DocumentoSituacionRequest;
 use App\Models\DocumentoSituacion;
 use App\Services\DocumentoSituacionService;
-use App\Http\Requests\Api\V1\DocumentoSituacionRequest;
 use Illuminate\Http\JsonResponse;
 
 class DocumentoSituacionController extends Controller
@@ -28,6 +28,7 @@ class DocumentoSituacionController extends Controller
     public function store(DocumentoSituacionRequest $request): JsonResponse
     {
         $item = $this->documentoSituacionService->create($request->validated());
+
         return response()->json($item, 201);
     }
 
@@ -45,6 +46,7 @@ class DocumentoSituacionController extends Controller
     public function update(DocumentoSituacionRequest $request, DocumentoSituacion $documentoSituacion): JsonResponse
     {
         $updated = $this->documentoSituacionService->update($documentoSituacion, $request->validated());
+
         return response()->json($updated);
     }
 
@@ -54,6 +56,7 @@ class DocumentoSituacionController extends Controller
     public function destroy(DocumentoSituacion $documentoSituacion): JsonResponse
     {
         $this->documentoSituacionService->delete($documentoSituacion);
+
         return response()->json(null, 204);
     }
 }

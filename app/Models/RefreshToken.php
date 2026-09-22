@@ -2,25 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Prunable;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $usuario_id
  * @property string $token
- * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property Carbon|null $expires_at
  * @property string|null $device_id
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Usuario|null $usuario
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Usuario|null $usuario
+ *
  * @method static Builder<static>|RefreshToken newModelQuery()
  * @method static Builder<static>|RefreshToken newQuery()
  * @method static Builder<static>|RefreshToken onlyTrashed()
@@ -37,11 +39,12 @@ use Illuminate\Database\Eloquent\Builder;
  * @method static Builder<static>|RefreshToken whereUsuarioId($value)
  * @method static Builder<static>|RefreshToken withTrashed(bool $withTrashed = true)
  * @method static Builder<static>|RefreshToken withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class RefreshToken extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait, Prunable;
+    use AuditableTrait, HasFactory, Prunable, SoftDeletes;
 
     /**
      * Get the prunable model query.
@@ -62,7 +65,7 @@ class RefreshToken extends Model
         'usuario_id',
         'token',
         'expires_at',
-        'device_id'
+        'device_id',
     ];
 
     /**

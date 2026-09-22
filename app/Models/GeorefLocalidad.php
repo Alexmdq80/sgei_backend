@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -20,14 +21,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property numeric|null $centroide_lon
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Departamento|null $departamento
- * @property-read \App\Models\GeorefCategoria|null $georefCategoria
- * @property-read \App\Models\GeorefFuente|null $georefFuente
- * @property-read \App\Models\LocalidadCensal|null $localidadCensal
- * @property-read \App\Models\Municipio|null $municipio
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Departamento|null $departamento
+ * @property-read GeorefCategoria|null $georefCategoria
+ * @property-read GeorefFuente|null $georefFuente
+ * @property-read LocalidadCensal|null $localidadCensal
+ * @property-read Municipio|null $municipio
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|GeorefLocalidad newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|GeorefLocalidad newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|GeorefLocalidad onlyTrashed()
@@ -49,11 +51,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|GeorefLocalidad whereUpdatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|GeorefLocalidad withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|GeorefLocalidad withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class GeorefLocalidad extends Model
 {
-    use HasFactory, SoftDeletes, AuditableTrait;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -61,15 +64,15 @@ class GeorefLocalidad extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "id_georef",
-        "departamento_id",
-        "municipio_id",
-        "localidad_censal_id",
-        "georef_fuente_id",
-        "georef_categoria_id",
-        "nombre",
-        "centroide_lat",
-        "centroide_lon"
+        'id_georef',
+        'departamento_id',
+        'municipio_id',
+        'localidad_censal_id',
+        'georef_fuente_id',
+        'georef_categoria_id',
+        'nombre',
+        'centroide_lat',
+        'centroide_lon',
     ];
 
     /**

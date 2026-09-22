@@ -3,12 +3,14 @@
 namespace Database\Factories;
 
 use App\Models\Escuela;
-use App\Models\Persona;
 use App\Models\EscuelaPersona;
+use App\Models\Persona;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\EscuelaPersona>
+ * @extends Factory<EscuelaPersona>
  */
 class EscuelaUsuarioFactory extends Factory
 {
@@ -22,10 +24,10 @@ class EscuelaUsuarioFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'escuela_id' => Escuela::factory(),
             'persona_id' => Persona::factory(),
-            'role_id' => \Spatie\Permission\Models\Role::where('name', 'profesor')->first()?->id ?? 1,
+            'role_id' => Role::where('name', 'profesor')->first()?->id ?? 1,
             'verified_at' => null, // Pendiente por defecto
         ];
     }

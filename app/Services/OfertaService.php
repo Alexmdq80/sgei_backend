@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Oferta;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class OfertaService
 {
@@ -42,6 +42,7 @@ class OfertaService
                 'vigente' => $data['vigente'] ?? $oferta->vigente,
                 'updated_by' => Auth::id(),
             ]);
+
             return $oferta;
         });
     }

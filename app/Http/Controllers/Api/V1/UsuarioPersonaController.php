@@ -3,22 +3,23 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Usuario;
+use App\Http\Resources\UsuarioResource;
 use App\Models\Persona;
-use App\Services\UserService;
+use App\Models\Usuario;
+use App\Notifications\UserLinkedNotification;
 use App\Services\CupofService;
 use App\Services\PersonaService;
-use App\Http\Resources\UsuarioResource;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Notifications\UserLinkedNotification;
-
 
 class UsuarioPersonaController extends Controller
 {
     protected UserService $userService;
+
     protected CupofService $cupofService;
+
     protected PersonaService $personaService;
 
     public function __construct(
@@ -40,10 +41,10 @@ class UsuarioPersonaController extends Controller
 
         $force = $request->boolean('force');
 
-        if (!$usuario->hasVerifiedEmail() && !$force) {
+        if (! $usuario->hasVerifiedEmail() && ! $force) {
             return response()->json([
                 'error' => 'Operación Inválida: El usuario debe haber verificado su correo electrónico antes de que se pueda confirmar su vinculación con el padrón.',
-                'code' => 422
+                'code' => 422,
             ], 422);
         }
 
@@ -60,7 +61,7 @@ class UsuarioPersonaController extends Controller
 
             return response()->json([
                 'message' => 'El usuario ya se encontraba vinculado y ahora ha sido activado.',
-                'user' => new UsuarioResource($usuarioActualizado)
+                'user' => new UsuarioResource($usuarioActualizado),
             ]);
         }
 
@@ -74,7 +75,7 @@ class UsuarioPersonaController extends Controller
             ->whereNull('usuario_id')
             ->first();
 
-        if (!$persona) {
+        if (! $persona) {
             return response()->json(['error' => 'No se encontró ninguna persona en el padrón con datos coincidentes (DNI y Email) para confirmar.'], 404);
         }
 
@@ -90,7 +91,7 @@ class UsuarioPersonaController extends Controller
 
         return response()->json([
             'message' => 'Vinculación con el padrón confirmada con éxito.',
-            'user' => new UsuarioResource($usuarioActualizado)
+            'user' => new UsuarioResource($usuarioActualizado),
         ]);
     }
 
@@ -110,14 +111,14 @@ class UsuarioPersonaController extends Controller
         $candidatos = $this->userService->getCandidatosPersona($usuario, $performer);
 
         return response()->json([
-            'data' => $candidatos->map(fn($p) => [
+            'data' => $candidatos->map(fn ($p) => [
                 'id' => $p->id,
                 'nombre_completo' => "{$p->apellido}, {$p->nombre}",
                 'documento_tipo' => $p->documentoTipo?->nombre,
                 'documento_numero' => $p->documentoNumeroRaw(),
                 'email' => $p->contacto?->email,
                 'relaciones' => $this->getRelacionesCandidato($p),
-            ])
+            ]),
         ]);
     }
 
@@ -140,7 +141,7 @@ class UsuarioPersonaController extends Controller
 
         return response()->json([
             'message' => 'Persona vinculada con éxito al usuario.',
-            'user' => new UsuarioResource($usuarioActualizado)
+            'user' => new UsuarioResource($usuarioActualizado),
         ]);
     }
 
@@ -161,7 +162,7 @@ class UsuarioPersonaController extends Controller
 
         return response()->json([
             'message' => 'Persona desvinculada con éxito del usuario.',
-            'user' => new UsuarioResource($usuarioActualizado)
+            'user' => new UsuarioResource($usuarioActualizado),
         ]);
     }
 
@@ -173,13 +174,13 @@ class UsuarioPersonaController extends Controller
         $relaciones = [];
 
         foreach ($persona->movimientosCupofActivos as $mov) {
-            $relaciones[] = "CUPOF: " . ($mov->cupof?->nombre_cargo ?? 'Cargo');
+            $relaciones[] = 'CUPOF: '.($mov->cupof?->nombre_cargo ?? 'Cargo');
         }
         if ($persona->inscripcion) {
-            $relaciones[] = "ESTUDIANTE";
+            $relaciones[] = 'ESTUDIANTE';
         }
         foreach ($persona->vinculosComoAdulto as $v) {
-            $relaciones[] = "VÍNCULO FAMILIAR";
+            $relaciones[] = 'VÍNCULO FAMILIAR';
         }
 
         return array_values(array_unique($relaciones));
