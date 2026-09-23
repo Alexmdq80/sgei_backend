@@ -93,7 +93,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/regiones', [GeografiaController::class, 'regiones']);
     Route::get('/departamentos', [GeografiaController::class, 'departamentos']);
     Route::get('/localidades', [GeografiaController::class, 'localidades']);
-
+    Route::get('/localidades/catalogo-completo', [GeografiaController::class, 'catalogoCompleto']);
+    
     // Rutas de Autenticación
     Route::prefix('auth')->group(function () {
         Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
@@ -103,7 +104,7 @@ Route::prefix('v1')->group(function () {
 
         // Esta ruta existe solo para que Laravel no de error al generar notificaciones (Route [password.reset] not defined)
         Route::get('/reset-password', function () {
-            return redirect(env('FRONTEND_URL', 'http://localhost:5173').'/reset-password?'.http_build_query(request()->all()));
+            return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/reset-password?' . http_build_query(request()->all()));
         })->name('password.reset');
 
         Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('api.password.reset');
@@ -169,7 +170,6 @@ Route::prefix('v1')->group(function () {
         });
         Route::get('/escalafones', [EscalafonController::class, 'index']);
         Route::get('/puesto-tipos', [PuestoTipoController::class, 'index']);
-
     });
 
     // Gestión Administrativa

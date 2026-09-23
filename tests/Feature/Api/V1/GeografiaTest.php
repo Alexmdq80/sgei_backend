@@ -67,3 +67,21 @@ test('keeps legacy departamento_id filter when no search is sent', function () {
     $response->assertStatus(200)
         ->assertJsonCount(2);
 });
+
+test('can get full localities catalog with hierarchy', function () {
+    $nacion = Nacion::create(['nombre' => 'ARGENTINA']);
+    $provincia = Provincia::factory()->create(['nacion_id' => $nacion->id]);
+    $departamento = Departamento::factory()->create(['provincia_id' => $provincia->id]);
+    Localidad::factory()->count(2)->create([
+        'nombre' => 'LOCALIDAD DE PRUEBA',
+        'departamento_id' => $departamento->id,
+    ]);
+
+    $response = $this->getJson('/api/v1/localidades/catalogo-completo');
+
+    $response->assertStatus(200)
+        ->assertJsonCount(2)
+        ->assertJsonPath('0.departamento.id', $departamento->id)
+        ->assertJsonPath('0.departamento.provincia.id', $provincia->id)
+        ->assertJsonPath('0.departamento.provincia.nombre', $provincia->nombre);
+});

@@ -91,4 +91,19 @@ class GeografiaController extends Controller
 
         return response()->json($regiones);
     }
+    /**
+     * Devuelve el catálogo completo de localidades con su jerarquía mínima
+     * para almacenamiento en caché local (IndexedDB) del cliente.
+     */
+    public function catalogoCompleto(): JsonResponse
+    {
+        $localidades = Localidad::with([
+            'departamento:id,nombre,provincia_id',
+            'departamento.provincia:id,nombre',
+        ])
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'departamento_id']);
+
+        return response()->json($localidades);
+    }
 }
