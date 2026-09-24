@@ -4,6 +4,7 @@ use App\Models\Calle;
 use App\Models\Localidad;
 use App\Models\LocalidadCensal;
 use App\Models\Usuario;
+use App\ValueObjects\TamanoPagina;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -39,4 +40,58 @@ test('buscar calles por q respeta estrictamente localidad_id', function () {
     expect($items)->toHaveCount(1)
         ->and($items[0]['localidad_censal_id'])->toBe($lc1->id)
         ->and($items[0]['nombre'])->toBe('AV. RIVADAVIA');
+});
+
+test('respeta per_page y el alias limit, con clamp', function () {
+    $lc = LocalidadCensal::create(['nombre' => 'TANDIL CENSAL']);
+    $localidad = Localidad::factory()->create(['nombre' => 'TANDIL', 'localidad_censal_id' => $lc->id]);
+    foreach (range(1, 5) as $i) {
+        Calle::create(['nombre' => "CALLE {$i}", 'localidad_censal_id' => $lc->id]);
+    }
+
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/calles?localidad_id={$localidad->id}&limit=2")
+        ->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('per_page', 2);
+
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/calles?localidad_id={$localidad->id}&per_page=3&limit=2")
+        ->assertOk()->assertJsonCount(3, 'data')->assertJsonPath('per_page', 3); // per_page gana
+
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/calles?localidad_id={$localidad->id}&per_page=9999")
+        ->assertOk()->assertJsonPath('per_page', 100); // clamp
+
+    // per_page vacío => cae al default (no rompe ni explota)
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/calles?localidad_id={$localidad->id}&per_page=")
+        ->assertOk()->assertJsonPath('per_page', 15);
+
+    // clamp inferior: limit negativo se acota a 1
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/calles?localidad_id={$localidad->id}&limit=-5")
+        ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('per_page', 1);
+
+});
+
+test('aplica el default y el clamp inferior con valores vacios o invalidos', function () {
+    $lc = LocalidadCensal::create(['nombre' => 'TANDIL CENSAL']);
+    $localidad = Localidad::factory()->create(['nombre' => 'TANDIL', 'localidad_censal_id' => $lc->id]);
+    foreach (range(1, 5) as $i) {
+        Calle::create(['nombre' => "CALLE {$i}", 'localidad_censal_id' => $lc->id]);
+    }
+
+    // per_page vacío => cae al default (cadena `?:` del VO)
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/calles?localidad_id={$localidad->id}&per_page=")
+        ->assertOk()->assertJsonPath('per_page', TamanoPagina::DEFAULT);
+
+    // per_page no numérico => también cae al default
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/calles?localidad_id={$localidad->id}&per_page=abc")
+        ->assertOk()->assertJsonPath('per_page', TamanoPagina::DEFAULT);
+
+    // clamp inferior: limit negativo se acota a 1
+    $this->actingAs($this->admin, 'sanctum')
+        ->getJson("/api/v1/admin/calles?localidad_id={$localidad->id}&limit=-5")
+        ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('per_page', 1);
 });

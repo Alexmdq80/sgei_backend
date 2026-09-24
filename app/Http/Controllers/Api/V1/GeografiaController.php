@@ -8,6 +8,7 @@ use App\Models\Departamento;
 use App\Models\Localidad;
 use App\Models\Provincia;
 use App\Models\Region;
+use App\ValueObjects\TamanoPagina;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -49,8 +50,7 @@ class GeografiaController extends Controller
         // --- Modo Omnibox: búsqueda por término con jerarquía completa ---
         if ($request->filled('search')) {
             $search = trim((string) $request->input('search'));
-            $limit = (int) $request->input('limit', $request->input('per_page', 15));
-            $limit = max(1, min($limit, 100)); // protección contra límites abusivos
+            $perPage = TamanoPagina::fromRequest($request)->valor;
 
             if ($search !== '') {
                 $query->where('nombre', 'like', "%{$search}%");
@@ -59,7 +59,7 @@ class GeografiaController extends Controller
             return response()->json(
                 $query
                     ->with(['departamento.provincia.nacion'])
-                    ->limit($limit)
+                    ->limit($perPage)
                     ->get(['id', 'nombre', 'departamento_id'])
             );
         }
@@ -91,6 +91,7 @@ class GeografiaController extends Controller
 
         return response()->json($regiones);
     }
+
     /**
      * Devuelve el catálogo completo de localidades con su jerarquía mínima
      * para almacenamiento en caché local (IndexedDB) del cliente.

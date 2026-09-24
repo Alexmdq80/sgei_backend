@@ -4,6 +4,7 @@ use App\Models\Departamento;
 use App\Models\Localidad;
 use App\Models\Nacion;
 use App\Models\Provincia;
+use App\ValueObjects\TamanoPagina;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -49,8 +50,7 @@ test('can search localities with full hierarchy (omnibox)', function () {
     // Localidad ajena al término: debe quedar fuera del resultado
     Localidad::factory()->create(['nombre' => 'QUILMES']);
 
-    $response = $this->getJson('/api/v1/localidades?search=TANDIL&per_page=15');
-
+    $response = $this->getJson('/api/v1/localidades?search=TANDIL&per_page='.TamanoPagina::DEFAULT);
     $response->assertStatus(200)
         ->assertJsonCount(1)
         ->assertJsonPath('0.nombre', 'TANDIL')

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CalleRequest;
 use App\Models\Calle;
 use App\Services\CalleService;
+use App\ValueObjects\TamanoPagina;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,12 +31,12 @@ class CalleController extends Controller
         }
 
         $search = $request->query('q', $request->query('search'));
-        $perPage = $request->query('per_page', 20);
+        $perPage = TamanoPagina::fromRequest($request)->valor;
 
         return response()->json(
             $this->calleService->getAll(
                 is_string($search) ? $search : null,
-                (int) $perPage,
+                $perPage,
                 $localidadId
             )
         );
